@@ -1,0 +1,53 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// IMPORTANT: Changes in the schema must be duplicated to validations.ts for consistency
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Recipe model stores all recipe information
+model Recipe {
+  id          String   @id @default(cuid())
+  name        String
+  ingredients String   // Stored as text, one ingredient per line
+  proteinType String?   // chicken, fish, red-meat, vegetarian
+  carbType    String?   // rice, pasta, couscous, fries, other
+  vegetableType String?
+  prepTime    String?   // quick, medium, long
+  tier        String   // favorite, non-regular, new
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationship: A recipe can appear in multiple meal plans
+   proteinMealPlans   MealPlan[] @relation("ProteinRecipe")
+  carbMealPlans      MealPlan[] @relation("CarbRecipe")
+  vegetableMealPlans MealPlan[] @relation("VegetableRecipe")
+}
+
+// MealPlan model stores weekly meal plans
+model MealPlan {
+  id        String   @id @default(cuid())
+  date      DateTime // The date for this meal
+  dayOfWeek String   // Monday, Tuesday, etc. (for display)
+  proteinRecipeId  String?
+  carbRecipeId  String?
+  vegetableRecipeId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationship: Each meal plan references one recipe
+  proteinRecipe Recipe? @relation("ProteinRecipe", fields: [proteinRecipeId], references: [id], onDelete: Cascade)
+  carbRecipe Recipe? @relation("CarbRecipe", fields: [carbRecipeId], references: [id], onDelete: Cascade)
+  vegetableRecipe Recipe? @relation("VegetableRecipe", fields: [vegetableRecipeId], references: [id], onDelete: Cascade)
+
+
+
+  // Index for efficient querying by date
+  @@index([date])
+}
