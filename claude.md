@@ -84,28 +84,105 @@ npm test -- expenseUtils.test.ts
 
 ### Data Flow Pattern
 
+The app follows a standard Next.js App Router architecture with React Server Components where appropriate:
+
+1. **Client Components** (`'use client'`) handle interactive UI (meal planning, recipe management)
+2. **API Routes** handle business logic and database operations via Prisma
+3. **Database** (SQLite) stores recipes and meal plans with relationships
+4. **AI Integration** via OpenAI API for recipe extraction and meal plan generation
+
+Data flow: UI → API Route → Prisma → SQLite → Response → UI Update
+
 ### Component Hierarchy
+
+```
+app/
+├── page.tsx                    # Landing page
+├── layout.tsx                  # Root layout
+├── recipes/
+│   └── page.tsx               # Recipe management page
+├── meal-plan/
+│   └── page.tsx               # Meal planning page
+└── api/
+    ├── recipes/               # Recipe CRUD operations
+    ├── meal-plan/             # Meal plan operations
+    └── ...
+
+components/
+├── Button.tsx                 # Reusable button
+├── Select.tsx                 # Reusable select dropdown
+├── RecipeCard.tsx            # Recipe display card
+└── RecipeForm.tsx            # Recipe creation/edit form
+```
 
 ## Key Files and Their Purposes
 
 ### Core Files
 
+- **`prisma/schema.prisma`**: Database schema defining Recipe and MealPlan models with protein/carb/vegetable relations
+- **`lib/validations.ts`**: Zod schemas for centralized validation (single source of truth)
+- **`lib/dateUtils.ts`**: Date manipulation helpers (getMonday, formatDate, etc.)
+- **`lib/ai.ts`**: OpenAI API integration for recipe extraction and meal planning
+- **`lib/prisma.ts`**: Prisma client singleton
+- **`types/index.ts`**: TypeScript type definitions
+
 ### API Routes
 
+- **`/api/recipes`**: GET (list/filter), POST (create)
+- **`/api/recipes/[id]`**: GET (single), PUT (update), DELETE
+- **`/api/recipes/extract`**: POST - AI recipe extraction from text
+- **`/api/meal-plan`**: GET (fetch week), POST (save week), PATCH (update meals)
+- **`/api/meal-plan/modify`**: POST - Natural language meal plan modifications
+
 ### Testing
+
+Currently no test suite. Future implementation will focus on:
+- Utility function tests (dateUtils, validation helpers)
+- API route integration tests
+- Component behavior tests
+
 ## Important Patterns and Conventions
 
 ### State Management
 
+- React `useState` for local component state
+- No global state management (Redux/Zustand) - keeping it simple
+- API calls refresh data from source of truth (database)
+- Form state managed locally within form components
+
 ### Data Immutability
+
+- Always create new arrays/objects when updating state
+- Use spread operators for updates: `setData({ ...data, field: newValue })`
+- Array operations: `filter()`, `map()`, avoid direct mutations
 
 ### TypeScript Usage
 
+- Strict type checking enabled
+- Prisma generates types automatically
+- Use `type` for data shapes, `interface` for component props
+- Zod schemas provide runtime validation + type inference
+
 ### React Patterns
+
+- Functional components only
+- Arrow functions for consistency
+- Extract reusable components (Button, Select)
+- Keep components < 250 lines
+- Use descriptive prop names and comments
 
 ### Storage Service Pattern
 
-## AI Categorization Feature
+Not applicable - using Prisma ORM with SQLite database instead of localStorage or other client-side storage.
+
+## Database Schema
+
+The app uses a relational model with named relations for multiple references:
+
+**Recipe**: Can serve as protein, carb, or vegetable in different meal plans
+**MealPlan**: References up to 3 recipes (protein, carb, vegetable) per day
+
+Key feature: Optional fields allow flexible meal composition (protein-only, carb-only, or combined meals).
 
 ## Testing Philosophy
 
@@ -122,14 +199,114 @@ npm test -- expenseUtils.test.ts
 
 ## Common Development Tasks
 
+### Adding a New Recipe Field
+
+1. Update `prisma/schema.prisma` to add the field
+2. Update `lib/validations.ts` recipeSchema with Zod validation
+3. Run `npx prisma migrate dev --name add_field_name`
+4. Run `npx prisma generate` to update Prisma client types
+5. Update `RecipeForm.tsx` to include the new field
+6. Update API routes if needed
+
+### Adding a New API Endpoint
+
+1. Create file in `app/api/[route]/route.ts`
+2. Export async functions: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`
+3. Use Zod schemas from `lib/validations.ts` for request validation
+4. Use Prisma client for database operations
+5. Return `NextResponse.json()` with appropriate status codes
+
+### Database Migrations
+
+```bash
+# Create migration after schema changes
+npx prisma migrate dev --name descriptive_migration_name
+
+# Reset database (WARNING: deletes all data)
+npx prisma migrate reset
+
+# Regenerate Prisma client after schema changes
+npx prisma generate
+
+# Open Prisma Studio to view/edit data
+npx prisma studio
+```
+
 ## Environment Variables
+
+Required in `.env` file:
+
+```
+DATABASE_URL="file:./dev.db"
+OPENAI_API_KEY="your-api-key-here"
+```
+
+See `.env.example` for template.
 
 ## Build and Deploy
 
+### Development
+
+```bash
+npm run dev  # Starts dev server on http://localhost:3000
+```
+
+### Production
+
+```bash
+npm run build   # Creates optimized production build
+npm start       # Runs production server
+```
+
+### Deployment Notes
+
+- Ensure `DATABASE_URL` points to persistent storage
+- Set `OPENAI_API_KEY` in environment variables
+- Run `npx prisma migrate deploy` in production (not `migrate dev`)
+- SQLite database file must be writable by the application
 
 ## Browser Compatibility
 
+- Modern browsers (Chrome, Firefox, Safari, Edge)
+- ES2020+ features used
+- No IE11 support
+- Requires JavaScript enabled
+
 ## Gotchas and Edge Cases
+
+### Prisma Named Relations
+
+The schema uses named relations (`@relation("ProteinRecipe")`) because Recipe has multiple references in MealPlan. When querying:
+
+```typescript
+// ✅ Correct
+include: { proteinRecipe: true, carbRecipe: true }
+
+// ❌ Wrong
+include: { recipe: true }  // This relation doesn't exist
+```
+
+### Optional Recipe Fields
+
+`proteinType` and `carbType` are optional in the schema. A recipe can be:
+- Protein-only (e.g., grilled chicken)
+- Carb-only (e.g., rice pilaf)
+- Both (e.g., chicken fried rice)
+- Neither (e.g., salad - would use vegetableType)
+
+### Date Handling
+
+- Always use `getMonday()` from `lib/dateUtils.ts` for week calculations
+- The app assumes weeks start on Monday
+- Dates in the database are stored in UTC
+- Use `setHours(0, 0, 0, 0)` to normalize dates when comparing
+
+### Validation Sync
+
+**IMPORTANT**: When changing Prisma schema, also update `lib/validations.ts`:
+- The Prisma schema comment reminds: "Changes in the schema must be duplicated to validations.ts"
+- Zod schemas won't auto-update from Prisma changes
+- Keep field optionality consistent between both files
 
 ## Code Style
 
