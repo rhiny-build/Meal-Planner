@@ -10,6 +10,37 @@
 import { useState } from 'react'
 import type { Recipe, RecipeFormData } from '@/types'
 import Button from './Button'
+import Select from './Select'
+
+// Select options
+const PROTEIN_OPTIONS = [
+  { value: '', label: 'None' },
+  { value: 'chicken', label: 'Chicken' },
+  { value: 'fish', label: 'Fish' },
+  { value: 'red-meat', label: 'Red Meat' },
+  { value: 'vegetarian', label: 'Vegetarian' },
+]
+
+const CARB_OPTIONS = [
+  { value: '', label: 'None' },
+  { value: 'rice', label: 'Rice' },
+  { value: 'pasta', label: 'Pasta' },
+  { value: 'couscous', label: 'Couscous' },
+  { value: 'fries', label: 'Fries' },
+  { value: 'other', label: 'Other' },
+]
+
+const PREP_TIME_OPTIONS = [
+  { value: 'quick', label: 'Quick (<30 min)' },
+  { value: 'medium', label: 'Medium (30-60 min)' },
+  { value: 'long', label: 'Long (>60 min)' },
+]
+
+const TIER_OPTIONS = [
+  { value: 'favorite', label: 'Favorite' },
+  { value: 'non-regular', label: 'Non-Regular' },
+  { value: 'new', label: 'New' },
+]
 
 interface RecipeFormProps {
   recipe?: Recipe // If provided, we're editing; otherwise, creating
@@ -165,81 +196,42 @@ export default function RecipeForm({
       </div>
 
       {/* Protein Type */}
-      <div>
-        <label className="block text-sm font-medium mb-1">
-          Protein Type <span className="text-red-600">*</span>
-        </label>
-        <select
-          name="proteinType"
-          value={formData.proteinType}
-          onChange={handleChange}
-          //required
-          className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
-        >
-          <option value="">None</option>
-          <option value="chicken">Chicken</option>
-          <option value="fish">Fish</option>
-          <option value="red-meat">Red Meat</option>
-          <option value="vegetarian">Vegetarian</option>
-        </select>
-      </div>
+      <Select
+        name="proteinType"
+        value={formData.proteinType || ''}
+        onChange={handleChange}
+        options={PROTEIN_OPTIONS}
+        label="Protein Type"
+      />
 
       {/* Carb Type */}
-      <div>
-        <label className="block text-sm font-medium mb-1">
-          Carb Type <span className="text-red-600">*</span>
-        </label>
-        <select
-          name="carbType"
-          value={formData.carbType}
-          onChange={handleChange}
-          //required
-          className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
-        >
-          <option value="">None</option>
-          <option value="rice">Rice</option>
-          <option value="pasta">Pasta</option>
-          <option value="couscous">Couscous</option>
-          <option value="fries">Fries</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
+      <Select
+        name="carbType"
+        value={formData.carbType || ''}
+        onChange={handleChange}
+        options={CARB_OPTIONS}
+        label="Carb Type"
+      />
 
       {/* Prep Time */}
-      <div>
-        <label className="block text-sm font-medium mb-1">
-          Prep Time <span className="text-red-600">*</span>
-        </label>
-        <select
-          name="prepTime"
-          value={formData.prepTime}
-          onChange={handleChange}
-          required
-          className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
-        >
-          <option value="quick">Quick (&lt;30 min)</option>
-          <option value="medium">Medium (30-60 min)</option>
-          <option value="long">Long (&gt;60 min)</option>
-        </select>
-      </div>
+      <Select
+        name="prepTime"
+        value={formData.prepTime}
+        onChange={handleChange}
+        options={PREP_TIME_OPTIONS}
+        label="Prep Time"
+        required
+      />
 
       {/* Tier */}
-      <div>
-        <label className="block text-sm font-medium mb-1">
-          Recipe Tier <span className="text-red-600">*</span>
-        </label>
-        <select
-          name="tier"
-          value={formData.tier}
-          onChange={handleChange}
-          required
-          className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
-        >
-          <option value="favorite">Favorite</option>
-          <option value="non-regular">Non-Regular</option>
-          <option value="new">New</option>
-        </select>
-      </div>
+      <Select
+        name="tier"
+        value={formData.tier}
+        onChange={handleChange}
+        options={TIER_OPTIONS}
+        label="Recipe Tier"
+        required
+      />
 
       {/* Form Actions */}
       <div className="flex gap-3">
