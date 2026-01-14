@@ -14,6 +14,7 @@
 import { useState, useEffect } from 'react'
 import type { MealPlanWithRecipe, Recipe } from '@/types'
 import Button from '@/components/Button'
+import { getMonday, formatDate } from '@/lib/dateUtils'
 
 // Days of the week
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -257,11 +258,6 @@ export default function MealPlanPage() {
     setIsLoading(true)
   }
 
-  // Format date for display
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  }
-
   // Get recipes filtered by type
   const proteinRecipes = allRecipes.filter(r => r.proteinType)
   const carbRecipes = allRecipes.filter(r => r.carbType)
@@ -376,14 +372,3 @@ export default function MealPlanPage() {
   )
 }
 
-/**
- * Helper function to get the Monday of the current week
- */
-function getMonday(date: Date): Date {
-  const d = new Date(date)
-  const day = d.getDay()
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1) // Adjust when day is Sunday
-  const monday = new Date(d.setDate(diff))
-  monday.setHours(0, 0, 0, 0)
-  return monday
-}
