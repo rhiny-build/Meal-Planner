@@ -12,9 +12,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import type { MealPlanWithRecipe, Recipe } from '@/types'
+import type {  Recipe, WeekPlan } from '@/types'
 import Button from '@/components/Button'
 import { getMonday, formatDate } from '@/lib/dateUtils'
+import { fetchMealPlan as fetchMealPlanService, fetchAllRecipes as fetchReceipesService, saveMealPlan } from '@/lib/apiService'
+import { generateMealPlan } from '@/lib/aiService'
 
 // Days of the week
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -24,19 +26,13 @@ export default function MealPlanPage() {
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([])
 
   // State for the 7-day meal plan from database
-  const [mealPlans, setMealPlans] = useState<MealPlanWithRecipe[]>([])
+  //const [mealPlans, setMealPlans] = useState<MealPlanWithRecipe[]>([])
 
   // State for week navigation
   const [startDate, setStartDate] = useState<Date>(getMonday(new Date()))
 
   // State for the editable week plan (protein and carb columns)
-  const [weekPlan, setWeekPlan] = useState<{
-    day: string
-    date: Date
-    proteinRecipeId: string
-    carbRecipeId: string
-    mealPlanId?: string // Database ID if it exists
-  }[]>([])
+  const [weekPlan, setWeekPlan] = useState<WeekPlan[]>([])
 
   const [isLoading, setIsLoading] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -51,8 +47,7 @@ export default function MealPlanPage() {
   // Fetch all recipes from API
   const fetchAllRecipes = async () => {
     try {
-      const response = await fetch('/api/recipes')
-      const data = await response.json()
+      const data = await fetchReceipesService()
       setAllRecipes(data)
     } catch (error) {
       console.error('Error fetching recipes:', error)
@@ -61,42 +56,12 @@ export default function MealPlanPage() {
 
   // Fetch the current week's meal plan from database
   const fetchMealPlan = async () => {
-    try {
-      const response = await fetch(
-        `/api/meal-plan?startDate=${startDate.toISOString()}`
-      )
-      const data = await response.json()
-      setMealPlans(data.mealPlans)
-
-      // Convert database meal plans to weekPlan format
-      const plan = DAYS.map((day, index) => {
-        const date = new Date(startDate)
-        date.setDate(date.getDate() + index)
-
-        // Find meal plans for this day
-        const dayMealPlans = data.mealPlans.filter((mp: MealPlanWithRecipe) =>
-          mp.dayOfWeek === day
-        )
-
-        // Separate protein and carb
-        const proteinMeal = dayMealPlans.find((mp: MealPlanWithRecipe) =>
-          mp.proteinRecipeId
-        )
-        const carbMeal = dayMealPlans.find((mp: MealPlanWithRecipe) =>
-          mp.carbsRecipeId
-        )
-
-        return {
-          day,
-          date,
-          proteinRecipeId: proteinMeal?.proteinRecipeId || '',
-          carbRecipeId: carbMeal?.carbRecipeId || '',
-          mealPlanId: proteinMeal?.id || carbMeal?.id, // Use any existing ID
-        }
-      })
-
-      setWeekPlan(plan)
-    } catch (error) {
+    try{
+        const plan = await fetchMealPlanService(startDate, DAYS);
+         setWeekPlan(plan)
+    }
+      
+    catch (error) {
       console.error('Error fetching meal plan:', error)
     } finally {
       setIsLoading(false)
@@ -115,110 +80,61 @@ export default function MealPlanPage() {
   }
 
   // Generate a new meal plan with AI (fills empty slots only)
+  // TODO: Re-enable AI generation after fixing endpoint integration
   const handleGenerate = async () => {
-    const emptyCount = weekPlan.reduce((count, day) => {
-      if (!day.proteinRecipeId) count++
-      if (!day.carbRecipeId) count++
-      return count
-    }, 0)
+    alert('AI meal plan generation coming soon!')
+    return
 
-    if (emptyCount === 0) {
-      alert('All meals are already selected. Clear some slots first if you want AI to generate new ones.')
-      return
-    }
+    // const emptyCount = weekPlan.reduce((count, day) => {
+    //   if (!day.proteinRecipeId) count++
+    //   if (!day.carbRecipeId) count++
+    //   return count
+    // }, 0)
 
-    const message = emptyCount === 14
-      ? 'Generate a complete meal plan for this week?'
-      : `Fill the ${emptyCount} empty meal slots with AI suggestions? Your ${14 - emptyCount} selected meals will remain unchanged.`
+    // if (emptyCount === 0) {
+    //   alert('All meals are already selected. Clear some slots first if you want AI to generate new ones.')
+    //   return
+    // }
 
-    if (!confirm(message)) {
-      return
-    }
+    // const message = emptyCount === 14
+    //   ? 'Generate a complete meal plan for this week?'
+    //   : `Fill the ${emptyCount} empty meal slots with AI suggestions? Your ${14 - emptyCount} selected meals will remain unchanged.`
 
-    setIsGenerating(true)
-    try {
-      // Send current selections to AI so it only fills gaps
-      const response = await fetch('/api/meal-plan/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          startDate: startDate.toISOString(),
-          currentPlan: weekPlan, // Send existing selections
-        }),
-      })
+    // if (!confirm(message)) {
+    //   return
+    // }
 
-      if (response.ok) {
-        const data = await response.json()
-        // Merge AI suggestions with existing selections
-        const updatedPlan = weekPlan.map((day, index) => ({
-          ...day,
-          proteinRecipeId: day.proteinRecipeId || data.mealPlans[index]?.proteinRecipeId || '',
-          carbRecipeId: day.carbRecipeId || data.mealPlans[index]?.carbRecipeId || '',
-        }))
-        setWeekPlan(updatedPlan)
-      } else {
-        const error = await response.json()
-        alert(error.error || 'Failed to generate meal plan')
-      }
-    } catch (error) {
-      console.error('Error generating meal plan:', error)
-      alert('Failed to generate meal plan')
-    } finally {
-      setIsGenerating(false)
-    }
+    // setIsGenerating(true)
+    // try {
+    //   const aiSuggestions = await generateMealPlan(startDate, weekPlan)
+
+    //   // Merge AI suggestions with existing selections
+    //   const updatedPlan = weekPlan.map((day, index) => ({
+    //     ...day,
+    //     proteinRecipeId: day.proteinRecipeId || aiSuggestions[index]?.proteinRecipeId || '',
+    //     carbRecipeId: day.carbRecipeId || aiSuggestions[index]?.carbRecipeId || '',
+    //   }))
+    //   setWeekPlan(updatedPlan)
+    // } catch (error) {
+    //   console.error('Error generating meal plan:', error)
+    //   alert('Failed to generate meal plan')
+    // } finally {
+    //   setIsGenerating(false)
+    // }
   }
 
   // Save the current week plan to database
   const handleSave = async () => {
     setIsSaving(true)
     try {
-      // Prepare data for saving
-      const updates = weekPlan.flatMap(day => {
-        const meals = []
-
-        // Add protein meal if selected
-        if (day.proteinRecipeId) {
-          meals.push({
-            date: day.date.toISOString(),
-            dayOfWeek: day.day,
-            proteinRecipeId: day.proteinRecipeId,
-            carbRecipeId: null,
-          })
-        }
-
-        // Add carb meal if selected
-        if (day.carbRecipeId) {
-          meals.push({
-            date: day.date.toISOString(),
-            dayOfWeek: day.day,
-            proteinRecipeId: null,
-            carbRecipeId: day.carbRecipeId,
-          })
-        }
-
-        return meals
-      })
-
-      // First delete existing meals for this week
-      await fetch('/api/meal-plan', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startDate: startDate.toISOString() }),
-      })
-
-      // Then create new meals
-      const response = await fetch('/api/meal-plan/bulk', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mealPlans: updates }),
-      })
-
-      if (response.ok) {
+      const savedPlan = await saveMealPlan(startDate, weekPlan, DAYS)
+      
+      if (savedPlan.length > 0) {
         alert('Meal plan saved!')
-        await fetchMealPlan()
+        setWeekPlan(savedPlan)
       } else {
-        const error = await response.json()
-        alert(error.error || 'Failed to save meal plan')
+        
+        alert('Failed to save meal plan')
       }
     } catch (error) {
       console.error('Error saving:', error)
