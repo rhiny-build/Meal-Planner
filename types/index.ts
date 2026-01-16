@@ -24,6 +24,13 @@ export type ProteinType = 'chicken' | 'fish' | 'red-meat' | 'vegetarian'
 export type CarbType = 'rice' | 'pasta' | 'couscous' | 'fries' | 'other'
 export type PrepTime = 'quick' | 'medium' | 'long'
 export type RecipeTier = 'favorite' | 'non-regular' | 'new'
+export type WeekPlan = {
+    day: string
+    date: Date
+    proteinRecipeId: string
+    carbRecipeId: string
+    mealPlanId?: string // Database ID if it exists
+}
 
 // Form data type for creating/editing recipes
 export interface RecipeFormData {

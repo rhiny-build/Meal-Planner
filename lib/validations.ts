@@ -39,15 +39,15 @@ export type MealPlanInput = z.infer<typeof mealPlanSchema>
  * For saving multiple meal plans at once
  */
 export const bulkMealPlanSchema = z.object({
-  startDate: z.string().datetime(),
+  startDate: z.string(),
   mealPlans: z.array(
     z.object({
-      day: z.string(),
-      proteinRecipeId: z.string().optional(),
-      carbRecipeId: z.string().optional(),
-      vegetableRecipeId: z.string().optional(),
+      dayOfWeek: z.string(),
+      proteinRecipeId: z.string().optional().nullable(),
+      carbRecipeId: z.string().optional().nullable(),
+      vegetableRecipeId: z.string().optional().nullable(),
     })
-  ).length(7, 'Must provide exactly 7 days'),
+  )
 })
 
 export type BulkMealPlanInput = z.infer<typeof bulkMealPlanSchema>

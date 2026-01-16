@@ -29,20 +29,20 @@ export const fetchMealPlan = async (startDate: Date, days: string[]): Promise<We
             mp.dayOfWeek === day
         )
 
-        // Separate protein and carb (align with backend field name)
+        // Separate protein and carb
         const proteinMeal = dayMealPlans.find((mp: MealPlanWithRecipe) =>
             mp.proteinRecipeId
         )
         const carbMeal = dayMealPlans.find((mp: MealPlanWithRecipe) =>
-            mp.carbsRecipeId
+            mp.carbRecipeId
         )
 
         return {
             day,
             date,
             proteinRecipeId: proteinMeal?.proteinRecipeId || '',
-            carbRecipeId: carbMeal?.carbsRecipeId || '',
-            mealPlanId: proteinMeal?.id || carbMeal?.id // Use any existing ID
+            carbRecipeId: carbMeal?.carbRecipeId || '',
+            mealPlanId: proteinMeal?.id || carbMeal?.id
         }
     })
 
@@ -75,15 +75,15 @@ try {
       
 
       // First delete existing meals for this week
-      
-      await fetch('/api/meal-plan', {
+
+      await fetch('/api/meal-plan/delete', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ startDate: startDate.toISOString() }),
       })
 
       // Then create new meals
-      const response = await fetch('/api/meal-plan/', {
+      const response = await fetch('/api/meal-plan/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ startDate: startDate.toISOString(), mealPlans: updates }),
