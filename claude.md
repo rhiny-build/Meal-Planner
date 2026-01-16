@@ -97,23 +97,54 @@ Data flow: UI → API Route → Prisma → SQLite → Response → UI Update
 
 ```
 app/
-├── page.tsx                    # Landing page
-├── layout.tsx                  # Root layout
+├── page.tsx                    # Landing page (~90 lines)
+├── layout.tsx                  # Root layout (~60 lines)
 ├── recipes/
-│   └── page.tsx               # Recipe management page
+│   ├── page.tsx               # Recipe management orchestration (~100 lines)
+│   └── components/
+│       ├── RecipeFilters.tsx  # Filter dropdowns (~70 lines)
+│       └── RecipeModal.tsx    # Modal wrapper (~40 lines)
 ├── meal-plan/
-│   └── page.tsx               # Meal planning page
+│   ├── page.tsx               # Meal plan orchestration (~120 lines)
+│   └── components/
+│       ├── MealPlanGrid.tsx   # 7×2 grid table (~80 lines)
+│       └── MealPlanHeader.tsx # Week nav + actions (~40 lines)
 └── api/
-    ├── recipes/               # Recipe CRUD operations
-    ├── meal-plan/             # Meal plan operations
-    └── ...
+    ├── recipes/
+    │   ├── route.ts           # GET, POST (~80 lines)
+    │   └── [id]/route.ts      # GET, PATCH, DELETE (~96 lines)
+    └── meal-plan/
+        ├── route.ts           # GET only (~50 lines)
+        ├── create/route.ts    # POST handler (~60 lines)
+        ├── update/route.ts    # PATCH handler (~45 lines)
+        ├── delete/route.ts    # DELETE handler (~45 lines)
+        └── modify/route.ts    # AI modifications (~97 lines)
 
 components/
-├── Button.tsx                 # Reusable button
-├── Select.tsx                 # Reusable select dropdown
-├── RecipeCard.tsx            # Recipe display card
-└── RecipeForm.tsx            # Recipe creation/edit form
+├── Button.tsx                 # Reusable button (~49 lines)
+├── Select.tsx                 # Reusable select (~55 lines)
+├── RecipeCard.tsx            # Recipe display (~105 lines)
+└── RecipeForm.tsx            # Recipe form (~150 lines)
+
+lib/
+├── apiService.ts              # API calls (~105 lines)
+├── aiService.ts               # AI operations (~43 lines)
+├── dateUtils.ts               # Date helpers (~38 lines)
+├── validations.ts             # Zod schemas (~53 lines)
+├── mealPlanHelpers.ts         # Shared meal plan logic (~50 lines)
+├── recipeFormHelpers.ts       # Form validation/formatting (~50 lines)
+└── hooks/
+    ├── useMealPlan.ts         # Meal plan state management (~60 lines)
+    └── useRecipes.ts          # Recipe state + filtering (~70 lines)
 ```
+
+### File Size Guidelines
+
+- **Component files**: Max 150 lines (ideally 100-120)
+- **API routes**: Max 50 lines per handler
+- **Business logic**: Max 200 lines (with clear sections)
+- **Hooks**: 50-80 lines
+- **Helpers**: 30-60 lines
 
 ## Key Files and Their Purposes
 
