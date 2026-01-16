@@ -38,7 +38,8 @@ export async function POST(request: NextRequest) {
         },
       },
       include: {
-        recipe: true,
+        proteinRecipe: true,
+        carbRecipe: true
       },
       orderBy: {
         date: 'asc',
@@ -72,8 +73,8 @@ export async function POST(request: NextRequest) {
         // Update it with the new recipe
         return prisma.mealPlan.update({
           where: { id: mealPlan.id },
-          data: { recipeId: modification.recipeId },
-          include: { recipe: true },
+          data: { proteinRecipeId: modification.proteinRecipeId, carbRecipeId: modification.carbRecipeId },
+          include: { proteinRecipe: true, carbRecipe  : true },
         })
       })
     )

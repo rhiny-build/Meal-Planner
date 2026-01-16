@@ -14,6 +14,7 @@
 import { useState } from 'react'
 import { getMonday } from '@/lib/dateUtils'
 import { useMealPlan } from '@/lib/hooks/useMealPlan'
+import { saveMealPlan } from '@/lib/apiService'
 import MealPlanHeader from './components/MealPlanHeader'
 import MealPlanGrid from './components/MealPlanGrid'
 
@@ -45,10 +46,36 @@ export default function MealPlanPage() {
     setStartDate(newDate)
   }
 
-  // TODO: Re-enable AI generation after fixing endpoint integration
   const handleGenerate = async () => {
-    alert('AI meal plan generation coming soon!')
-    setIsGenerating(false)
+    setIsGenerating(true)
+    try {
+      // Save first to get meal plan IDs
+      const savedPlan = await saveMealPlan(startDate, weekPlan, ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
+      const mealPlanIds = savedPlan.map((mp: { mealPlanId?: string }) => mp.mealPlanId as string)
+
+      const response = await fetch('/api/meal-plan/modify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instruction: 'Generate a balanced meal plan for the week following the rules. Do not change existing meals that are already set.',
+          mealPlanIds,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to generate meal plan')
+      }
+
+      const result = await response.json()
+      alert(result.explanation)
+      window.location.reload()
+    } catch (error) {
+      console.error('Error generating meal plan:', error)
+      alert(error instanceof Error ? error.message : 'Failed to generate meal plan')
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   if (isLoading) {

@@ -48,6 +48,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Descriptive messages**: Future you (or others) should understand the commit without reading the diff
 - **Don't commit broken code**: Every commit should leave the codebase in a working state
 
+## Custom Commands
+
+### `help debug`
+
+**Purpose**: Guide the user through debugging so they learn the skill, NOT to fix the issue quickly.
+
+**Rules**:
+- Go step by step. Answer with guiding questions or hints only.
+- NEVER reveal the bug's source or solution unless explicitly asked. If unsure, ask the user first.
+- Keep responses to 2-3 lines max. Let the user ask for more if needed.
+
 ## Common Commands
 
 ### Development

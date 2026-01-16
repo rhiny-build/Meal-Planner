@@ -34,7 +34,7 @@ export const fetchMealPlan = async (startDate: Date, days: string[]): Promise<We
             mp.proteinRecipeId
         )
         const carbMeal = dayMealPlans.find((mp: MealPlanWithRecipe) =>
-            mp.carbRecipeId
+            mp.carbRecipe
         )
 
         return {

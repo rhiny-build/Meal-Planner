@@ -14,7 +14,7 @@ export const recipeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   proteinType: z.string().optional(),
   carbType: z.string().optional(),
-  tier: z.enum(['regular', 'non-regular']).default('regular'),
+  tier: z.enum(['regular', 'non-regular', 'favorite']).default('regular'),
   prepTime: z.string().optional(),
   description: z.string().optional(),
 })

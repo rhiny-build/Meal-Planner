@@ -69,7 +69,8 @@ export interface MealPlanModificationRequest {
 export interface MealPlanModificationResult {
   modifiedPlan: {
     date: Date
-    recipeId: string
+    proteinRecipeId: string
+    carbRecipeId: string
   }[]
   explanation: string // What the AI changed and why
 }
