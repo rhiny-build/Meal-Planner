@@ -29,9 +29,12 @@ Tests are **co-located** with their source files for easy discovery:
 lib/
 ├── dateUtils.ts                  # Source file
 ├── dateUtils.test.ts             # Co-located test
-└── ai/
-    ├── extractIngredientsFromText.ts
-    └── ai.test.ts                # AI layer tests (mocked)
+├── ai/
+│   ├── extractIngredientsFromText.ts
+│   └── ai.test.ts                # AI layer tests (mocked)
+└── hooks/
+    ├── useRecipes.ts             # React hook
+    └── useRecipes.test.ts        # Hook tests (mocked fetch)
 
 components/
 ├── RecipeCard.tsx                # Source file
@@ -134,7 +137,50 @@ it('should call onEdit when Edit button is clicked', async () => {
 })
 ```
 
-### 4. Testing AI/LLM Code
+### 4. Testing React Hooks
+
+Hooks need special handling since they can only run inside components. Use `renderHook` from React Testing Library.
+
+```typescript
+import { renderHook, waitFor, act } from '@testing-library/react'
+
+// Mock fetch for API calls
+global.fetch = vi.fn().mockResolvedValue({
+  ok: true,
+  json: () => Promise.resolve(mockData),
+})
+
+it('should fetch data on mount', async () => {
+  const { result } = renderHook(() => useRecipes())
+
+  // Initially loading
+  expect(result.current.isLoading).toBe(true)
+
+  // Wait for async operation
+  await waitFor(() => {
+    expect(result.current.isLoading).toBe(false)
+  })
+
+  expect(result.current.recipes).toHaveLength(3)
+})
+
+it('should update state when calling hook methods', async () => {
+  const { result } = renderHook(() => useRecipes())
+
+  await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+  // Use act() for synchronous state updates
+  act(() => {
+    result.current.handleFilterChange('tier', 'favorite')
+  })
+
+  await waitFor(() => {
+    expect(result.current.filteredRecipes).toHaveLength(2)
+  })
+})
+```
+
+### 5. Testing AI/LLM Code
 
 Mock the AI client to avoid real API calls (which are slow and cost money).
 
@@ -160,7 +206,7 @@ vi.mocked(openai.chat.completions.create).mockRejectedValue(
 )
 ```
 
-### 5. Integration Tests with Real Database
+### 6. Integration Tests with Real Database
 
 Use a clean database state for each test.
 
