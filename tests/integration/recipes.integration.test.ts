@@ -12,11 +12,11 @@
  * - Verify database constraints and relationships work
  * - Test real query performance and behavior
  *
- * SETUP REQUIRED:
- * These tests use a separate test database (test.db) to avoid
- * affecting your development data. The database is:
- * - Created fresh for each test file
- * - Cleaned between tests
+ * SETUP:
+ * These tests use a separate test database (prisma/test.db) to avoid
+ * affecting your development data (prisma/dev.db). The test database is:
+ * - Created automatically via `prisma db push` before tests
+ * - Cleaned between tests (beforeEach deletes all data)
  * - Deleted after tests complete
  *
  * IMPORTANT: Integration tests are slower than unit tests.
@@ -25,20 +25,26 @@
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import { PrismaClient } from '@prisma/client'
+import { execSync } from 'child_process'
+import path from 'path'
+import fs from 'fs'
 
 /**
- * Use the main Prisma client for integration tests
+ * Use a SEPARATE test database to avoid affecting development data
  *
- * For simplicity, we're using the same database as development.
- * In a production setup, you would:
- * 1. Set DATABASE_URL to a test database in your test environment
- * 2. Use a separate .env.test file
- * 3. Run migrations before tests in CI
- *
- * The key principle is: integration tests use real database operations,
- * but we clean up after ourselves to avoid polluting data.
+ * This creates a test.db file in the prisma directory, completely
+ * isolated from the dev.db used by the application.
  */
-const testPrisma = new PrismaClient()
+const TEST_DB_PATH = path.join(process.cwd(), 'prisma', 'test.db')
+const TEST_DB_URL = `file:${TEST_DB_PATH}`
+
+const testPrisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: TEST_DB_URL,
+    },
+  },
+})
 
 describe('Recipe Integration Tests', () => {
   /**
@@ -48,12 +54,14 @@ describe('Recipe Integration Tests', () => {
    * Here we ensure the test database has the correct schema.
    */
   beforeAll(async () => {
+    // Push the schema to the test database (creates tables)
+    // This ensures the test DB has the same schema as dev
+    execSync(`DATABASE_URL="${TEST_DB_URL}" npx prisma db push --skip-generate`, {
+      stdio: 'pipe', // Suppress output
+    })
+
     // Connect to test database
     await testPrisma.$connect()
-
-    // Push the schema to create tables (if they don't exist)
-    // In production, you'd use migrations instead
-    // Note: This requires the schema to be in sync with prisma/schema.prisma
   })
 
   /**
@@ -62,12 +70,14 @@ describe('Recipe Integration Tests', () => {
    * Use it for cleanup: close connections, delete test data, etc.
    */
   afterAll(async () => {
-    // Clean up all test data
-    await testPrisma.mealPlan.deleteMany()
-    await testPrisma.recipe.deleteMany()
-
     // Disconnect from database
     await testPrisma.$disconnect()
+
+    // Optionally delete the test database file
+    // Comment this out if you want to inspect the test DB after tests
+    if (fs.existsSync(TEST_DB_PATH)) {
+      fs.unlinkSync(TEST_DB_PATH)
+    }
   })
 
   /**
