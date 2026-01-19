@@ -88,7 +88,7 @@ npm run test:watch
 npm run test:coverage
 
 # Run a single test file
-npm test -- __tests__/lib/dateUtils.test.ts
+npm test -- lib/dateUtils.test.ts
 
 # Run tests matching a pattern
 npm test -- --grep "RecipeCard"

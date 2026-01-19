@@ -15,7 +15,7 @@ npm run test:watch
 npm run test:coverage
 
 # Run a specific test file
-npm test -- __tests__/lib/dateUtils.test.ts
+npm test -- lib/dateUtils.test.ts
 
 # Run tests matching a pattern
 npm test -- --grep "dateUtils"
@@ -23,18 +23,33 @@ npm test -- --grep "dateUtils"
 
 ## Test Structure
 
+Tests are **co-located** with their source files for easy discovery:
+
 ```
-__tests__/
-├── lib/                          # Unit tests for utility functions
-│   ├── dateUtils.test.ts         # Pure function tests
-│   └── ai.test.ts                # AI layer tests (mocked)
-├── api/                          # API route tests
-│   └── recipes.test.ts           # Mocked database tests
-├── components/                   # React component tests
-│   └── RecipeCard.test.tsx       # UI and interaction tests
-└── integration/                  # Integration tests
+lib/
+├── dateUtils.ts                  # Source file
+├── dateUtils.test.ts             # Co-located test
+└── ai/
+    ├── extractIngredientsFromText.ts
+    └── ai.test.ts                # AI layer tests (mocked)
+
+components/
+├── RecipeCard.tsx                # Source file
+└── RecipeCard.test.tsx           # Co-located test
+
+app/api/recipes/
+├── route.ts                      # API route
+└── recipes.test.ts               # API route tests (mocked database)
+
+tests/                            # Non-co-located tests
+└── integration/
     └── recipes.integration.test.ts  # Real database tests
 ```
+
+**Why co-located tests?**
+- Easy to find the test for any file
+- Tests move automatically during refactoring
+- Clear which files have test coverage
 
 ## Testing Philosophy
 
