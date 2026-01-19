@@ -84,12 +84,11 @@ export async function POST(request: NextRequest) {
     const recipe = await prisma.recipe.create({
       data: {
         name: validation.data.name,
-        ingredients: body.ingredients,
+        ingredients: validation.data.ingredients,
         proteinType: validation.data.proteinType || undefined,
         carbType: validation.data.carbType || undefined,
         prepTime: validation.data.prepTime || undefined,
         tier: validation.data.tier,
-        description: validation.data.description || undefined,
       },
     })
 

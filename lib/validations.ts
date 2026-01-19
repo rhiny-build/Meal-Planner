@@ -12,11 +12,11 @@ import { z } from 'zod'
  */
 export const recipeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
+  ingredients: z.string().min(1, 'Ingredients are required'),
   proteinType: z.string().optional(),
   carbType: z.string().optional(),
   tier: z.enum(['regular', 'non-regular', 'favorite']).default('regular'),
   prepTime: z.string().optional(),
-  description: z.string().optional(),
 })
 
 export type RecipeInput = z.infer<typeof recipeSchema>

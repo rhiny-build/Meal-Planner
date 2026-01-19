@@ -63,18 +63,24 @@ export default function RecipeCard({
 
       {/* Recipe Details */}
       <div className="space-y-2 mb-4 text-sm text-gray-600 dark:text-gray-400">
-        <div className="flex items-center">
-          <span className="font-medium mr-2">Protein:</span>
-          <span className="capitalize">{recipe.proteinType.replace('-', ' ')}</span>
-        </div>
-        <div className="flex items-center">
-          <span className="font-medium mr-2">Carb:</span>
-          <span className="capitalize">{recipe.carbType}</span>
-        </div>
-        <div className="flex items-center">
-          <span className="font-medium mr-2">Prep Time:</span>
-          <span>{formatPrepTime(recipe.prepTime)}</span>
-        </div>
+        {recipe.proteinType && (
+          <div className="flex items-center">
+            <span className="font-medium mr-2">Protein:</span>
+            <span className="capitalize">{recipe.proteinType.replace('-', ' ')}</span>
+          </div>
+        )}
+        {recipe.carbType && (
+          <div className="flex items-center">
+            <span className="font-medium mr-2">Carb:</span>
+            <span className="capitalize">{recipe.carbType}</span>
+          </div>
+        )}
+        {recipe.prepTime && (
+          <div className="flex items-center">
+            <span className="font-medium mr-2">Prep Time:</span>
+            <span>{formatPrepTime(recipe.prepTime)}</span>
+          </div>
+        )}
       </div>
 
       {/* Ingredients Preview */}
