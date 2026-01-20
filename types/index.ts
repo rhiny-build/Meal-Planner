@@ -58,10 +58,20 @@ export interface ExtractedRecipeData {
   name?: string // AI might extract the recipe name too
 }
 
+// Lightweight plan entry for AI requests (doesn't require full DB fields)
+export interface PlanEntryForAI {
+  date: Date
+  dayOfWeek: string
+  proteinRecipeId: string | null
+  carbRecipeId: string | null
+  proteinRecipe?: Recipe | null
+  carbRecipe?: Recipe | null
+}
+
 // Request to modify a meal plan using natural language
 export interface MealPlanModificationRequest {
   instruction: string // e.g., "swap Tuesday for something faster"
-  currentPlan: MealPlanWithRecipe[] // The current week's plan
+  currentPlan: PlanEntryForAI[] // The current week's plan
   availableRecipes: Recipe[] // All recipes to choose from
 }
 

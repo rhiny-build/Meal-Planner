@@ -16,72 +16,49 @@ import type { MealPlanModificationRequest } from '@/types'
  *
  * Request body should include:
  * - instruction: string (e.g., "swap Tuesday for something faster")
- * - mealPlanIds: string[] (the IDs of the current week's meal plans)
+ * - currentPlan: WeekPlan[] (the current week's plan from client state)
+ *
+ * Returns the modified plan directly - does NOT save to database.
+ * Saving is done separately when user clicks Save.
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { instruction, mealPlanIds } = body
+    const { instruction, currentPlan } = body
 
-    if (!instruction || !mealPlanIds || !Array.isArray(mealPlanIds)) {
+    if (!instruction || !currentPlan || !Array.isArray(currentPlan)) {
       return NextResponse.json(
-        { error: 'Missing instruction or mealPlanIds' },
+        { error: 'Missing instruction or currentPlan' },
         { status: 400 }
       )
     }
 
-    // Fetch the current meal plans with recipe details
-    const currentPlan = await prisma.mealPlan.findMany({
-      where: {
-        id: {
-          in: mealPlanIds,
-        },
-      },
-      include: {
-        proteinRecipe: true,
-        carbRecipe: true
-      },
-      orderBy: {
-        date: 'asc',
-      },
-    })
-
     // Fetch all available recipes
     const availableRecipes = await prisma.recipe.findMany()
 
-    // Use AI to determine what changes to make
+    // Build the modification request
+    // The AI needs to know the dates, day names, and any existing selections
+    const planForAI = currentPlan.map((day: { day: string; date: string; proteinRecipeId: string; carbRecipeId: string }) => ({
+      date: new Date(day.date),
+      dayOfWeek: day.day,
+      proteinRecipeId: day.proteinRecipeId || null,
+      carbRecipeId: day.carbRecipeId || null,
+      proteinRecipe: day.proteinRecipeId ? availableRecipes.find(r => r.id === day.proteinRecipeId) : null,
+      carbRecipe: day.carbRecipeId ? availableRecipes.find(r => r.id === day.carbRecipeId) : null,
+    }))
+
     const modificationRequest: MealPlanModificationRequest = {
       instruction,
-      currentPlan,
+      currentPlan: planForAI,
       availableRecipes,
     }
 
     const result = await modifyMealPlan(modificationRequest)
 
-    // Apply the modifications to the database
-    const updatedPlans = await Promise.all(
-      result.modifiedPlan.map(modification => {
-        // Find the meal plan for this date
-        const mealPlan = currentPlan.find(
-          mp => mp.date.toDateString() === modification.date.toDateString()
-        )
-
-        if (!mealPlan) {
-          throw new Error(`No meal plan found for date ${modification.date}`)
-        }
-
-        // Update it with the new recipe
-        return prisma.mealPlan.update({
-          where: { id: mealPlan.id },
-          data: { proteinRecipeId: modification.proteinRecipeId, carbRecipeId: modification.carbRecipeId },
-          include: { proteinRecipe: true, carbRecipe  : true },
-        })
-      })
-    )
-
+    // Return the modified plan directly - no database writes
     return NextResponse.json({
       explanation: result.explanation,
-      updatedPlans,
+      modifiedPlan: result.modifiedPlan,
     })
   } catch (error) {
     console.error('Error modifying meal plan:', error)

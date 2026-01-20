@@ -54,10 +54,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Purpose**: Guide the user through debugging so they learn the skill, NOT to fix the issue quickly.
 
-**Rules**:
-- Go step by step. Answer with guiding questions or hints only.
-- NEVER reveal the bug's source or solution unless explicitly asked. If unsure, ask the user first.
-- Keep responses to 2-3 lines max. Let the user ask for more if needed.
+**STRICT RULES - NO EXCEPTIONS**:
+- **2-3 lines max per response.** End with ONE guiding question or hint. Nothing more.
+- **NEVER explain the bug, its cause, or solution** - even partially. Only ask questions that help the user discover it themselves.
+- **NEVER read multiple files at once** to "understand the flow" - let the user guide you to what they want to explore.
+- **If tempted to over-explain**: STOP. Delete your response and write a shorter one with just a question.
+- **Only reveal more if the user explicitly says**: "just tell me" or "what's the answer"
 
 ## Common Commands
 

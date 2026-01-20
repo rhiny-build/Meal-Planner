@@ -85,6 +85,25 @@ export function useMealPlan(startDate: Date) {
     return count
   }, 0)
 
+  // Apply AI-generated plan to current state
+  const applyGeneratedPlan = (modifiedPlan: { date: Date | string; proteinRecipeId: string; carbRecipeId: string }[]) => {
+    const newPlan = weekPlan.map(day => {
+      const modification = modifiedPlan.find(m => {
+        const modDate = new Date(m.date)
+        return modDate.toDateString() === day.date.toDateString()
+      })
+      if (modification) {
+        return {
+          ...day,
+          proteinRecipeId: modification.proteinRecipeId || '',
+          carbRecipeId: modification.carbRecipeId || '',
+        }
+      }
+      return day
+    })
+    setWeekPlan(newPlan)
+  }
+
   return {
     weekPlan,
     proteinRecipes,
@@ -95,5 +114,6 @@ export function useMealPlan(startDate: Date) {
     handleRecipeChange,
     handleSave,
     handleClear,
+    applyGeneratedPlan,
   }
 }

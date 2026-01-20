@@ -14,7 +14,6 @@
 import { useState } from 'react'
 import { getMonday } from '@/lib/dateUtils'
 import { useMealPlan } from '@/lib/hooks/useMealPlan'
-import { saveMealPlan } from '@/lib/apiService'
 import MealPlanHeader from './components/MealPlanHeader'
 import MealPlanGrid from './components/MealPlanGrid'
 
@@ -32,6 +31,7 @@ export default function MealPlanPage() {
     handleRecipeChange,
     handleSave,
     handleClear,
+    applyGeneratedPlan,
   } = useMealPlan(startDate)
 
   const handlePreviousWeek = () => {
@@ -49,16 +49,12 @@ export default function MealPlanPage() {
   const handleGenerate = async () => {
     setIsGenerating(true)
     try {
-      // Save first to get meal plan IDs
-      const savedPlan = await saveMealPlan(startDate, weekPlan, ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
-      const mealPlanIds = savedPlan.map((mp: { mealPlanId?: string }) => mp.mealPlanId as string)
-
       const response = await fetch('/api/meal-plan/modify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           instruction: 'Generate a balanced meal plan for the week following the rules. Do not change existing meals that are already set.',
-          mealPlanIds,
+          currentPlan: weekPlan,
         }),
       })
 
@@ -68,8 +64,8 @@ export default function MealPlanPage() {
       }
 
       const result = await response.json()
+      applyGeneratedPlan(result.modifiedPlan)
       alert(result.explanation)
-      window.location.reload()
     } catch (error) {
       console.error('Error generating meal plan:', error)
       alert(error instanceof Error ? error.message : 'Failed to generate meal plan')
