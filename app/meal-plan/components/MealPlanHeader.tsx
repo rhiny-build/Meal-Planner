@@ -63,5 +63,7 @@ export default function MealPlanHeader({
         <span className="font-medium">Selected meals:</span> {selectedCount} / 14
       </div>
     </>
+
+    //TODO: Add AI instruction field with a default of generate plan for this week. At the moment, it will be heardcoded.
   )
 }

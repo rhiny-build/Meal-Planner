@@ -9,6 +9,8 @@
 | `npx prisma migrate reset` | Drops DB, recreates, runs all migrations | When you want a fresh start (deletes all data!) |
 | `npx prisma generate` | Regenerates Prisma client types | After schema changes (usually auto-runs with migrate) |
 | `npx prisma studio` | Opens visual database editor | When you want to view/edit data in browser |
+| `npx prisma db seed` | Runs seed script to populate data | After resetting DB or starting fresh |
+| `npx prisma db push --force-reset` | Resets DB and syncs schema | When you want empty DB (deletes all data!) |
 
 ## NPM/NPX Commands
 
