@@ -146,7 +146,6 @@ lib/
 ├── apiService.ts              # API calls (~105 lines)
 ├── aiService.ts               # AI operations (~43 lines)
 ├── dateUtils.ts               # Date helpers (~38 lines)
-├── validations.ts             # Zod schemas (~53 lines)
 ├── mealPlanHelpers.ts         # Shared meal plan logic (~50 lines)
 ├── recipeFormHelpers.ts       # Form validation/formatting (~50 lines)
 └── hooks/
@@ -166,8 +165,7 @@ lib/
 
 ### Core Files
 
-- **`prisma/schema.prisma`**: Database schema defining Recipe and MealPlan models with protein/carb/vegetable relations
-- **`lib/validations.ts`**: Zod schemas for centralized validation (single source of truth)
+- **`prisma/schema.prisma`**: Database schema defining Recipe and MealPlan models with protein/carb/vegetable relations (single source of truth for data validation)
 - **`lib/dateUtils.ts`**: Date manipulation helpers (getMonday, formatDate, etc.)
 - **`lib/ai.ts`**: OpenAI API integration for recipe extraction and meal planning
 - **`lib/prisma.ts`**: Prisma client singleton
@@ -208,7 +206,7 @@ Currently no test suite. Future implementation will focus on:
 - Strict type checking enabled
 - Prisma generates types automatically
 - Use `type` for data shapes, `interface` for component props
-- Zod schemas provide runtime validation + type inference
+- Prisma handles runtime validation at the database level
 
 ### React Patterns
 
@@ -249,17 +247,16 @@ Key feature: Optional fields allow flexible meal composition (protein-only, carb
 ### Adding a New Recipe Field
 
 1. Update `prisma/schema.prisma` to add the field
-2. Update `lib/validations.ts` recipeSchema with Zod validation
-3. Run `npx prisma migrate dev --name add_field_name`
-4. Run `npx prisma generate` to update Prisma client types
-5. Update `RecipeForm.tsx` to include the new field
-6. Update API routes if needed
+2. Run `npx prisma migrate dev --name add_field_name`
+3. Run `npx prisma generate` to update Prisma client types
+4. Update `RecipeForm.tsx` to include the new field
+5. Update `types/index.ts` if needed for form data types
 
 ### Adding a New API Endpoint
 
 1. Create file in `app/api/[route]/route.ts`
 2. Export async functions: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`
-3. Use Zod schemas from `lib/validations.ts` for request validation
+3. Add basic validation for required fields (Prisma handles the rest)
 4. Use Prisma client for database operations
 5. Return `NextResponse.json()` with appropriate status codes
 
@@ -347,13 +344,6 @@ include: { recipe: true }  // This relation doesn't exist
 - The app assumes weeks start on Monday
 - Dates in the database are stored in UTC
 - Use `setHours(0, 0, 0, 0)` to normalize dates when comparing
-
-### Validation Sync
-
-**IMPORTANT**: When changing Prisma schema, also update `lib/validations.ts`:
-- The Prisma schema comment reminds: "Changes in the schema must be duplicated to validations.ts"
-- Zod schemas won't auto-update from Prisma changes
-- Keep field optionality consistent between both files
 
 ## Code Style
 

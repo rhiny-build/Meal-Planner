@@ -9,7 +9,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import type { RecipeFormData, RecipeFilters } from '@/types'
-import { recipeSchema } from '@/lib/validations'
 
 /**
  * GET /api/recipes
@@ -62,20 +61,10 @@ export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as RecipeFormData
 
-    // Validate using Zod schema
-    const validation = recipeSchema.safeParse(body)
-
-    if (!validation.success) {
+    // Basic validation - Prisma will enforce the rest
+    if (!body.name || !body.ingredients) {
       return NextResponse.json(
-        { error: 'Validation failed', details: validation.error.issues },
-        { status: 400 }
-      )
-    }
-
-    // Validate required fields for recipe creation
-    if (!body.ingredients) {
-      return NextResponse.json(
-        { error: 'Ingredients are required' },
+        { error: 'Name and ingredients are required' },
         { status: 400 }
       )
     }
@@ -83,12 +72,12 @@ export async function POST(request: NextRequest) {
     // Create the recipe in the database
     const recipe = await prisma.recipe.create({
       data: {
-        name: validation.data.name,
-        ingredients: validation.data.ingredients,
-        proteinType: validation.data.proteinType || undefined,
-        carbType: validation.data.carbType || undefined,
-        prepTime: validation.data.prepTime || undefined,
-        tier: validation.data.tier,
+        name: body.name,
+        ingredients: body.ingredients,
+        proteinType: body.proteinType || null,
+        carbType: body.carbType || null,
+        prepTime: body.prepTime || null,
+        tier: body.tier || 'regular',
       },
     })
 

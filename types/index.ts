@@ -68,6 +68,17 @@ export interface PlanEntryForAI {
   carbRecipe?: Recipe | null
 }
 
+// Request body for creating/saving a week of meal plans
+export interface BulkMealPlanRequest {
+  startDate: string
+  mealPlans: {
+    dayOfWeek: string
+    proteinRecipeId?: string | null
+    carbRecipeId?: string | null
+    vegetableRecipeId?: string | null
+  }[]
+}
+
 // Request to modify a meal plan using natural language
 export interface MealPlanModificationRequest {
   instruction: string // e.g., "swap Tuesday for something faster"

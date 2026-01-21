@@ -6,8 +6,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { bulkMealPlanSchema } from '@/lib/validations'
 import { validateMonday, getWeekBounds } from '@/lib/mealPlanHelpers'
+import type { BulkMealPlanRequest } from '@/types'
 
 /**
  * POST /api/meal-plan/create
@@ -18,20 +18,17 @@ import { validateMonday, getWeekBounds } from '@/lib/mealPlanHelpers'
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const body = (await request.json()) as BulkMealPlanRequest
 
-    // Validate using Zod schema
-    const validation = bulkMealPlanSchema.safeParse(body)
-
-    if (!validation.success) {
+    // Basic validation
+    if (!body.startDate || !body.mealPlans) {
       return NextResponse.json(
-        { error: 'Validation failed', details: validation.error.issues },
+        { error: 'startDate and mealPlans are required' },
         { status: 400 }
       )
     }
 
-    const { startDate: startDateStr, mealPlans: mealPlansData } = validation.data
-    const startDate = new Date(startDateStr)
+    const startDate = new Date(body.startDate)
 
     // Validate it's a Monday
     try {
@@ -57,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     // Create new meal plans for each day
     const mealPlans = await Promise.all(
-      mealPlansData.map((dayPlan, index) => {
+      body.mealPlans.map((dayPlan, index) => {
         const date = new Date(startDate)
         date.setDate(startDate.getDate() + index)
 

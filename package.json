@@ -33,8 +33,10 @@
     "prisma": "^5.22.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "typescript": "^5.9.3",
-    "zod": "^4.3.5"
+    "typescript": "^5.9.3"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",

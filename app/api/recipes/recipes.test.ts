@@ -261,7 +261,7 @@ describe('POST /api/recipes', () => {
 
     // Assert: Should fail validation
     expect(response.status).toBe(400)
-    expect(data.error).toBe('Validation failed')
+    expect(data.error).toBe('Name and ingredients are required')
 
     // Database should NOT have been called
     expect(prisma.recipe.create).not.toHaveBeenCalled()
