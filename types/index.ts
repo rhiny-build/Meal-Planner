@@ -36,6 +36,7 @@ export type WeekPlan = {
 export interface RecipeFormData {
   name: string
   ingredients: string
+  recipeUrl?: string
   proteinType? : ProteinType
   carbType? : CarbType
   prepTime: PrepTime

@@ -109,7 +109,7 @@ This project is designed to be both a functional meal planning tool and a learni
    # Generate Prisma client
    npm run db:generate
 
-   # Create the database
+   # Create the database (first time setup)
    npm run db:push
 
    # Seed with example recipes
@@ -161,8 +161,10 @@ The schema defines two main models:
 - `MealPlan` - Stores which recipe is planned for which date
 
 Prisma provides type-safe database access. When you change the schema:
-1. Run `npm run db:push` to update the database
+1. Run `npx prisma migrate dev --name descriptive_name` to create a migration
 2. Prisma automatically generates TypeScript types for you
+
+Note: `npm run db:push` is fine for initial setup or prototyping, but use migrations for schema changes on existing databases with data.
 
 ### API Routes (`app/api/`)
 
@@ -205,7 +207,7 @@ If you're new to these technologies, here's a suggested learning order:
    }
    ```
 
-2. Run `npm run db:push` to update the database
+2. Run `npx prisma migrate dev --name add_cuisine_field` to create a migration
 
 3. Update types in `types/index.ts`:
    ```typescript

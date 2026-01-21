@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
     const recipe = await prisma.recipe.create({
       data: {
         name: body.name,
+        recipeUrl: body.recipeUrl || null,
         ingredients: body.ingredients,
         proteinType: body.proteinType || null,
         carbType: body.carbType || null,

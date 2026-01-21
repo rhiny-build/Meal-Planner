@@ -56,6 +56,7 @@ export default function RecipeForm({
   // Form state
   const [formData, setFormData] = useState<RecipeFormData>({
     name: recipe?.name || '',
+    recipeUrl: recipe?.recipeUrl || '',
     ingredients: recipe?.ingredients || '',
     proteinType: (recipe?.proteinType as any) || '',
     carbType: (recipe?.carbType as any) || '',
@@ -64,7 +65,7 @@ export default function RecipeForm({
   })
 
   // AI import state
-  const [importText, setImportText] = useState('')
+  
   const [isImporting, setIsImporting] = useState(false)
   const [importError, setImportError] = useState('')
 
@@ -83,7 +84,7 @@ export default function RecipeForm({
 
   // Handle AI import from pasted text
   const handleImport = async () => {
-    if (!importText.trim()) {
+    if (!formData.recipeUrl.trim()) {
       setImportError('Please paste some recipe text')
       return
     }
@@ -95,7 +96,7 @@ export default function RecipeForm({
       const response = await fetch('/api/recipes/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: importText }),
+        body: JSON.stringify({ text: formData.recipeUrl }),
       })
 
       if (!response.ok) {
@@ -111,7 +112,7 @@ export default function RecipeForm({
         name: data.name || formData.name,
       })
 
-      setImportText('')
+     
     } catch (error) {
       setImportError(
         error instanceof Error ? error.message : 'Failed to import recipe'
@@ -141,15 +142,17 @@ export default function RecipeForm({
           AI-Assisted Import (Optional)
         </h3>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-          Paste recipe text and let AI extract the ingredients and name for
+          Paste recipe URL and let AI extract the ingredients and name for
           you.
         </p>
-        <textarea
-          value={importText}
-          onChange={e => setImportText(e.target.value)}
-          placeholder="Paste recipe text here..."
-          className="w-full p-2 border rounded mb-2 dark:bg-gray-800 dark:border-gray-700"
-          rows={4}
+        <input
+          name="recipeUrl"
+          type="url"
+          value={formData.recipeUrl}
+          onChange={handleChange}
+          placeholder="Paste url text here..."
+          className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
+          
         />
         {importError && (
           <p className="text-red-600 text-sm mb-2">{importError}</p>

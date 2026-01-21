@@ -63,6 +63,12 @@ export default function RecipeCard({
 
       {/* Recipe Details */}
       <div className="space-y-2 mb-4 text-sm text-gray-600 dark:text-gray-400">
+        {recipe.recipeUrl && (
+          <div className="flex items-center">
+            <span className="font-medium mr-2">URL:</span>
+            <a href={recipe.recipeUrl} target="_blank" className="text-blue-600 hover:underline">
+          </div>
+        )}
         {recipe.proteinType && (
           <div className="flex items-center">
             <span className="font-medium mr-2">Protein:</span>

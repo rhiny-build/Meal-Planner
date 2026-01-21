@@ -19,6 +19,7 @@ model Recipe {
   proteinType String?   // chicken, fish, red-meat, vegetarian
   carbType    String?   // rice, pasta, couscous, fries, other
   vegetableType String?
+  recipeUrl   String? //link to URL if exists
   prepTime    String?   // quick, medium, long
   tier        String   // favorite, non-regular, new
   createdAt   DateTime @default(now())
