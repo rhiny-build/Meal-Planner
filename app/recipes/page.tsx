@@ -19,6 +19,8 @@ import RecipeCard from '@/components/RecipeCard'
 import Button from '@/components/Button'
 import RecipeFilters from './components/RecipeFilters'
 import RecipeModal from './components/RecipeModal'
+import InspireModal from './components/InspireModal'
+import type { RecipeSuggestion } from '@/lib/perplexityService'
 
 export default function RecipesPage() {
   const {
@@ -35,6 +37,9 @@ export default function RecipesPage() {
   // State for add/edit modal
   const [showForm, setShowForm] = useState(false)
   const [editingRecipe, setEditingRecipe] = useState<Recipe | undefined>()
+
+  // State for inspire modal
+  const [showInspire, setShowInspire] = useState(false)
 
   const onSubmit = async (data: RecipeFormData): Promise<void> => {
     const success = editingRecipe
@@ -57,6 +62,10 @@ export default function RecipesPage() {
     setEditingRecipe(undefined)
   }
 
+  const onAcceptSuggestion = async (recipe: RecipeSuggestion): Promise<void> => {
+    await handleCreate(recipe)
+  }
+
   if (isLoading) {
     return (
       <div className="text-center py-12">
@@ -69,7 +78,12 @@ export default function RecipesPage() {
     <div className="max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Recipe Library</h1>
-        <Button onClick={() => setShowForm(true)}>Add Recipe</Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => setShowInspire(true)}>
+            Inspire Me
+          </Button>
+          <Button onClick={() => setShowForm(true)}>Add Recipe</Button>
+        </div>
       </div>
 
       {showForm && (
@@ -77,6 +91,13 @@ export default function RecipesPage() {
           recipe={editingRecipe}
           onSubmit={onSubmit}
           onCancel={onCancel}
+        />
+      )}
+
+      {showInspire && (
+        <InspireModal
+          onAccept={onAcceptSuggestion}
+          onClose={() => setShowInspire(false)}
         />
       )}
 
