@@ -20,7 +20,7 @@ import Button from '@/components/Button'
 import RecipeFilters from './components/RecipeFilters'
 import RecipeModal from './components/RecipeModal'
 import InspireModal from './components/InspireModal'
-import type { RecipeSuggestion } from '@/lib/perplexityService'
+import type { RecipeSuggestion } from '@/lib/aiService'
 
 export default function RecipesPage() {
   const {

@@ -63,7 +63,7 @@ export function useRecipes() {
 
   const handleCreate = async (data: RecipeFormData) => {
     try {
-      const response = await fetch('/api/recipes', {
+      const response = await fetch('/api/recipes/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),

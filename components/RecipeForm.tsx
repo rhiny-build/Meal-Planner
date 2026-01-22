@@ -84,7 +84,7 @@ export default function RecipeForm({
 
   // Handle AI import from pasted text
   const handleImport = async () => {
-    if (!formData.recipeUrl.trim()) {
+    if (!formData.recipeUrl?.trim()) {
       setImportError('Please paste some recipe text')
       return
     }

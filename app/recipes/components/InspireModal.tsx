@@ -9,7 +9,7 @@
 
 import { useState } from 'react'
 import Button from '@/components/Button'
-import { discoverRecipes, type RecipeSuggestion } from '@/lib/perplexityService'
+import { discoverRecipes, type RecipeSuggestion } from '@/lib/aiService'
 
 interface InspireModalProps {
   onAccept: (recipe: RecipeSuggestion) => Promise<void>
@@ -78,7 +78,6 @@ export default function InspireModal({ onAccept, onClose }: InspireModalProps) {
             </label>
             <div className="flex gap-2 items-start">
               <textarea
-                type="text"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
