@@ -22,6 +22,7 @@ export default function InspireModal({ onAccept, onClose }: InspireModalProps) {
   const [error, setError] = useState('')
   const [suggestions, setSuggestions] = useState<RecipeSuggestion[]>([])
   const [acceptedIds, setAcceptedIds] = useState<Set<number>>(new Set())
+  const  [rejectedRecipes, setRejectedRecipes] = useState<Set<String>>(new Set())
 
   const handleSearch = async () => {
     if (!prompt.trim()) {
@@ -33,9 +34,15 @@ export default function InspireModal({ onAccept, onClose }: InspireModalProps) {
     setError('')
     setSuggestions([])
     setAcceptedIds(new Set())
+    let searchPrompt = prompt.trim();
 
+    if (rejectedRecipes.size > 0) {
+       searchPrompt = `${prompt.trim()}. Do not include recipes with the following URLs: ${Array.from(rejectedRecipes).join(', ')}`
+      
+    }
+    //setRejectedRecipes(new Set())
     try {
-      const recipes = await discoverRecipes(prompt)
+      const recipes = await discoverRecipes(searchPrompt)
       setSuggestions(recipes)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to find recipes')
@@ -54,7 +61,7 @@ export default function InspireModal({ onAccept, onClose }: InspireModalProps) {
   }
 
   const handleReject = (index: number) => {
-    setSuggestions(prev => prev.filter((_, i) => i !== index))
+    setRejectedRecipes(prev => new Set(prev).add(suggestions[index].recipeUrl))
   }
 
   return (
@@ -103,13 +110,16 @@ export default function InspireModal({ onAccept, onClose }: InspireModalProps) {
                   className={`border rounded-lg p-4 ${
                     acceptedIds.has(index)
                       ? 'bg-green-50 dark:bg-green-900/20 border-green-300'
-                      : 'dark:border-gray-600'
+                      : rejectedRecipes.has(recipe.recipeUrl)? 'bg-red-50 dark:bg-red-900/20 border-red-300' :
+                      'dark:border-gray-600'
                   }`}
                 >
                   <div className="flex justify-between items-start mb-2">
                     <h4 className="font-semibold text-lg">{recipe.name}</h4>
                     {acceptedIds.has(index) ? (
                       <span className="text-green-600 font-medium">Added!</span>
+                    ) : rejectedRecipes.has(recipe.recipeUrl)? (
+                      <span className="text-red-600 font-medium">Rejected!</span>
                     ) : (
                       <div className="flex gap-2">
                         <Button
