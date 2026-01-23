@@ -13,7 +13,7 @@ This document explains the technical architecture of the Family Meal Planner app
 ### Backend
 - **Next.js API Routes** - Serverless API endpoints
 - **Prisma 5** - Database ORM with type generation
-- **SQLite** - Lightweight file-based database
+- **PostgreSQL** - Production-ready relational database (via Vercel Postgres)
 
 ### AI Integration
 - **OpenAI API** - GPT models for intelligent features
@@ -25,16 +25,27 @@ This document explains the technical architecture of the Family Meal Planner app
 /app                    # Next.js App Router pages and API
 ├── /api               # Backend API routes
 │   ├── /recipes       # Recipe CRUD operations
-│   │   ├── route.ts           # GET all, POST new
+│   │   ├── route.ts           # GET all recipes
+│   │   ├── /create/route.ts   # POST new recipe
 │   │   ├── /[id]/route.ts     # GET, PATCH, DELETE by ID
 │   │   └── /extract/route.ts  # AI extraction endpoint
-│   └── /meal-plan     # Meal plan operations
-│       ├── route.ts           # GET, POST, PATCH meal plan
-│       └── /modify/route.ts   # Natural language modifications
+│   ├── /meal-plan     # Meal plan operations
+│   │   ├── route.ts           # GET, POST, PATCH meal plan
+│   │   └── /modify/route.ts   # Natural language modifications
+│   └── /shopping-list # Shopping list operations
+│       ├── route.ts           # GET shopping list for week
+│       ├── /generate/route.ts # POST generate from meal plan
+│       └── /item/route.ts     # POST, PATCH, DELETE items
 ├── /recipes          # Recipe library page
 │   └── page.tsx
 ├── /meal-plan        # Weekly meal plan page
 │   └── page.tsx
+├── /shopping-list    # Shopping list page
+│   ├── page.tsx
+│   └── /components
+│       ├── ShoppingListHeader.tsx
+│       ├── ShoppingListItems.tsx
+│       └── AddItemForm.tsx
 ├── layout.tsx        # Root layout (header, footer)
 ├── page.tsx          # Home page
 └── globals.css       # Global styles
@@ -45,7 +56,12 @@ This document explains the technical architecture of the Family Meal Planner app
 └── RecipeForm.tsx    # Recipe add/edit form
 
 /lib                  # Shared utilities and business logic
-├── ai.ts             # AI abstraction layer (OpenAI)
+├── /ai               # AI abstraction layer
+│   ├── extractIngredientsFromURL.ts  # URL recipe extraction
+│   ├── generateWeeklyMealPlan.ts     # Meal plan generation
+│   └── modifyMealPlan.ts             # Natural language modifications
+├── ingredientParser.ts # Ingredient string parsing utility
+├── dateUtils.ts      # Date manipulation helpers
 └── prisma.ts         # Prisma client singleton
 
 /prisma              # Database configuration
@@ -106,7 +122,7 @@ POST /api/meal-plan/modify
   ↓
 API fetches current meal plan + all recipes
   ↓
-Calls modifyMealPlan() in lib/ai.ts
+Calls modifyMealPlan() in lib/ai/modifyMealPlan.ts
   ↓
 AI understands instruction and picks new recipe
   ↓
@@ -115,6 +131,27 @@ API updates affected meal plans in database
 Returns explanation + updated plans
   ↓
 UI shows changes and AI explanation
+```
+
+### Shopping List Generation Flow
+```
+User clicks "Generate Shopping List"
+  ↓
+POST /api/shopping-list/generate with weekStart
+  ↓
+API fetches meal plans for the week with recipes
+  ↓
+API collects all structured ingredients from recipes
+  ↓
+Aggregation logic groups by ingredient name (case-insensitive)
+  ↓
+Quantities combined when units match
+  ↓
+API creates/updates ShoppingList and ShoppingListItem records
+  ↓
+Returns shopping list with all items
+  ↓
+UI displays items with checkboxes for tracking
 ```
 
 ## Key Design Patterns
@@ -177,23 +214,50 @@ if (process.env.NODE_ENV !== 'production')
 
 ### 4. AI Abstraction Layer
 
-All AI calls go through `lib/ai.ts`:
+All AI calls go through modular files in `lib/ai/`:
 ```typescript
-// Exported functions with clear interfaces
+// lib/ai/extractIngredientsFromURL.ts
 export async function extractIngredientsFromURL(
   url: string
-): Promise<ExtractedRecipeData>
+): Promise<ExtractedRecipeData>  // Returns name, ingredients, and structuredIngredients
 
+// lib/ai/generateWeeklyMealPlan.ts
 export async function generateWeeklyMealPlan(
   recipes: Recipe[],
   startDate: Date
 ): Promise<string[]>
+
+// lib/ai/modifyMealPlan.ts
+export async function modifyMealPlan(
+  instruction: string,
+  currentPlan: MealPlan[],
+  allRecipes: Recipe[]
+): Promise<ModifyResult>
 ```
 
-To switch AI providers, only modify `lib/ai.ts`:
+To switch AI providers, modify the files in `lib/ai/`:
 - Change the client initialization
 - Update the API calls
 - Keep the same function signatures
+
+### 5. Ingredient Parsing
+
+The `lib/ingredientParser.ts` utility parses ingredient strings into structured data:
+```typescript
+// Parses "2 cups flour (sifted)" into:
+{
+  quantity: "2",
+  unit: "cups",
+  name: "flour",
+  notes: "sifted"
+}
+```
+
+This supports common formats:
+- "2 cups flour" → quantity + unit + name
+- "1/2 lb chicken breast" → fractional quantities
+- "3 large eggs" → quantity + size modifier in name
+- "salt and pepper to taste" → name only (no quantity/unit)
 
 ### 5. Type Safety with TypeScript
 
@@ -218,16 +282,35 @@ async function handleCreate(data: RecipeFormData) {
 ### Recipe Table
 ```prisma
 model Recipe {
-  id          String   @id @default(cuid())
-  name        String
-  ingredients String
-  proteinType String
-  carbType    String
-  prepTime    String
-  tier        String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  mealPlans   MealPlan[]  // Relation
+  id                    String       @id @default(cuid())
+  name                  String
+  ingredients           String       // Legacy text field (kept for backwards compatibility)
+  proteinType           String?
+  carbType              String?
+  prepTime              String
+  tier                  String
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+  structuredIngredients Ingredient[] // New structured ingredients
+  mealPlans             MealPlan[]
+}
+```
+
+### Ingredient Table (New)
+```prisma
+model Ingredient {
+  id        String   @id @default(cuid())
+  recipeId  String
+  name      String   // Ingredient name (e.g., "flour")
+  quantity  String?  // Amount (e.g., "2")
+  unit      String?  // Unit of measurement (e.g., "cups")
+  notes     String?  // Additional notes (e.g., "sifted")
+  order     Int      // Display order
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([recipeId])
 }
 ```
 
@@ -243,6 +326,39 @@ model MealPlan {
   updatedAt DateTime @updatedAt
 
   @@index([date])  // For efficient date queries
+}
+```
+
+### ShoppingList Table (New)
+```prisma
+model ShoppingList {
+  id        String             @id @default(cuid())
+  weekStart DateTime           // Week start date (Monday)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  items     ShoppingListItem[]
+
+  @@unique([weekStart])  // One shopping list per week
+}
+```
+
+### ShoppingListItem Table (New)
+```prisma
+model ShoppingListItem {
+  id             String       @id @default(cuid())
+  shoppingListId String
+  name           String       // Ingredient name
+  quantity       String?      // Amount
+  unit           String?      // Unit of measurement
+  notes          String?      // Additional notes
+  checked        Boolean      @default(false)  // Purchased status
+  isManual       Boolean      @default(false)  // User-added vs generated
+  order          Int          // Display order
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  shoppingList   ShoppingList @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
+
+  @@index([shoppingListId])
 }
 ```
 
@@ -302,9 +418,10 @@ const completion = await openai.chat.completions.create({
 ## Performance Considerations
 
 ### Database
-- SQLite is fine for single-user apps
-- Indexed queries on date for meal plans
+- PostgreSQL for production (via Vercel Postgres)
+- Indexed queries on date for meal plans and shopping lists
 - Cascade delete to maintain referential integrity
+- Structured ingredients enable efficient shopping list aggregation
 
 ### API Routes
 - Keep API handlers thin
@@ -332,7 +449,7 @@ const completion = await openai.chat.completions.create({
 ### For Production
 - Add user authentication (NextAuth.js)
 - Implement rate limiting
-- Use PostgreSQL instead of SQLite
+- PostgreSQL already in use via Vercel Postgres
 - Add CSRF protection
 - Sanitize user inputs
 - Use proper environment variable management
@@ -375,9 +492,8 @@ Currently no tests, but here's a recommended approach:
 - AWS (more complex)
 
 ### Database for Production
-- Replace SQLite with PostgreSQL
-- Update Prisma schema datasource
-- Use database URL from hosting provider
+- PostgreSQL already configured via Vercel Postgres
+- Database URL set via `DATABASE_URL` environment variable
 
 ### Environment Variables
 Set these in your hosting platform:

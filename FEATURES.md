@@ -85,11 +85,38 @@
   - Load plan for any week
   - Plans survive app restarts
 
+### Shopping List (Implemented)
+
+- ✅ **Shopping List Generation**
+  - Generate from weekly meal plan
+  - Aggregates ingredients across all meals
+  - Groups by ingredient name (case-insensitive)
+  - Combines quantities when units match
+  - Files: [app/api/shopping-list/generate/route.ts](./app/api/shopping-list/generate/route.ts)
+
+- ✅ **Shopping List Management**
+  - Week navigation (same as meal plan)
+  - Check off items as purchased
+  - Delete items
+  - Add manual items
+  - Files: [app/shopping-list/page.tsx](./app/shopping-list/page.tsx), [app/shopping-list/components/](./app/shopping-list/components/)
+
+- ✅ **Export Shopping List**
+  - Copy to clipboard as text
+  - Only exports unchecked items
+  - File: [app/shopping-list/page.tsx](./app/shopping-list/page.tsx)
+
+- ✅ **Structured Ingredients**
+  - Ingredients stored with quantity, unit, name, notes
+  - AI extraction returns structured data
+  - Ingredient parser for existing text ingredients
+  - Files: [lib/ingredientParser.ts](./lib/ingredientParser.ts), [lib/ai/extractIngredientsFromURL.ts](./lib/ai/extractIngredientsFromURL.ts)
+
 ### Database & Infrastructure
 
 - ✅ **Database Setup**
   - Prisma schema defined
-  - SQLite database
+  - PostgreSQL database (via Vercel Postgres)
   - Migrations working
   - File: [prisma/schema.prisma](./prisma/schema.prisma)
 
@@ -184,13 +211,13 @@
 - 📋 Structure: AI layer supports new functions
 - 📋 Would add: Natural language recipe search, AI recommendations
 
-### Shopping List Generation
-- 📋 Structure: Database schema supports meal plan queries
-- 📋 Would add: Aggregate ingredients from weekly plan, remove duplicates
-
 ### Staples Management
-- 📋 Structure: Could extend Recipe model
-- 📋 Would add: Pantry staples list, exclude from shopping list
+- 📋 Structure: ShoppingList model ready for extension
+- 📋 Would add: Pantry staples list, exclude from shopping list generation
+
+### Pantry Monitoring
+- 📋 Structure: Could extend Ingredient model
+- 📋 Would add: Track pantry inventory, suggest recipes based on available ingredients
 
 ## Testing Coverage
 
@@ -202,23 +229,25 @@
 - ✅ Delete recipe works
 - ✅ Filters work
 - ✅ Meal plan displays
+- ✅ Shopping list generates from meal plan
+- ✅ Shopping list items can be checked/unchecked
+- ✅ Manual items can be added to shopping list
 - ✅ API endpoints respond correctly
 
-### Automated Testing (Not Implemented)
-- ⬜ Unit tests
-- ⬜ Integration tests
+### Automated Testing (Implemented)
+- ✅ Unit tests for utilities (dateUtils, ingredientParser)
+- ✅ Unit tests for AI functions (mocked)
+- ✅ Hook tests (useRecipes, useMealPlan)
 - ⬜ E2E tests
-- ⬜ API route tests
+- ⬜ Full integration tests with database
 
 ## Known Limitations
 
 1. **Single User** - No authentication, designed for one household
-2. **AI URL Import** - URL fetching not implemented (text import works)
-3. **No Drag-and-Drop** - Using dropdown selection instead (simpler, works well)
-4. **SQLite** - Fine for local dev, not ideal for production
-5. **No Image Upload** - Text-only recipes for now
-6. **No Shopping List** - Manual transcription needed
-7. **API Costs** - Using OpenAI API (costs per request)
+2. **No Drag-and-Drop** - Using dropdown selection instead (simpler, works well)
+3. **No Image Upload** - Text-only recipes for now
+4. **API Costs** - Using OpenAI API (costs per request)
+5. **No Staples Management** - All ingredients appear in shopping list (future feature)
 
 ## Performance Metrics
 
@@ -255,7 +284,7 @@
 
 ### Short Term
 - Add recipe photos
-- Implement shopping list
+- Add staples management (exclude from shopping list)
 - Add recipe ratings
 - Print-friendly meal plan view
 - Email meal plan
@@ -276,6 +305,11 @@
 
 ## Conclusion
 
-Phase 1 is **100% complete** with all requested features implemented and working. The codebase is well-documented, type-safe, and ready for learning and extension. The AI abstraction layer makes it easy to switch providers in the future.
+Phase 1 and Phase 2 core features are **complete** with all requested functionality implemented and working:
+- Full recipe management with structured ingredients
+- AI-powered meal plan generation and modification
+- Shopping list generation from meal plans with ingredient aggregation
 
-The app is production-ready for single-user/family use with proper environment variables and a production database.
+The codebase is well-documented, type-safe, and ready for learning and extension. The AI abstraction layer makes it easy to switch providers in the future.
+
+The app is production-ready for single-user/family use with PostgreSQL database and proper environment variables.

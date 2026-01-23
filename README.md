@@ -11,7 +11,7 @@ This project is designed to be both a functional meal planning tool and a learni
 - **Next.js 14+** - React framework with App Router
 - **TypeScript** - Type-safe JavaScript
 - **Tailwind CSS** - Utility-first CSS framework
-- **Prisma 5** - Database ORM (using SQLite)
+- **Prisma 5** - Database ORM (using PostgreSQL)
 - **OpenAI API** - AI-powered features (abstracted for easy switching to Claude)
 
 ## Features
@@ -41,11 +41,20 @@ This project is designed to be both a functional meal planning tool and a learni
 - ✅ Navigate between weeks
 - ✅ Persistent meal plans
 
+#### Shopping List
+- ✅ Generate shopping list from weekly meal plan
+- ✅ Intelligent ingredient aggregation:
+  - Groups same ingredients (case-insensitive)
+  - Combines quantities when units match
+- ✅ Check off items as purchased
+- ✅ Add manual items
+- ✅ Export to clipboard as text
+
 ### Phase 2 (Structure in place, not implemented)
 - Photo-based recipe import
 - Recipe discovery via natural language
-- Shopping list generation
-- Staples management
+- Staples management (exclude common pantry items)
+- Pantry monitoring
 
 ## Project Structure
 
@@ -54,8 +63,10 @@ This project is designed to be both a functional meal planning tool and a learni
   /api              # API routes (Next.js route handlers)
     /recipes        # Recipe CRUD operations
     /meal-plan      # Meal plan operations
+    /shopping-list  # Shopping list operations
   /recipes          # Recipe library page
   /meal-plan        # Weekly meal plan page
+  /shopping-list    # Shopping list page
   globals.css       # Global styles
   layout.tsx        # Root layout component
   page.tsx          # Home page
@@ -66,7 +77,12 @@ This project is designed to be both a functional meal planning tool and a learni
   RecipeForm.tsx    # Recipe add/edit form
 
 /lib                # Business logic and utilities
-  ai.ts             # AI abstraction layer (OpenAI)
+  /ai               # AI abstraction layer (modular)
+    extractIngredientsFromURL.ts
+    generateWeeklyMealPlan.ts
+    modifyMealPlan.ts
+  ingredientParser.ts  # Parse ingredient strings
+  dateUtils.ts      # Date manipulation helpers
   prisma.ts         # Prisma client singleton
 
 /prisma             # Database configuration
@@ -139,16 +155,21 @@ This project is designed to be both a functional meal planning tool and a learni
 
 ## Understanding the Code
 
-### AI Abstraction Layer (`lib/ai.ts`)
+### AI Abstraction Layer (`lib/ai/`)
 
-This is a critical file for learning. It demonstrates how to:
+The AI layer is modular with separate files for each function:
+- `extractIngredientsFromURL.ts` - Extract recipe data from URLs
+- `generateWeeklyMealPlan.ts` - Generate 7-day meal plans
+- `modifyMealPlan.ts` - Natural language meal plan modifications
+
+Each file demonstrates how to:
 - Integrate with the OpenAI API
 - Structure code for easy provider switching
 - Handle AI responses and errors
 
 **To switch to Claude API:**
 1. Install the Anthropic SDK: `npm install @anthropic-ai/sdk`
-2. Update the imports and client initialization in `lib/ai.ts`
+2. Update the imports and client initialization in each `lib/ai/*.ts` file
 3. Update each function to use Claude's API format
 4. Add `ANTHROPIC_API_KEY` to your `.env` file
 
@@ -156,9 +177,12 @@ The function signatures remain the same, so the rest of your app won't need chan
 
 ### Database with Prisma (`prisma/schema.prisma`)
 
-The schema defines two main models:
+The schema defines these main models:
 - `Recipe` - Stores recipe information
+- `Ingredient` - Structured ingredients for each recipe (quantity, unit, name, notes)
 - `MealPlan` - Stores which recipe is planned for which date
+- `ShoppingList` - Weekly shopping list
+- `ShoppingListItem` - Individual items in a shopping list
 
 Prisma provides type-safe database access. When you change the schema:
 1. Run `npx prisma migrate dev --name descriptive_name` to create a migration
@@ -234,9 +258,10 @@ Edit `prisma/seed.ts` and add recipes to the array, then run `npm run db:seed`.
 
 ## Troubleshooting
 
-### "Database is locked" error
-- Stop all running instances of the app
-- Delete `dev.db` and run `npm run db:push` again
+### Database connection issues
+- Check that `DATABASE_URL` is set correctly in `.env`
+- For local development, ensure PostgreSQL is running
+- For Vercel deployment, check Vercel Postgres connection settings
 
 ### AI features not working
 - Check that your `OPENAI_API_KEY` is set correctly in `.env`
@@ -254,9 +279,9 @@ Once you're comfortable with the codebase, try:
 
 1. **Add a rating system** - Let users rate recipes
 2. **Add photos** - Allow uploading recipe images
-3. **Implement shopping lists** - Generate grocery lists from meal plans
+3. **Add staples management** - Exclude common pantry items from shopping lists
 4. **Add user authentication** - Support multiple families
-5. **Deploy to production** - Use Vercel or another hosting platform
+5. **Add pantry monitoring** - Track what's in your pantry
 
 ## Resources
 
