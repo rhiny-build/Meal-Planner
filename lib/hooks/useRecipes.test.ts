@@ -304,7 +304,7 @@ describe('useRecipes', () => {
     expect(createResult).toBe(true)
 
     // Verify POST was called with correct data
-    expect(fetch).toHaveBeenCalledWith('/api/recipes', {
+    expect(fetch).toHaveBeenCalledWith('/api/recipes/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: expect.stringContaining('New Recipe'),

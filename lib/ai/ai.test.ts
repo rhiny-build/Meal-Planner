@@ -19,15 +19,12 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+// Mock fetch globally for URL fetching
+const mockFetch = vi.fn()
+global.fetch = mockFetch
+
 /**
  * Mock the OpenAI client module
- *
- * We're mocking the entire './client' module which exports:
- * - openai: The OpenAI client instance
- * - MODEL: The model name string
- *
- * The mock replaces openai.chat.completions.create() with a function
- * we can control to return whatever we want.
  */
 vi.mock('@/lib/ai/client', () => ({
   MODEL: 'gpt-4o-mini-test',
@@ -41,176 +38,160 @@ vi.mock('@/lib/ai/client', () => ({
 }))
 
 // Import after mocking so we get the mocked version
-import { extractIngredientsFromText } from '@/lib/ai/extractIngredientsFromText'
+import { extractIngredientsFromURL } from '@/lib/ai/extractIngredientsFromURL'
 import { openai } from '@/lib/ai/client'
 
-describe('extractIngredientsFromText', () => {
+describe('extractIngredientsFromURL', () => {
   beforeEach(() => {
     // Reset all mocks before each test
     vi.clearAllMocks()
   })
 
   /**
-   * Test 1: Successful extraction
-   *
-   * Verify that when OpenAI returns a valid response,
-   * our function parses it correctly.
+   * Test 1: Successful extraction from URL
    */
-  it('should extract ingredients from recipe text', async () => {
-    // Arrange: Mock OpenAI to return a successful response
+  it('should extract ingredients from a recipe URL', async () => {
+    // Arrange: Mock fetch to return HTML content
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: () =>
+        Promise.resolve('<html><body>Recipe with 2 cups flour</body></html>'),
+    })
+
+    // Mock OpenAI to return a successful response
     const mockResponse = {
       choices: [
         {
           message: {
             content: JSON.stringify({
-              ingredients: '2 chicken breasts\n1 tbsp olive oil\n3 cloves garlic',
-              name: 'Garlic Chicken',
+              name: 'Simple Flour Recipe',
+              ingredients: '2 cups flour',
+              structuredIngredients: [
+                { name: 'flour', quantity: '2', unit: 'cups', notes: null, order: 0 },
+              ],
             }),
           },
         },
       ],
     }
 
-    // Set up the mock to return our fake response
     vi.mocked(openai.chat.completions.create).mockResolvedValue(
       mockResponse as any
     )
 
     // Act: Call our function
-    const result = await extractIngredientsFromText(`
-      Garlic Chicken Recipe
-      Ingredients:
-      - 2 chicken breasts
-      - 1 tbsp olive oil
-      - 3 cloves garlic
-      Instructions: Cook everything together.
-    `)
+    const result = await extractIngredientsFromURL('https://example.com/recipe')
 
     // Assert: Check the result
-    expect(result.ingredients).toBe(
-      '2 chicken breasts\n1 tbsp olive oil\n3 cloves garlic'
-    )
-    expect(result.name).toBe('Garlic Chicken')
+    expect(result.name).toBe('Simple Flour Recipe')
+    expect(result.ingredients).toBe('2 cups flour')
+    expect(result.structuredIngredients).toHaveLength(1)
+    expect(result.structuredIngredients?.[0].name).toBe('flour')
+    expect(result.structuredIngredients?.[0].quantity).toBe('2')
+    expect(result.structuredIngredients?.[0].unit).toBe('cups')
+
+    // Verify fetch was called with the URL
+    expect(mockFetch).toHaveBeenCalledWith('https://example.com/recipe', {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MealPlannerBot/1.0)' },
+    })
 
     // Verify OpenAI was called
     expect(openai.chat.completions.create).toHaveBeenCalledTimes(1)
   })
 
   /**
-   * Test 2: Verify the prompt format
-   *
-   * We can inspect HOW our function calls OpenAI to ensure
-   * we're sending the right messages and parameters.
+   * Test 2: Handle fetch failure
    */
-  it('should call OpenAI with correct parameters', async () => {
-    // Arrange
-    vi.mocked(openai.chat.completions.create).mockResolvedValue({
-      choices: [{ message: { content: '{"ingredients": "test"}' } }],
-    } as any)
+  it('should throw error when URL fetch fails', async () => {
+    // Arrange: Mock fetch to fail
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+    })
 
-    // Act
-    await extractIngredientsFromText('Some recipe text')
-
-    // Assert: Check the call parameters
-    expect(openai.chat.completions.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        model: 'gpt-4o-mini-test', // Our mocked MODEL constant
-        response_format: { type: 'json_object' },
-        messages: expect.arrayContaining([
-          expect.objectContaining({
-            role: 'system',
-            // The actual system message mentions extracting ingredients
-            content: expect.stringContaining('extracts ingredients'),
-          }),
-          expect.objectContaining({
-            role: 'user',
-            content: expect.stringContaining('Some recipe text'),
-          }),
-        ]),
-      })
-    )
+    // Act & Assert
+    await expect(
+      extractIngredientsFromURL('https://example.com/bad-url')
+    ).rejects.toThrow('Failed to extract recipe from URL')
   })
 
   /**
-   * Test 3: Handle missing ingredients field
-   *
-   * What if the AI returns unexpected data?
-   * Our function should handle this gracefully.
+   * Test 3: Handle API errors
    */
-  it('should handle response without name field', async () => {
-    // Arrange: AI returns only ingredients, no name
-    vi.mocked(openai.chat.completions.create).mockResolvedValue({
-      choices: [
-        {
-          message: {
-            content: JSON.stringify({
-              ingredients: 'salt\npepper',
-              // no 'name' field
-            }),
-          },
-        },
-      ],
-    } as any)
+  it('should throw user-friendly error when OpenAI API fails', async () => {
+    // Arrange: Mock successful fetch
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve('<html><body>Recipe</body></html>'),
+    })
 
-    // Act
-    const result = await extractIngredientsFromText('A simple recipe')
-
-    // Assert: Should still work, name is optional
-    expect(result.ingredients).toBe('salt\npepper')
-    expect(result.name).toBeUndefined()
-  })
-
-  /**
-   * Test 4: Handle API errors
-   *
-   * What happens when OpenAI fails? Our function should:
-   * - Catch the error
-   * - Throw a user-friendly error message
-   */
-  it('should throw user-friendly error when API fails', async () => {
-    // Arrange: Simulate API failure
+    // Simulate API failure
     vi.mocked(openai.chat.completions.create).mockRejectedValue(
       new Error('API rate limit exceeded')
     )
 
-    // Act & Assert: Expect the function to throw
+    // Act & Assert
     await expect(
-      extractIngredientsFromText('Some recipe')
-    ).rejects.toThrow('Failed to extract ingredients')
+      extractIngredientsFromURL('https://example.com/recipe')
+    ).rejects.toThrow('Failed to extract recipe from URL')
   })
 
   /**
-   * Test 5: Handle empty response
-   *
-   * What if OpenAI returns no content?
+   * Test 4: Handle empty AI response
    */
   it('should throw error when AI returns no content', async () => {
-    // Arrange: Empty response
+    // Arrange
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve('<html><body>Recipe</body></html>'),
+    })
+
     vi.mocked(openai.chat.completions.create).mockResolvedValue({
       choices: [{ message: { content: null } }],
     } as any)
 
     // Act & Assert
     await expect(
-      extractIngredientsFromText('Recipe text')
-    ).rejects.toThrow('Failed to extract ingredients')
+      extractIngredientsFromURL('https://example.com/recipe')
+    ).rejects.toThrow('Failed to extract recipe from URL')
   })
 
   /**
-   * Test 6: Handle malformed JSON
-   *
-   * What if OpenAI returns invalid JSON?
+   * Test 5: Generate ingredients text from structured if not provided
    */
-  it('should throw error when AI returns invalid JSON', async () => {
-    // Arrange: Invalid JSON in response
-    vi.mocked(openai.chat.completions.create).mockResolvedValue({
-      choices: [{ message: { content: 'not valid json' } }],
-    } as any)
+  it('should generate ingredients text from structured ingredients', async () => {
+    // Arrange
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve('<html><body>Recipe</body></html>'),
+    })
 
-    // Act & Assert
-    await expect(
-      extractIngredientsFromText('Recipe text')
-    ).rejects.toThrow('Failed to extract ingredients')
+    // Response without ingredients text, only structured
+    const mockResponse = {
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              name: 'Test Recipe',
+              structuredIngredients: [
+                { name: 'chicken', quantity: '2', unit: 'lbs', notes: 'diced' },
+                { name: 'salt', quantity: null, unit: null, notes: 'to taste' },
+              ],
+            }),
+          },
+        },
+      ],
+    }
+
+    vi.mocked(openai.chat.completions.create).mockResolvedValue(
+      mockResponse as any
+    )
+
+    // Act
+    const result = await extractIngredientsFromURL('https://example.com/recipe')
+
+    // Assert: ingredients text should be generated from structured
+    expect(result.ingredients).toBe('2 lbs chicken (diced)\nsalt (to taste)')
   })
 })
 
@@ -228,9 +209,4 @@ describe('extractIngredientsFromText', () => {
  * 3. Test error handling thoroughly
  *    - AI APIs fail in many ways: rate limits, timeouts, bad responses
  *    - Your app should handle these gracefully
- *
- * 4. For E2E/smoke tests, you might want ONE real API test
- *    - Run it separately, infrequently (e.g., daily)
- *    - Mark it with a special tag to skip in normal test runs
- *    - This catches API changes but doesn't slow down development
  */
