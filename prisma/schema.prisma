@@ -13,41 +13,60 @@ datasource db {
 
 // Recipe model stores all recipe information
 model Recipe {
-  id          String   @id @default(cuid())
-  name        String
-  ingredients String   // Stored as text, one ingredient per line
-  proteinType String?   // chicken, fish, red-meat, vegetarian
-  carbType    String?   // rice, pasta, couscous, fries, other
+  id            String   @id @default(cuid())
+  name          String
+  ingredients   String   // Stored as text, one ingredient per line (kept for backwards compatibility)
+  proteinType   String?  // chicken, fish, red-meat, vegetarian
+  carbType      String?  // rice, pasta, couscous, fries, other
   vegetableType String?
-  recipeUrl   String? //link to URL if exists
-  prepTime    String?   // quick, medium, long
-  tier        String   // favorite, non-regular, new
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  recipeUrl     String?  // link to URL if exists
+  prepTime      String?  // quick, medium, long
+  tier          String   // favorite, non-regular, new
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // Relationship: A recipe can appear in multiple meal plans
-   proteinMealPlans   MealPlan[] @relation("ProteinRecipe")
+  proteinMealPlans   MealPlan[] @relation("ProteinRecipe")
   carbMealPlans      MealPlan[] @relation("CarbRecipe")
   vegetableMealPlans MealPlan[] @relation("VegetableRecipe")
+
+  // Relationship: A recipe has many structured ingredients
+  structuredIngredients Ingredient[]
+}
+
+// Ingredient model stores structured ingredient data for recipes
+model Ingredient {
+  id        String   @id @default(cuid())
+  recipeId  String
+  name      String   // The ingredient name (e.g., "chicken breast", "olive oil")
+  quantity  String?  // The amount (e.g., "2", "1/2", "500")
+  unit      String?  // The unit of measurement (e.g., "cups", "grams", "tablespoons")
+  notes     String?  // Additional notes (e.g., "diced", "optional", "for garnish")
+  order     Int      // Display order in the recipe
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationship: Each ingredient belongs to one recipe
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([recipeId])
 }
 
 // MealPlan model stores weekly meal plans
 model MealPlan {
-  id        String   @id @default(cuid())
-  date      DateTime // The date for this meal
-  dayOfWeek String   // Monday, Tuesday, etc. (for display)
-  proteinRecipeId  String?
-  carbRecipeId  String?
-  vegetableRecipeId  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String   @id @default(cuid())
+  date              DateTime // The date for this meal
+  dayOfWeek         String   // Monday, Tuesday, etc. (for display)
+  proteinRecipeId   String?
+  carbRecipeId      String?
+  vegetableRecipeId String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   // Relationship: Each meal plan references one recipe
-  proteinRecipe Recipe? @relation("ProteinRecipe", fields: [proteinRecipeId], references: [id], onDelete: Cascade)
-  carbRecipe Recipe? @relation("CarbRecipe", fields: [carbRecipeId], references: [id], onDelete: Cascade)
+  proteinRecipe   Recipe? @relation("ProteinRecipe", fields: [proteinRecipeId], references: [id], onDelete: Cascade)
+  carbRecipe      Recipe? @relation("CarbRecipe", fields: [carbRecipeId], references: [id], onDelete: Cascade)
   vegetableRecipe Recipe? @relation("VegetableRecipe", fields: [vegetableRecipeId], references: [id], onDelete: Cascade)
-
-
 
   // Index for efficient querying by date
   @@index([date])

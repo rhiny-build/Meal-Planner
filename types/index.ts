@@ -5,10 +5,15 @@
  * Keeping types in one place makes them easy to update and maintain.
  */
 
-import { Recipe, MealPlan } from '@prisma/client'
+import { Recipe, MealPlan, Ingredient } from '@prisma/client'
 
 // Re-export Prisma types for convenience
-export type { Recipe, MealPlan }
+export type { Recipe, MealPlan, Ingredient }
+
+// Type for a recipe with its structured ingredients included
+export type RecipeWithIngredients = Recipe & {
+  structuredIngredients: Ingredient[]
+}
 
 // Type for a meal plan with the recipe details included
 // This is useful when displaying the meal plan since we want to show recipe info
@@ -53,9 +58,19 @@ export interface RecipeFilters {
 
 // AI-related types
 
+// Structured ingredient data for creating/updating ingredients
+export interface StructuredIngredientData {
+  name: string
+  quantity?: string | null
+  unit?: string | null
+  notes?: string | null
+  order: number
+}
+
 // Response from AI when extracting ingredients from a URL
 export interface ExtractedRecipeData {
-  ingredients: string
+  ingredients: string // Legacy: ingredients as text
+  structuredIngredients?: StructuredIngredientData[] // New: parsed ingredients
   name?: string // AI might extract the recipe name too
 }
 
