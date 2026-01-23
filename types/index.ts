@@ -5,10 +5,10 @@
  * Keeping types in one place makes them easy to update and maintain.
  */
 
-import { Recipe, MealPlan, Ingredient } from '@prisma/client'
+import { Recipe, MealPlan, Ingredient, ShoppingList, ShoppingListItem } from '@prisma/client'
 
 // Re-export Prisma types for convenience
-export type { Recipe, MealPlan, Ingredient }
+export type { Recipe, MealPlan, Ingredient, ShoppingList, ShoppingListItem }
 
 // Type for a recipe with its structured ingredients included
 export type RecipeWithIngredients = Recipe & {
@@ -111,4 +111,40 @@ export interface MealPlanModificationResult {
     carbRecipeId: string
   }[]
   explanation: string // What the AI changed and why
+}
+
+// Shopping List types
+
+// Type for a shopping list with its items included
+export type ShoppingListWithItems = ShoppingList & {
+  items: ShoppingListItem[]
+}
+
+// Aggregated ingredient for shopping list generation
+export interface AggregatedIngredient {
+  name: string // Normalized ingredient name
+  quantities: Array<{
+    quantity: string | null
+    unit: string | null
+    source: string // Recipe name for traceability
+  }>
+  combinedQuantity?: string // Combined if units match
+  combinedUnit?: string
+  notes?: string // Sources or other notes
+}
+
+// Request to generate a shopping list
+export interface GenerateShoppingListRequest {
+  weekStart: string // ISO date string for the Monday of the week
+}
+
+// Shopping list item for creating/updating
+export interface ShoppingListItemData {
+  name: string
+  quantity?: string | null
+  unit?: string | null
+  notes?: string | null
+  checked?: boolean
+  isManual?: boolean
+  order: number
 }

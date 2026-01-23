@@ -71,3 +71,37 @@ model MealPlan {
   // Index for efficient querying by date
   @@index([date])
 }
+
+// ShoppingList model stores generated shopping lists for a week
+model ShoppingList {
+  id        String   @id @default(cuid())
+  weekStart DateTime // The Monday of the week this list is for
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationship: A shopping list has many items
+  items ShoppingListItem[]
+
+  // Ensure only one list per week
+  @@unique([weekStart])
+}
+
+// ShoppingListItem model stores individual items on a shopping list
+model ShoppingListItem {
+  id             String   @id @default(cuid())
+  shoppingListId String
+  name           String   // The ingredient name (aggregated/normalized)
+  quantity       String?  // Combined quantity (e.g., "3" or "2 + 1/2")
+  unit           String?  // The unit (when units match during aggregation)
+  notes          String?  // Source recipes or additional notes
+  checked        Boolean  @default(false) // Whether item has been purchased
+  isManual       Boolean  @default(false) // Whether item was manually added
+  order          Int      // Display order
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relationship: Each item belongs to one shopping list
+  shoppingList ShoppingList @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
+
+  @@index([shoppingListId])
+}

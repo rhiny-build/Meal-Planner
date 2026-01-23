@@ -43,6 +43,12 @@ export default function RootLayout({
                 >
                   Meal Plan
                 </Link>
+                <Link
+                  href="/shopping-list"
+                  className="hover:underline font-medium"
+                >
+                  Shopping List
+                </Link>
               </div>
             </div>
           </nav>
