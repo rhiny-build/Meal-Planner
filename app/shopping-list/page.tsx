@@ -29,14 +29,13 @@ export default function ShoppingListPage() {
     goToNextWeek,
     generateList,
     toggleItem,
-    deleteItem,
     addItem,
   } = useShoppingList()
 
   const [showAddForm, setShowAddForm] = useState(false)
 
-  const handleAddItem = async (name: string, quantity?: string, unit?: string) => {
-    const success = await addItem(name, quantity, unit)
+  const handleAddItem = async (name: string) => {
+    const success = await addItem(name)
     if (success) {
       setShowAddForm(false)
     }
@@ -95,7 +94,6 @@ export default function ShoppingListPage() {
           <ShoppingListItems
             items={shoppingList.items}
             onToggle={toggleItem}
-            onDelete={deleteItem}
           />
 
           {showAddForm ? (

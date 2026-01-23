@@ -33,18 +33,16 @@ export async function POST(request: NextRequest) {
     })
 
     const allIngredients = collectIngredientsFromMealPlans(mealPlans)
-    const aggregatedIngredients = aggregateIngredients(allIngredients)
+    const aggregatedItems = aggregateIngredients(allIngredients)
 
     const shoppingList = await prisma.shoppingList.upsert({
       where: { weekStart },
       create: {
         weekStart,
         items: {
-          create: aggregatedIngredients.map((ing, index) => ({
-            name: ing.name,
-            quantity: ing.combinedQuantity || null,
-            unit: ing.combinedUnit || null,
-            notes: ing.notes || null,
+          create: aggregatedItems.map((item, index) => ({
+            name: item.name,
+            notes: `For: ${item.sources.join(', ')}`,
             checked: false,
             isManual: false,
             order: index,
@@ -55,11 +53,9 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date(),
         items: {
           deleteMany: { isManual: false },
-          create: aggregatedIngredients.map((ing, index) => ({
-            name: ing.name,
-            quantity: ing.combinedQuantity || null,
-            unit: ing.combinedUnit || null,
-            notes: ing.notes || null,
+          create: aggregatedItems.map((item, index) => ({
+            name: item.name,
+            notes: `For: ${item.sources.join(', ')}`,
             checked: false,
             isManual: false,
             order: index,

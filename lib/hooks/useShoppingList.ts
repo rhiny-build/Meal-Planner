@@ -92,30 +92,8 @@ export function useShoppingList() {
     }
   }
 
-  const deleteItem = async (itemId: string) => {
-    if (!confirm('Delete this item?')) return
-
-    try {
-      const response = await fetch(`/api/shopping-list/item?id=${itemId}`, {
-        method: 'DELETE',
-      })
-
-      if (response.ok) {
-        setShoppingList((prev) => {
-          if (!prev) return prev
-          return {
-            ...prev,
-            items: prev.items.filter((item) => item.id !== itemId),
-          }
-        })
-      }
-    } catch (error) {
-      console.error('Error deleting item:', error)
-    }
-  }
-
-  const addItem = async (name: string, quantity?: string, unit?: string) => {
-    if (!shoppingList) return
+  const addItem = async (name: string) => {
+    if (!shoppingList) return false
 
     try {
       const response = await fetch('/api/shopping-list/item', {
@@ -124,8 +102,6 @@ export function useShoppingList() {
         body: JSON.stringify({
           shoppingListId: shoppingList.id,
           name,
-          quantity: quantity || null,
-          unit: unit || null,
         }),
       })
 
@@ -155,7 +131,6 @@ export function useShoppingList() {
     goToNextWeek,
     generateList,
     toggleItem,
-    deleteItem,
     addItem,
   }
 }
