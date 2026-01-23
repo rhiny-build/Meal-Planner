@@ -11,150 +11,34 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { getMonday } from '@/lib/dateUtils'
+import { useState } from 'react'
+import { useShoppingList } from '@/lib/hooks/useShoppingList'
+import { formatShoppingListAsText } from '@/lib/shoppingListHelpers'
 import Button from '@/components/Button'
-import type { ShoppingListWithItems, ShoppingListItem } from '@/types'
 import ShoppingListHeader from './components/ShoppingListHeader'
 import ShoppingListItems from './components/ShoppingListItems'
 import AddItemForm from './components/AddItemForm'
 
 export default function ShoppingListPage() {
-  const [startDate, setStartDate] = useState<Date>(getMonday(new Date()))
-  const [shoppingList, setShoppingList] = useState<ShoppingListWithItems | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isGenerating, setIsGenerating] = useState(false)
+  const {
+    startDate,
+    shoppingList,
+    isLoading,
+    isGenerating,
+    goToPreviousWeek,
+    goToNextWeek,
+    generateList,
+    toggleItem,
+    deleteItem,
+    addItem,
+  } = useShoppingList()
+
   const [showAddForm, setShowAddForm] = useState(false)
 
-  const fetchShoppingList = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const response = await fetch(
-        `/api/shopping-list?weekStart=${startDate.toISOString()}`
-      )
-      const data = await response.json()
-      setShoppingList(data)
-    } catch (error) {
-      console.error('Error fetching shopping list:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [startDate])
-
-  useEffect(() => {
-    fetchShoppingList()
-  }, [fetchShoppingList])
-
-  const handlePreviousWeek = () => {
-    const newDate = new Date(startDate)
-    newDate.setDate(newDate.getDate() - 7)
-    setStartDate(newDate)
-  }
-
-  const handleNextWeek = () => {
-    const newDate = new Date(startDate)
-    newDate.setDate(newDate.getDate() + 7)
-    setStartDate(newDate)
-  }
-
-  const handleGenerate = async () => {
-    setIsGenerating(true)
-    try {
-      const response = await fetch('/api/shopping-list/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ weekStart: startDate.toISOString() }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to generate shopping list')
-      }
-
-      const data = await response.json()
-      setShoppingList(data)
-    } catch (error) {
-      console.error('Error generating shopping list:', error)
-      alert('Failed to generate shopping list')
-    } finally {
-      setIsGenerating(false)
-    }
-  }
-
-  const handleToggleItem = async (itemId: string, checked: boolean) => {
-    try {
-      const response = await fetch('/api/shopping-list/item', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: itemId, checked }),
-      })
-
-      if (response.ok) {
-        // Update local state
-        setShoppingList((prev) => {
-          if (!prev) return prev
-          return {
-            ...prev,
-            items: prev.items.map((item) =>
-              item.id === itemId ? { ...item, checked } : item
-            ),
-          }
-        })
-      }
-    } catch (error) {
-      console.error('Error toggling item:', error)
-    }
-  }
-
-  const handleDeleteItem = async (itemId: string) => {
-    if (!confirm('Delete this item?')) return
-
-    try {
-      const response = await fetch(`/api/shopping-list/item?id=${itemId}`, {
-        method: 'DELETE',
-      })
-
-      if (response.ok) {
-        setShoppingList((prev) => {
-          if (!prev) return prev
-          return {
-            ...prev,
-            items: prev.items.filter((item) => item.id !== itemId),
-          }
-        })
-      }
-    } catch (error) {
-      console.error('Error deleting item:', error)
-    }
-  }
-
   const handleAddItem = async (name: string, quantity?: string, unit?: string) => {
-    if (!shoppingList) return
-
-    try {
-      const response = await fetch('/api/shopping-list/item', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          shoppingListId: shoppingList.id,
-          name,
-          quantity: quantity || null,
-          unit: unit || null,
-        }),
-      })
-
-      if (response.ok) {
-        const newItem = await response.json()
-        setShoppingList((prev) => {
-          if (!prev) return prev
-          return {
-            ...prev,
-            items: [...prev.items, newItem],
-          }
-        })
-        setShowAddForm(false)
-      }
-    } catch (error) {
-      console.error('Error adding item:', error)
+    const success = await addItem(name, quantity, unit)
+    if (success) {
+      setShowAddForm(false)
     }
   }
 
@@ -164,23 +48,11 @@ export default function ShoppingListPage() {
       return
     }
 
-    const uncheckedItems = shoppingList.items.filter((item) => !item.checked)
+    const text = formatShoppingListAsText(shoppingList.items)
 
-    const text = uncheckedItems
-      .map((item) => {
-        const parts = []
-        if (item.quantity) parts.push(item.quantity)
-        if (item.unit) parts.push(item.unit)
-        parts.push(item.name)
-        return `- ${parts.join(' ')}`
-      })
-      .join('\n')
-
-    // Copy to clipboard
     navigator.clipboard.writeText(text).then(() => {
       alert('Shopping list copied to clipboard!')
     }).catch(() => {
-      // Fallback: show in a textarea for manual copy
       const textarea = document.createElement('textarea')
       textarea.value = text
       document.body.appendChild(textarea)
@@ -201,9 +73,9 @@ export default function ShoppingListPage() {
 
       <ShoppingListHeader
         startDate={startDate}
-        onPreviousWeek={handlePreviousWeek}
-        onNextWeek={handleNextWeek}
-        onGenerate={handleGenerate}
+        onPreviousWeek={goToPreviousWeek}
+        onNextWeek={goToNextWeek}
+        onGenerate={generateList}
         onExport={handleExportText}
         isGenerating={isGenerating}
         hasItems={shoppingList?.items && shoppingList.items.length > 0}
@@ -214,7 +86,7 @@ export default function ShoppingListPage() {
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             No shopping list for this week yet.
           </p>
-          <Button onClick={handleGenerate} disabled={isGenerating}>
+          <Button onClick={generateList} disabled={isGenerating}>
             {isGenerating ? 'Generating...' : 'Generate from Meal Plan'}
           </Button>
         </div>
@@ -222,8 +94,8 @@ export default function ShoppingListPage() {
         <>
           <ShoppingListItems
             items={shoppingList.items}
-            onToggle={handleToggleItem}
-            onDelete={handleDeleteItem}
+            onToggle={toggleItem}
+            onDelete={deleteItem}
           />
 
           {showAddForm ? (
