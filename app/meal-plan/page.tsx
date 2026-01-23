@@ -17,9 +17,12 @@ import { useMealPlan } from '@/lib/hooks/useMealPlan'
 import MealPlanHeader from './components/MealPlanHeader'
 import MealPlanGrid from './components/MealPlanGrid'
 
+const DEFAULT_PROMPT = 'Generate a balanced meal plan for the week following the rules. Do not change existing meals that are already set.'
+
 export default function MealPlanPage() {
   const [startDate, setStartDate] = useState<Date>(getMonday(new Date()))
   const [isGenerating, setIsGenerating] = useState(false)
+  const [debugPrompt, setDebugPrompt] = useState(DEFAULT_PROMPT)
 
   const {
     weekPlan,
@@ -53,7 +56,7 @@ export default function MealPlanPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          instruction: 'Generate a balanced meal plan for the week following the rules. Do not change existing meals that are already set.',
+          instruction: debugPrompt,
           currentPlan: weekPlan,
         }),
       })
@@ -93,6 +96,25 @@ export default function MealPlanPage() {
         onSave={handleSave}
         onClear={handleClear}
       />
+
+      {/* Debug: Test different prompts */}
+      <div className="my-4 p-4 border border-dashed border-gray-400 rounded bg-gray-50 dark:bg-gray-800">
+        <label className="block text-sm font-medium mb-2 text-gray-600 dark:text-gray-400">
+          Debug: AI Prompt (edit to test different prompts)
+        </label>
+        <textarea
+          value={debugPrompt}
+          onChange={(e) => setDebugPrompt(e.target.value)}
+          className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 font-mono text-sm"
+          rows={3}
+        />
+        <button
+          onClick={() => setDebugPrompt(DEFAULT_PROMPT)}
+          className="mt-2 text-sm text-blue-600 hover:underline"
+        >
+          Reset to default
+        </button>
+      </div>
 
       <MealPlanGrid
         weekPlan={weekPlan}

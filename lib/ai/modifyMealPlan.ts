@@ -48,13 +48,22 @@ User instruction: "${request.instruction}"
 Rules to follow:
 - Weekdays (Mon-Thu) should be quick/medium prep
 - Weekends (Fri-Sun) can be any prep time
-- Don't repeat same protein on consecutive days
-- Don't repeat same carb on consecutive days
+- NEVER repeat same protein on consecutive days. For example, two dishes that contain Rice should not be on back-to-back days. 
+If a plan has the same protein on two consecutive days, change the second day's protein or leave it empty if no suitable replacement is found.
+- NEVERrepeat same carb on consecutive days. For example, two dishes that contain Chicken should not be on back-to-back days. 
+If a plan has the same carb on two consecutive days, change the second day's carb or leave it empty if no suitable replacement is found.
+- Never repeat the same recipe within the week
+- Aim for balanced protein and carb distribution
+- Use only the available recipes provided
+- For any new recipes selected, provide their IDs from the available recipes
 - Prefer favorite tier recipes, some regular, rarely non-regular
+- A parital plan that follows the rules is absolutely acceptable. A full plan that breaks the rules is not and you would have failed in your task.
 
 Return JSON with:
 - "modifiedPlan": array of {date: ISO date string, proteinRecipeId: string, carbRecipeId: string} for changed meals only
 - "explanation": string explaining what you changed and why`
+
+console.log('Modification prompt:', prompt)
 
     const completion = await openai.chat.completions.create({
       model: MODEL,

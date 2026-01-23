@@ -2,13 +2,13 @@
  * Recipe Form Component
  *
  * Form for creating or editing recipes.
- * Supports both manual entry and AI-assisted import from text/URL.
+ * Supports both manual entry and AI-assisted import from URL.
  */
 
 'use client'
 
 import { useState } from 'react'
-import type { Recipe, RecipeFormData } from '@/types'
+import type { Recipe, RecipeFormData, StructuredIngredientData } from '@/types'
 import Button from './Button'
 import Select from './Select'
 
@@ -58,6 +58,7 @@ export default function RecipeForm({
     name: recipe?.name || '',
     recipeUrl: recipe?.recipeUrl || '',
     ingredients: recipe?.ingredients || '',
+    structuredIngredients: undefined,
     proteinType: (recipe?.proteinType as any) || '',
     carbType: (recipe?.carbType as any) || '',
     prepTime: (recipe?.prepTime as any) || 'quick',
@@ -65,7 +66,6 @@ export default function RecipeForm({
   })
 
   // AI import state
-  
   const [isImporting, setIsImporting] = useState(false)
   const [importError, setImportError] = useState('')
 
@@ -82,10 +82,10 @@ export default function RecipeForm({
     })
   }
 
-  // Handle AI import from pasted text
+  // Handle AI import from URL
   const handleImport = async () => {
     if (!formData.recipeUrl?.trim()) {
-      setImportError('Please paste some recipe text')
+      setImportError('Please enter a recipe URL')
       return
     }
 
@@ -96,7 +96,7 @@ export default function RecipeForm({
       const response = await fetch('/api/recipes/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: formData.recipeUrl }),
+        body: JSON.stringify({ url: formData.recipeUrl }),
       })
 
       if (!response.ok) {
@@ -109,6 +109,7 @@ export default function RecipeForm({
       setFormData({
         ...formData,
         ingredients: data.ingredients || formData.ingredients,
+        structuredIngredients: data.structuredIngredients || undefined,
         name: data.name || formData.name,
       })
 

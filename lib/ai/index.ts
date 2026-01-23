@@ -16,6 +16,5 @@
  */
 
 export { extractIngredientsFromURL } from './extractIngredientsFromURL'
-export { extractIngredientsFromText } from './extractIngredientsFromText'
 export { modifyMealPlan } from './modifyMealPlan'
 export { generateWeeklyMealPlan } from './generateWeeklyMealPlan'
