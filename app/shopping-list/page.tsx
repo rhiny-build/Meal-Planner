@@ -11,15 +11,21 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useShoppingList } from '@/lib/hooks/useShoppingList'
 import { formatShoppingListAsText } from '@/lib/shoppingListHelpers'
+import type { Recipe } from '@/types'
 import Button from '@/components/Button'
 import ShoppingListHeader from './components/ShoppingListHeader'
 import ShoppingListItems from './components/ShoppingListItems'
 import AddItemForm from './components/AddItemForm'
 
 export default function ShoppingListPage() {
+  const searchParams = useSearchParams()
+  const weekParam = searchParams.get('week')
+  const initialWeek = weekParam ? new Date(weekParam) : undefined
+
   const {
     startDate,
     shoppingList,
@@ -30,7 +36,17 @@ export default function ShoppingListPage() {
     generateList,
     toggleItem,
     addItem,
-  } = useShoppingList()
+  } = useShoppingList(initialWeek)
+
+  const [recipes, setRecipes] = useState<Recipe[]>([])
+
+  // Fetch recipes for linking
+  useEffect(() => {
+    fetch('/api/recipes')
+      .then(res => res.json())
+      .then(data => setRecipes(data))
+      .catch(err => console.error('Error fetching recipes:', err))
+  }, [])
 
   const [showAddForm, setShowAddForm] = useState(false)
 
@@ -93,6 +109,7 @@ export default function ShoppingListPage() {
         <>
           <ShoppingListItems
             items={shoppingList.items}
+            recipes={recipes}
             onToggle={toggleItem}
           />
 

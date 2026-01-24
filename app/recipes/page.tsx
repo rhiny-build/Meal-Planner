@@ -13,7 +13,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { Recipe, RecipeFormData } from '@/types'
+import type { RecipeWithIngredients, RecipeFormData } from '@/types'
 import { useRecipes } from '@/lib/hooks/useRecipes'
 import RecipeCard from '@/components/RecipeCard'
 import Button from '@/components/Button'
@@ -36,7 +36,7 @@ export default function RecipesPage() {
 
   // State for add/edit modal
   const [showForm, setShowForm] = useState(false)
-  const [editingRecipe, setEditingRecipe] = useState<Recipe | undefined>()
+  const [editingRecipe, setEditingRecipe] = useState<RecipeWithIngredients | undefined>()
 
   // State for inspire modal
   const [showInspire, setShowInspire] = useState(false)
@@ -52,7 +52,7 @@ export default function RecipesPage() {
     }
   }
 
-  const onEdit = (recipe: Recipe) => {
+  const onEdit = (recipe: RecipeWithIngredients) => {
     setEditingRecipe(recipe)
     setShowForm(true)
   }

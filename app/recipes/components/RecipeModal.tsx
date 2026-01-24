@@ -4,11 +4,11 @@
  * Modal wrapper for recipe add/edit form
  */
 
-import type { Recipe, RecipeFormData } from '@/types'
+import type { RecipeWithIngredients, RecipeFormData } from '@/types'
 import RecipeForm from '@/components/RecipeForm'
 
 interface RecipeModalProps {
-  recipe?: Recipe
+  recipe?: RecipeWithIngredients
   onSubmit: (data: RecipeFormData) => Promise<void>
   onCancel: () => void
 }

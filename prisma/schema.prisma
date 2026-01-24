@@ -86,6 +86,8 @@ model ShoppingList {
   @@unique([weekStart])
 }
 
+//TODO: this feels like the wrong design - items in shopping lists should always link to ingredients.
+
 // ShoppingListItem model stores individual items on a shopping list
 model ShoppingListItem {
   id             String   @id @default(cuid())

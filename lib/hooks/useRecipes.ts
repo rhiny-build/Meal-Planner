@@ -5,11 +5,11 @@
  */
 
 import { useState, useEffect } from 'react'
-import type { Recipe, RecipeFilters, RecipeFormData } from '@/types'
+import type { RecipeWithIngredients, RecipeFilters, RecipeFormData } from '@/types'
 
 export function useRecipes() {
-  const [recipes, setRecipes] = useState<Recipe[]>([])
-  const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([])
+  const [recipes, setRecipes] = useState<RecipeWithIngredients[]>([])
+  const [filteredRecipes, setFilteredRecipes] = useState<RecipeWithIngredients[]>([])
   const [filters, setFilters] = useState<RecipeFilters>({})
   const [isLoading, setIsLoading] = useState(true)
 

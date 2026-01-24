@@ -12,6 +12,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { getMonday } from '@/lib/dateUtils'
 import { useMealPlan } from '@/lib/hooks/useMealPlan'
 import MealPlanHeader from './components/MealPlanHeader'
@@ -20,8 +21,10 @@ import MealPlanGrid from './components/MealPlanGrid'
 const DEFAULT_PROMPT = 'Generate a balanced meal plan for the week following the rules. Do not change existing meals that are already set.'
 
 export default function MealPlanPage() {
+  const router = useRouter()
   const [startDate, setStartDate] = useState<Date>(getMonday(new Date()))
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isGeneratingList, setIsGeneratingList] = useState(false)
   const [debugPrompt, setDebugPrompt] = useState(DEFAULT_PROMPT)
 
   const {
@@ -77,6 +80,28 @@ export default function MealPlanPage() {
     }
   }
 
+  const handleGenerateShoppingList = async () => {
+    setIsGeneratingList(true)
+    try {
+      const response = await fetch('/api/shopping-list/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ weekStart: startDate.toISOString() }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to generate shopping list')
+      }
+
+      router.push(`/shopping-list?week=${startDate.toISOString()}`)
+    } catch (error) {
+      console.error('Error generating shopping list:', error)
+      alert('Failed to generate shopping list')
+    } finally {
+      setIsGeneratingList(false)
+    }
+  }
+
   if (isLoading) {
     return <div className="text-center py-12">Loading meal plan...</div>
   }
@@ -90,11 +115,13 @@ export default function MealPlanPage() {
         selectedCount={selectedCount}
         isGenerating={isGenerating}
         isSaving={isSaving}
+        isGeneratingList={isGeneratingList}
         onPreviousWeek={handlePreviousWeek}
         onNextWeek={handleNextWeek}
         onGenerate={handleGenerate}
         onSave={handleSave}
         onClear={handleClear}
+        onGenerateShoppingList={handleGenerateShoppingList}
       />
 
       {/* Debug: Test different prompts */}

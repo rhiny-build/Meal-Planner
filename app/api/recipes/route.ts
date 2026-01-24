@@ -31,9 +31,12 @@ export async function GET(request: NextRequest) {
     if (filters.carbType) where.carbType = filters.carbType
     if (filters.prepTime) where.prepTime = filters.prepTime
 
-    // Fetch recipes from database
+    // Fetch recipes from database with structured ingredients
     const recipes = await prisma.recipe.findMany({
       where,
+      include: {
+        structuredIngredients: { orderBy: { order: 'asc' } },
+      },
       orderBy: [
         { tier: 'asc' }, // Favorites first
         { name: 'asc' }, // Then alphabetically

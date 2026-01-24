@@ -8,9 +8,19 @@
 'use client'
 
 import { useState } from 'react'
-import type { Recipe, RecipeFormData, StructuredIngredientData } from '@/types'
+import type { RecipeWithIngredients, RecipeFormData, Ingredient } from '@/types'
 import Button from './Button'
 import Select from './Select'
+
+// Format a structured ingredient for display
+function formatIngredient(ing: Ingredient): string {
+  const parts: string[] = []
+  if (ing.quantity) parts.push(ing.quantity)
+  if (ing.unit) parts.push(ing.unit)
+  parts.push(ing.name)
+  if (ing.notes) parts.push(`(${ing.notes})`)
+  return parts.join(' ')
+}
 
 // Select options
 const PROTEIN_OPTIONS = [
@@ -43,7 +53,7 @@ const TIER_OPTIONS = [
 ]
 
 interface RecipeFormProps {
-  recipe?: Recipe // If provided, we're editing; otherwise, creating
+  recipe?: RecipeWithIngredients // If provided, we're editing; otherwise, creating
   onSubmit: (data: RecipeFormData) => Promise<void>
   onCancel: () => void
 }
@@ -53,11 +63,19 @@ export default function RecipeForm({
   onSubmit,
   onCancel,
 }: RecipeFormProps) {
+  // Build ingredients text from structured ingredients if available
+  const getInitialIngredientsText = () => {
+    if (recipe?.structuredIngredients && recipe.structuredIngredients.length > 0) {
+      return recipe.structuredIngredients.map(formatIngredient).join('\n')
+    }
+    return recipe?.ingredients || ''
+  }
+
   // Form state
   const [formData, setFormData] = useState<RecipeFormData>({
     name: recipe?.name || '',
     recipeUrl: recipe?.recipeUrl || '',
-    ingredients: recipe?.ingredients || '',
+    ingredients: getInitialIngredientsText(),
     structuredIngredients: undefined,
     proteinType: (recipe?.proteinType as any) || '',
     carbType: (recipe?.carbType as any) || '',

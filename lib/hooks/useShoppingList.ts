@@ -8,8 +8,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { getMonday } from '@/lib/dateUtils'
 import type { ShoppingListWithItems } from '@/types'
 
-export function useShoppingList() {
-  const [startDate, setStartDate] = useState<Date>(getMonday(new Date()))
+export function useShoppingList(initialWeek?: Date) {
+  const [startDate, setStartDate] = useState<Date>(
+    initialWeek ? getMonday(initialWeek) : getMonday(new Date())
+  )
   const [shoppingList, setShoppingList] = useState<ShoppingListWithItems | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)

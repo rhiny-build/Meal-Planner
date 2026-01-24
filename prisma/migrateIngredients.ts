@@ -4,7 +4,10 @@
  * This script reads all recipes and splits their ingredient text (one per line)
  * into individual Ingredient records. The original string field is preserved.
  *
- * Usage: npx ts-node prisma/migrateIngredients.ts
+ * TODO: Remove this from the build process once all environments are synced.
+ * This script is idempotent (skips recipes that already have structured ingredients).
+ *
+ * Usage: npx tsx prisma/migrateIngredients.ts
  */
 
 import { PrismaClient } from '@prisma/client'

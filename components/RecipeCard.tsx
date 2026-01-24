@@ -5,13 +5,23 @@
  * Used in the recipe library to show recipes in a grid.
  */
 
-import type { Recipe } from '@/types'
+import type { RecipeWithIngredients, Ingredient } from '@/types'
 import Button from './Button'
 
 interface RecipeCardProps {
-  recipe: Recipe
-  onEdit: (recipe: Recipe) => void
+  recipe: RecipeWithIngredients
+  onEdit: (recipe: RecipeWithIngredients) => void
   onDelete: (id: string) => void
+}
+
+// Format a structured ingredient for display
+function formatIngredient(ing: Ingredient): string {
+  const parts: string[] = []
+  if (ing.quantity) parts.push(ing.quantity)
+  if (ing.unit) parts.push(ing.unit)
+  parts.push(ing.name)
+  if (ing.notes) parts.push(`(${ing.notes})`)
+  return parts.join(' ')
 }
 
 export default function RecipeCard({
@@ -94,9 +104,22 @@ export default function RecipeCard({
         <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Ingredients:
         </p>
-        <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3">
-          {recipe.ingredients}
-        </p>
+        {recipe.structuredIngredients && recipe.structuredIngredients.length > 0 ? (
+          <ul className="text-sm text-gray-600 dark:text-gray-400 list-disc list-inside space-y-0.5">
+            {recipe.structuredIngredients.slice(0, 5).map((ing) => (
+              <li key={ing.id} className="truncate">
+                {formatIngredient(ing)}
+              </li>
+            ))}
+            {recipe.structuredIngredients.length > 5 && (
+              <li className="text-gray-400">+{recipe.structuredIngredients.length - 5} more</li>
+            )}
+          </ul>
+        ) : (
+          <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3">
+            {recipe.ingredients}
+          </p>
+        )}
       </div>
 
       {/* Actions */}

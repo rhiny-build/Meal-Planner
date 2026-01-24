@@ -30,9 +30,13 @@ export async function extractIngredientsFromURL(
     const prompt = `Extract the recipe name and ingredients from this webpage HTML.
 
 For each ingredient, parse it into structured format:
-- name: the ingredient name (e.g., "chicken breast", "olive oil")
+- name: the ingredient name only (e.g., "chicken breast", "olive oil") - do NOT include quantities or units in the name
 - quantity: the amount as a string (e.g., "2", "1/2", "500") - null if not specified
-- unit: the unit of measurement (e.g., "cups", "grams", "tablespoons") - null if not specified
+- unit: the unit of measurement in METRIC units (convert imperial to metric):
+  - Use "g" or "kg" for weight (not lb, oz)
+  - Use "ml" or "L" for liquids (not cups, fl oz)
+  - Keep tbsp/tsp for small amounts
+  - Keep countable units (cloves, bunches, etc.)
 - notes: preparation notes (e.g., "diced", "optional", "for garnish") - null if none
 
 Return JSON with:

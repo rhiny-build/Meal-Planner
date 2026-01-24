@@ -23,10 +23,56 @@ export interface AggregatedItem {
 }
 
 /**
+ * Strip quantity and unit prefixes from ingredient names
+ * E.g., "2 lb chicken" → "chicken", "500g beef" → "beef"
+ */
+export function stripUnitsFromName(name: string): string {
+  // Units list (will match with or without trailing period/s)
+  const units = [
+    'lb', 'lbs', 'pound', 'pounds',
+    'oz', 'ounce', 'ounces',
+    'g', 'gram', 'grams',
+    'kg', 'kilogram', 'kilograms',
+    'ml', 'milliliter', 'milliliters',
+    'l', 'liter', 'liters', 'litre', 'litres',
+    'cup', 'cups',
+    'tbsp', 'tablespoon', 'tablespoons', 'tbs',
+    'tsp', 'teaspoon', 'teaspoons',
+    'bunch', 'bunches',
+    'can', 'cans',
+    'clove', 'cloves',
+    'piece', 'pieces',
+    'slice', 'slices',
+    'head', 'heads',
+    'stalk', 'stalks',
+    'sprig', 'sprigs',
+    'pinch', 'pinches',
+    'handful', 'handfuls',
+    'dash', 'dashes',
+    'large', 'medium', 'small',
+  ]
+
+  // Build pattern: REQUIRE at least one digit/fraction, then optional more, then unit (with optional period), then space
+  const unitGroup = units.join('|')
+  const pattern = new RegExp(
+    `^[\\d½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞][\\d./\\s\\-½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]*\\s*(?:${unitGroup})\\.?\\s+`,
+    'i'
+  )
+
+  let cleaned = name.replace(pattern, '')
+
+  // Also strip leading numbers without units (e.g., "2 chicken breasts") - require at least one digit
+  cleaned = cleaned.replace(/^[\d½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞][\d./\s\-½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]*\s+/, '')
+
+  return cleaned.trim() || name.trim()
+}
+
+/**
  * Normalize an ingredient name for grouping
  */
 export function normalizeIngredientName(name: string): string {
-  return name.toLowerCase().trim().replace(/\s+/g, ' ')
+  const stripped = stripUnitsFromName(name)
+  return stripped.toLowerCase().trim().replace(/\s+/g, ' ')
 }
 
 /**
@@ -38,11 +84,12 @@ export function aggregateIngredients(ingredients: RawIngredient[]): AggregatedIt
   const grouped = new Map<string, AggregatedItem>()
 
   for (const ing of ingredients) {
-    const normalizedName = normalizeIngredientName(ing.name)
+    const cleanName = stripUnitsFromName(ing.name)
+    const normalizedName = cleanName.toLowerCase().trim().replace(/\s+/g, ' ')
 
     if (!grouped.has(normalizedName)) {
       grouped.set(normalizedName, {
-        name: ing.name,
+        name: cleanName,
         sources: [],
       })
     }
