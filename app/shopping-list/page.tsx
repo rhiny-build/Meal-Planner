@@ -11,7 +11,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useShoppingList } from '@/lib/hooks/useShoppingList'
 import { formatShoppingListAsText } from '@/lib/shoppingListHelpers'
@@ -21,7 +21,7 @@ import ShoppingListHeader from './components/ShoppingListHeader'
 import ShoppingListItems from './components/ShoppingListItems'
 import AddItemForm from './components/AddItemForm'
 
-export default function ShoppingListPage() {
+function ShoppingListContent() {
   const searchParams = useSearchParams()
   const weekParam = searchParams.get('week')
   const initialWeek = weekParam ? new Date(weekParam) : undefined
@@ -130,5 +130,13 @@ export default function ShoppingListPage() {
         </>
       )}
     </div>
+  )
+}
+
+export default function ShoppingListPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-12">Loading...</div>}>
+      <ShoppingListContent />
+    </Suspense>
   )
 }
