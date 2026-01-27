@@ -52,27 +52,30 @@ export function stripUnitsFromName(name: string): string {
     'large', 'medium', 'small',
   ]
 
-  // Build pattern: REQUIRE at least one digit/fraction, then optional more, then unit (with optional period), then space
   const unitGroup = units.join('|')
-  const pattern = new RegExp(
+  let cleaned = name
+
+  // Strip parenthetical quantities like "(5-6 oz)" or "(1 lb)" anywhere in the string
+  cleaned = cleaned.replace(/\s*\([^)]*(?:oz|lb|g|kg|ml|cup|tbsp|tsp)[^)]*\)\s*/gi, ' ')
+
+  // Strip quantity + unit prefix: "2 lb chicken" → "chicken"
+  const quantityUnitPattern = new RegExp(
     `^[\\d½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞][\\d./\\s\\-½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]*\\s*(?:${unitGroup})\\.?\\s+`,
     'i'
   )
+  cleaned = cleaned.replace(quantityUnitPattern, '')
 
-  let cleaned = name.replace(pattern, '')
+  // Strip unit-only prefix without number: "lb. ground beef" → "ground beef"
+  const unitOnlyPattern = new RegExp(
+    `^(?:${unitGroup})\\.?\\s+`,
+    'i'
+  )
+  cleaned = cleaned.replace(unitOnlyPattern, '')
 
-  // Also strip leading numbers without units (e.g., "2 chicken breasts") - require at least one digit
+  // Strip leading numbers without units (e.g., "2 chicken breasts")
   cleaned = cleaned.replace(/^[\d½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞][\d./\s\-½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]*\s+/, '')
 
   return cleaned.trim() || name.trim()
-}
-
-/**
- * Normalize an ingredient name for grouping
- */
-export function normalizeIngredientName(name: string): string {
-  const stripped = stripUnitsFromName(name)
-  return stripped.toLowerCase().trim().replace(/\s+/g, ' ')
 }
 
 /**

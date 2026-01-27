@@ -9,7 +9,7 @@ Living document for tracking features, bugs, and improvements.
 - [ ] Add day notes field (for context like "kid has soccer until 7pm")
 
 ### Shopping List
-- [ ] Fix unit stripping bugs (parenthetical quantities like "(5-6 oz)", unit-only prefixes like "lb.", "Tbsp.")
+(no items)
 
 ### AI Fixes
 - [ ] URL extraction returning wrong recipe (investigate HTML parsing/prompt) - e.g., honey garlic chicken URL returned "Classic Tomato Basil Pasta"
@@ -49,6 +49,7 @@ Living document for tracking features, bugs, and improvements.
 
 - [x] Remember last viewed week (localStorage persistence)
 - [x] Refresh recipes list on navigation (visibilitychange listener)
+- [x] Fix unit stripping bugs (parenthetical quantities, unit-only prefixes)
 
 ---
 
