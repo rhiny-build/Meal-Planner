@@ -21,8 +21,18 @@ import MealPlanGrid from './components/MealPlanGrid'
 const DEFAULT_PROMPT = 'Generate a balanced meal plan for the week following the rules. Do not change existing meals that are already set.'
 
 export default function MealPlanPage() {
+
+  //check local storage for saved date for the planner
+
+  const lastVisited = typeof window !== 'undefined' ? localStorage.getItem('mealPlanLastVisited') : null
+  let weekStart = getMonday(new Date());
+  if (lastVisited) {
+    const parsedDate = new Date(lastVisited)
+    weekStart = getMonday(parsedDate)
+  }
+
   const router = useRouter()
-  const [startDate, setStartDate] = useState<Date>(getMonday(new Date()))
+  const [startDate, setStartDate] = useState<Date>(weekStart)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isGeneratingList, setIsGeneratingList] = useState(false)
   const [debugPrompt, setDebugPrompt] = useState(DEFAULT_PROMPT)
@@ -43,12 +53,16 @@ export default function MealPlanPage() {
   const handlePreviousWeek = () => {
     const newDate = new Date(startDate)
     newDate.setDate(newDate.getDate() - 7)
+        localStorage.setItem('mealPlanLastVisited', newDate.toISOString())
+
     setStartDate(newDate)
   }
 
   const handleNextWeek = () => {
     const newDate = new Date(startDate)
     newDate.setDate(newDate.getDate() + 7)
+    localStorage.setItem('mealPlanLastVisited', newDate.toISOString())
+
     setStartDate(newDate)
   }
 

@@ -21,6 +21,20 @@ export function useMealPlan(startDate: Date) {
     fetchData()
   }, [startDate])
 
+  useEffect(() => {
+    const handlevisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchData()
+      }
+    }
+    
+    document.addEventListener('visibilitychange', handlevisibilityChange)
+    
+    return () => {
+        document.removeEventListener('visibilitychange', handlevisibilityChange)
+    }
+  }, [])
+
   const fetchData = async () => {
     setIsLoading(true)
     try {
