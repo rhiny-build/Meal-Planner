@@ -1,11 +1,20 @@
 /**
  * useShoppingList Hook
  *
- * Manages shopping list state and API interactions
+ * Manages shopping list state and week navigation
+ *
+ * TODO: Standardize error handling - currently generateList shows alert on failure,
+ * but toggleItem and addItem fail silently. Should be consistent across all operations.
  */
 
 import { useState, useEffect, useCallback } from 'react'
 import { getMonday } from '@/lib/dateUtils'
+import {
+  fetchShoppingList,
+  generateShoppingList,
+  updateShoppingListItem,
+  addShoppingListItem,
+} from '@/lib/apiService'
 import type { ShoppingListWithItems } from '@/types'
 
 export function useShoppingList(initialWeek?: Date) {
@@ -16,24 +25,16 @@ export function useShoppingList(initialWeek?: Date) {
   const [isLoading, setIsLoading] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
 
-  const fetchShoppingList = useCallback(async () => {
+  const loadList = useCallback(async () => {
     setIsLoading(true)
-    try {
-      const response = await fetch(
-        `/api/shopping-list?weekStart=${startDate.toISOString()}`
-      )
-      const data = await response.json()
-      setShoppingList(data)
-    } catch (error) {
-      console.error('Error fetching shopping list:', error)
-    } finally {
-      setIsLoading(false)
-    }
+    const data = await fetchShoppingList(startDate)
+    setShoppingList(data)
+    setIsLoading(false)
   }, [startDate])
 
   useEffect(() => {
-    fetchShoppingList()
-  }, [fetchShoppingList])
+    loadList()
+  }, [loadList])
 
   const goToPreviousWeek = () => {
     const newDate = new Date(startDate)
@@ -50,17 +51,7 @@ export function useShoppingList(initialWeek?: Date) {
   const generateList = async () => {
     setIsGenerating(true)
     try {
-      const response = await fetch('/api/shopping-list/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ weekStart: startDate.toISOString() }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to generate shopping list')
-      }
-
-      const data = await response.json()
+      const data = await generateShoppingList(startDate)
       setShoppingList(data)
     } catch (error) {
       console.error('Error generating shopping list:', error)
@@ -71,55 +62,30 @@ export function useShoppingList(initialWeek?: Date) {
   }
 
   const toggleItem = async (itemId: string, checked: boolean) => {
-    try {
-      const response = await fetch('/api/shopping-list/item', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: itemId, checked }),
+    const updated = await updateShoppingListItem(itemId, { checked })
+    if (updated) {
+      setShoppingList((prev) => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          items: prev.items.map((item) =>
+            item.id === itemId ? { ...item, checked } : item
+          ),
+        }
       })
-
-      if (response.ok) {
-        setShoppingList((prev) => {
-          if (!prev) return prev
-          return {
-            ...prev,
-            items: prev.items.map((item) =>
-              item.id === itemId ? { ...item, checked } : item
-            ),
-          }
-        })
-      }
-    } catch (error) {
-      console.error('Error toggling item:', error)
     }
   }
 
   const addItem = async (name: string) => {
     if (!shoppingList) return false
 
-    try {
-      const response = await fetch('/api/shopping-list/item', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          shoppingListId: shoppingList.id,
-          name,
-        }),
+    const newItem = await addShoppingListItem(shoppingList.id, name)
+    if (newItem) {
+      setShoppingList((prev) => {
+        if (!prev) return prev
+        return { ...prev, items: [...prev.items, newItem] }
       })
-
-      if (response.ok) {
-        const newItem = await response.json()
-        setShoppingList((prev) => {
-          if (!prev) return prev
-          return {
-            ...prev,
-            items: [...prev.items, newItem],
-          }
-        })
-        return true
-      }
-    } catch (error) {
-      console.error('Error adding item:', error)
+      return true
     }
     return false
   }

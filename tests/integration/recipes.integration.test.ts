@@ -21,6 +21,11 @@
  *
  * IMPORTANT: Integration tests are slower than unit tests.
  * Run them less frequently (e.g., before commits, in CI).
+ *
+ * TODO: Fix integration test setup - currently fails because schema.prisma
+ * is configured for PostgreSQL but tests try to use SQLite test.db.
+ * Options: (1) Use PostgreSQL for tests, (2) Add separate test schema for SQLite,
+ * or (3) Use a test PostgreSQL database.
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'

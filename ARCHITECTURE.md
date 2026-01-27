@@ -35,7 +35,10 @@ This document explains the technical architecture of the Family Meal Planner app
 │   └── /shopping-list # Shopping list operations
 │       ├── route.ts           # GET shopping list for week
 │       ├── /generate/route.ts # POST generate from meal plan
-│       └── /item/route.ts     # POST, PATCH, DELETE items
+│       └── /item
+│           ├── route.ts       # POST add item
+│           ├── /update/route.ts # PATCH update item
+│           └── /delete/route.ts # DELETE remove item
 ├── /recipes          # Recipe library page
 │   └── page.tsx
 ├── /meal-plan        # Weekly meal plan page
@@ -60,6 +63,12 @@ This document explains the technical architecture of the Family Meal Planner app
 │   ├── extractIngredientsFromURL.ts  # URL recipe extraction
 │   ├── generateWeeklyMealPlan.ts     # Meal plan generation
 │   └── modifyMealPlan.ts             # Natural language modifications
+├── /hooks            # React hooks
+│   ├── useMealPlan.ts        # Meal plan state management
+│   ├── useRecipes.ts         # Recipe state + filtering
+│   └── useShoppingList.ts    # Shopping list state management
+├── apiService.ts       # API call utilities
+├── shoppingListHelpers.ts # Shopping list business logic
 ├── ingredientParser.ts # Ingredient string parsing utility
 ├── dateUtils.ts      # Date manipulation helpers
 └── prisma.ts         # Prisma client singleton

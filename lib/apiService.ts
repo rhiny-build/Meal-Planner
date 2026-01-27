@@ -1,5 +1,13 @@
+/**
+ * API Service
+ *
+ * Centralized API call utilities for the application.
+ *
+ * TODO: Split this file into separate modules (mealPlanApi.ts, recipeApi.ts, shoppingListApi.ts)
+ * as it grows. Currently manageable but approaching the point where separation would help.
+ */
 
-import type { MealPlanWithRecipe, WeekPlan, Recipe } from '@/types'
+import type { MealPlanWithRecipe, WeekPlan, Recipe, ShoppingListWithItems, ShoppingListItem } from '@/types'
 
 
 export const fetchMealPlan = async (startDate: Date, days: string[]): Promise<WeekPlan[]> => {
@@ -102,5 +110,61 @@ try {
       console.error('Error saving:', error)
       alert('Failed to save meal plan')
       return []
-    } 
+    }
+}
+
+// Shopping List API functions
+
+export const fetchShoppingList = async (weekStart: Date): Promise<ShoppingListWithItems | null> => {
+  try {
+    const response = await fetch(
+      `/api/shopping-list?weekStart=${weekStart.toISOString()}`
+    )
+    return await response.json()
+  } catch (error) {
+    console.error('Error fetching shopping list:', error)
+    return null
+  }
+}
+
+export const generateShoppingList = async (weekStart: Date): Promise<ShoppingListWithItems | null> => {
+  const response = await fetch('/api/shopping-list/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ weekStart: weekStart.toISOString() }),
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to generate shopping list')
+  }
+
+  return await response.json()
+}
+
+export const updateShoppingListItem = async (
+  itemId: string,
+  updates: Partial<{ checked: boolean; name: string }>
+): Promise<ShoppingListItem | null> => {
+  const response = await fetch('/api/shopping-list/item/update', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: itemId, ...updates }),
+  })
+
+  if (!response.ok) return null
+  return await response.json()
+}
+
+export const addShoppingListItem = async (
+  shoppingListId: string,
+  name: string
+): Promise<ShoppingListItem | null> => {
+  const response = await fetch('/api/shopping-list/item', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ shoppingListId, name }),
+  })
+
+  if (!response.ok) return null
+  return await response.json()
 }
