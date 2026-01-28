@@ -293,4 +293,121 @@ describe('useMealPlan', () => {
       expect(result.current.weekPlan[1].vegetableRecipeId).toBe('3')
     })
   })
+
+  describe('Day Notes', () => {
+    beforeEach(() => {
+      // Clear localStorage before each test
+      localStorage.clear()
+    })
+
+    it('should initialize with empty notes', async () => {
+      const { result } = renderHook(() => useMealPlan(startDate))
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false)
+      })
+
+      expect(result.current.dayNotes).toEqual({})
+    })
+
+    it('should update notes via handleNoteChange', async () => {
+      const { result } = renderHook(() => useMealPlan(startDate))
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false)
+      })
+
+      act(() => {
+        result.current.handleNoteChange('Monday', 'Soccer practice at 6pm')
+      })
+
+      expect(result.current.dayNotes['Monday']).toBe('Soccer practice at 6pm')
+    })
+
+    it('should persist notes to localStorage', async () => {
+      const { result } = renderHook(() => useMealPlan(startDate))
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false)
+      })
+
+      act(() => {
+        result.current.handleNoteChange('Tuesday', 'Date night')
+      })
+
+      // Check localStorage directly
+      const storageKey = `mealPlanNotes_${startDate.toISOString().split('T')[0]}`
+      const stored = localStorage.getItem(storageKey)
+      expect(stored).toBeTruthy()
+      expect(JSON.parse(stored!)).toEqual({ Tuesday: 'Date night' })
+    })
+
+    it('should load notes from localStorage on mount', async () => {
+      // Pre-populate localStorage
+      const storageKey = `mealPlanNotes_${startDate.toISOString().split('T')[0]}`
+      localStorage.setItem(storageKey, JSON.stringify({ Wednesday: 'Work late' }))
+
+      const { result } = renderHook(() => useMealPlan(startDate))
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false)
+      })
+
+      expect(result.current.dayNotes['Wednesday']).toBe('Work late')
+    })
+
+    it('should use different storage keys for different weeks', async () => {
+      const week1 = new Date('2025-01-27')
+      const week2 = new Date('2025-02-03')
+
+      // Set notes for week 1
+      const storageKey1 = `mealPlanNotes_${week1.toISOString().split('T')[0]}`
+      localStorage.setItem(storageKey1, JSON.stringify({ Monday: 'Week 1 note' }))
+
+      // Set notes for week 2
+      const storageKey2 = `mealPlanNotes_${week2.toISOString().split('T')[0]}`
+      localStorage.setItem(storageKey2, JSON.stringify({ Monday: 'Week 2 note' }))
+
+      // Render hook for week 1
+      const { result: result1 } = renderHook(() => useMealPlan(week1))
+      await waitFor(() => {
+        expect(result1.current.isLoading).toBe(false)
+      })
+      expect(result1.current.dayNotes['Monday']).toBe('Week 1 note')
+
+      // Render hook for week 2
+      const { result: result2 } = renderHook(() => useMealPlan(week2))
+      await waitFor(() => {
+        expect(result2.current.isLoading).toBe(false)
+      })
+      expect(result2.current.dayNotes['Monday']).toBe('Week 2 note')
+    })
+
+    it('should handle multiple notes across days', async () => {
+      const { result } = renderHook(() => useMealPlan(startDate))
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false)
+      })
+
+      // Each state update needs its own act() to allow state to settle
+      act(() => {
+        result.current.handleNoteChange('Monday', 'Gym')
+      })
+
+      act(() => {
+        result.current.handleNoteChange('Friday', 'Movie night')
+      })
+
+      act(() => {
+        result.current.handleNoteChange('Sunday', 'Meal prep')
+      })
+
+      expect(result.current.dayNotes).toEqual({
+        Monday: 'Gym',
+        Friday: 'Movie night',
+        Sunday: 'Meal prep',
+      })
+    })
+  })
 })

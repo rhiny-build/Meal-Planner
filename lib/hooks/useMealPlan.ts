@@ -10,16 +10,50 @@ import { fetchMealPlan as fetchMealPlanService, fetchAllRecipes, saveMealPlan } 
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
+// Day notes type - keyed by day name
+type DayNotes = Record<string, string>
+
+// Get localStorage key for notes based on week start date
+function getNotesStorageKey(startDate: Date): string {
+  return `mealPlanNotes_${startDate.toISOString().split('T')[0]}`
+}
+
 export function useMealPlan(startDate: Date) {
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([])
   const [weekPlan, setWeekPlan] = useState<WeekPlan[]>([])
+  const [dayNotes, setDayNotes] = useState<DayNotes>({})
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
 
   // Fetch data on mount and when date changes
   useEffect(() => {
     fetchData()
+    loadNotesFromStorage()
   }, [startDate])
+
+  // Load notes from localStorage
+  const loadNotesFromStorage = () => {
+    if (typeof window === 'undefined') return
+    const stored = localStorage.getItem(getNotesStorageKey(startDate))
+    if (stored) {
+      try {
+        setDayNotes(JSON.parse(stored))
+      } catch {
+        setDayNotes({})
+      }
+    } else {
+      setDayNotes({})
+    }
+  }
+
+  // Save notes to localStorage when they change
+  const handleNoteChange = (day: string, note: string) => {
+    const newNotes = { ...dayNotes, [day]: note }
+    setDayNotes(newNotes)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(getNotesStorageKey(startDate), JSON.stringify(newNotes))
+    }
+  }
 
   useEffect(() => {
     const handlevisibilityChange = () => {
@@ -125,6 +159,7 @@ export function useMealPlan(startDate: Date) {
 
   return {
     weekPlan,
+    dayNotes,
     proteinRecipes,
     carbRecipes,
     vegetableRecipes,
@@ -132,6 +167,7 @@ export function useMealPlan(startDate: Date) {
     isLoading,
     isSaving,
     handleRecipeChange,
+    handleNoteChange,
     handleSave,
     handleClear,
     applyGeneratedPlan,

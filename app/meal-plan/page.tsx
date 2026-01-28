@@ -39,6 +39,7 @@ export default function MealPlanPage() {
 
   const {
     weekPlan,
+    dayNotes,
     proteinRecipes,
     carbRecipes,
     vegetableRecipes,
@@ -46,6 +47,7 @@ export default function MealPlanPage() {
     isLoading,
     isSaving,
     handleRecipeChange,
+    handleNoteChange,
     handleSave,
     handleClear,
     applyGeneratedPlan,
@@ -160,10 +162,12 @@ export default function MealPlanPage() {
 
       <MealPlanGrid
         weekPlan={weekPlan}
+        dayNotes={dayNotes}
         proteinRecipes={proteinRecipes}
         carbRecipes={carbRecipes}
         vegetableRecipes={vegetableRecipes}
         onRecipeChange={handleRecipeChange}
+        onNoteChange={handleNoteChange}
       />
     </div>
   )
