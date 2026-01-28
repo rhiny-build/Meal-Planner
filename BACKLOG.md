@@ -5,7 +5,6 @@ Living document for tracking features, bugs, and improvements.
 ## This Week
 
 ### Meal Plan Improvements
-- [ ] Add vegetable dish dropdown to UI (schema already supports it)
 - [ ] Add day notes field (for context like "kid has soccer until 7pm")
 
 ### Shopping List
@@ -47,6 +46,7 @@ Living document for tracking features, bugs, and improvements.
 
 ## Completed
 
+- [x] Add vegetable dish support (checkbox in recipes, third column in meal plan grid)
 - [x] Remember last viewed week (localStorage persistence)
 - [x] Refresh recipes list on navigation (visibilitychange listener)
 - [x] Fix unit stripping bugs (parenthetical quantities, unit-only prefixes)
@@ -56,5 +56,4 @@ Living document for tracking features, bugs, and improvements.
 ## Notes
 
 - Perplexity integration for "Inspire Me" search working well
-- Schema already has `vegetableRecipeId` - just needs UI
 - Shopping list schema discussion resolved: keeping simple text-based approach (no foreign keys to ingredients)
