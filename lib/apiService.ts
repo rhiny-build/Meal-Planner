@@ -37,12 +37,15 @@ export const fetchMealPlan = async (startDate: Date, days: string[]): Promise<We
             mp.dayOfWeek === day
         )
 
-        // Separate protein and carb
+        // Separate protein, carb, and vegetable
         const proteinMeal = dayMealPlans.find((mp: MealPlanWithRecipe) =>
             mp.proteinRecipeId
         )
         const carbMeal = dayMealPlans.find((mp: MealPlanWithRecipe) =>
             mp.carbRecipe
+        )
+        const vegetableMeal = dayMealPlans.find((mp: MealPlanWithRecipe) =>
+            mp.vegetableRecipeId
         )
 
         return {
@@ -50,7 +53,8 @@ export const fetchMealPlan = async (startDate: Date, days: string[]): Promise<We
             date,
             proteinRecipeId: proteinMeal?.proteinRecipeId || '',
             carbRecipeId: carbMeal?.carbRecipeId || '',
-            mealPlanId: proteinMeal?.id || carbMeal?.id
+            vegetableRecipeId: vegetableMeal?.vegetableRecipeId || '',
+            mealPlanId: proteinMeal?.id || carbMeal?.id || vegetableMeal?.id
         }
     })
 
@@ -77,7 +81,8 @@ try {
             date: weekDay.date.toISOString(),
             dayOfWeek: weekDay.day,
             proteinRecipeId: weekDay.proteinRecipeId || null,
-            carbRecipeId: weekDay.carbRecipeId || null
+            carbRecipeId: weekDay.carbRecipeId || null,
+            vegetableRecipeId: weekDay.vegetableRecipeId || null
           }))
           
       

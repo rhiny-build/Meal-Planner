@@ -2,7 +2,7 @@
  * Meal Plan Page
  *
  * Features:
- * - 7 days × 2 columns (protein and carb)
+ * - 7 days × 3 columns (protein, carb, and vegetable)
  * - Generate new meal plan with AI
  * - Manual recipe selection via dropdowns
  * - Save/load from database
@@ -41,6 +41,7 @@ export default function MealPlanPage() {
     weekPlan,
     proteinRecipes,
     carbRecipes,
+    vegetableRecipes,
     selectedCount,
     isLoading,
     isSaving,
@@ -161,6 +162,7 @@ export default function MealPlanPage() {
         weekPlan={weekPlan}
         proteinRecipes={proteinRecipes}
         carbRecipes={carbRecipes}
+        vegetableRecipes={vegetableRecipes}
         onRecipeChange={handleRecipeChange}
       />
     </div>

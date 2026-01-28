@@ -51,12 +51,14 @@ export function useMealPlan(startDate: Date) {
     }
   }
 
-  const handleRecipeChange = (dayIndex: number, column: 'protein' | 'carb', recipeId: string) => {
+  const handleRecipeChange = (dayIndex: number, column: 'protein' | 'carb' | 'vegetable', recipeId: string) => {
     const newPlan = [...weekPlan]
     if (column === 'protein') {
       newPlan[dayIndex].proteinRecipeId = recipeId
-    } else {
+    } else if (column === 'carb') {
       newPlan[dayIndex].carbRecipeId = recipeId
+    } else {
+      newPlan[dayIndex].vegetableRecipeId = recipeId
     }
     setWeekPlan(newPlan)
   }
@@ -83,7 +85,7 @@ export function useMealPlan(startDate: Date) {
     const newPlan = DAYS.map((day, index) => {
       const date = new Date(startDate)
       date.setDate(date.getDate() + index)
-      return { day, date, proteinRecipeId: '', carbRecipeId: '' }
+      return { day, date, proteinRecipeId: '', carbRecipeId: '', vegetableRecipeId: '' }
     })
     setWeekPlan(newPlan)
   }
@@ -91,16 +93,18 @@ export function useMealPlan(startDate: Date) {
   // Get recipes filtered by type
   const proteinRecipes = allRecipes.filter(r => r.proteinType)
   const carbRecipes = allRecipes.filter(r => r.carbType)
+  const vegetableRecipes = allRecipes.filter(r => r.vegetableType)
 
   // Calculate selected count
   const selectedCount = weekPlan.reduce((count, day) => {
     if (day.proteinRecipeId) count++
     if (day.carbRecipeId) count++
+    if (day.vegetableRecipeId) count++
     return count
   }, 0)
 
   // Apply AI-generated plan to current state
-  const applyGeneratedPlan = (modifiedPlan: { date: Date | string; proteinRecipeId: string; carbRecipeId: string }[]) => {
+  const applyGeneratedPlan = (modifiedPlan: { date: Date | string; proteinRecipeId: string; carbRecipeId: string; vegetableRecipeId: string }[]) => {
     const newPlan = weekPlan.map(day => {
       const modification = modifiedPlan.find(m => {
         const modDate = new Date(m.date)
@@ -111,6 +115,7 @@ export function useMealPlan(startDate: Date) {
           ...day,
           proteinRecipeId: modification.proteinRecipeId || '',
           carbRecipeId: modification.carbRecipeId || '',
+          vegetableRecipeId: modification.vegetableRecipeId || '',
         }
       }
       return day
@@ -122,6 +127,7 @@ export function useMealPlan(startDate: Date) {
     weekPlan,
     proteinRecipes,
     carbRecipes,
+    vegetableRecipes,
     selectedCount,
     isLoading,
     isSaving,

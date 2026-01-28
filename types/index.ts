@@ -34,6 +34,7 @@ export type WeekPlan = {
     date: Date
     proteinRecipeId: string
     carbRecipeId: string
+    vegetableRecipeId: string
     mealPlanId?: string // Database ID if it exists
 }
 
@@ -45,6 +46,7 @@ export interface RecipeFormData {
   recipeUrl?: string
   proteinType?: ProteinType
   carbType?: CarbType
+  vegetableType?: string // 'vegetable' when dish includes vegetables
   prepTime: PrepTime
   tier: RecipeTier
 }
@@ -81,8 +83,10 @@ export interface PlanEntryForAI {
   dayOfWeek: string
   proteinRecipeId: string | null
   carbRecipeId: string | null
+  vegetableRecipeId: string | null
   proteinRecipe?: Recipe | null
   carbRecipe?: Recipe | null
+  vegetableRecipe?: Recipe | null
 }
 
 // Request body for creating/saving a week of meal plans
@@ -109,6 +113,7 @@ export interface MealPlanModificationResult {
     date: Date
     proteinRecipeId: string
     carbRecipeId: string
+    vegetableRecipeId: string
   }[]
   explanation: string // What the AI changed and why
 }

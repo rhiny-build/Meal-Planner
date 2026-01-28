@@ -38,13 +38,15 @@ export async function POST(request: NextRequest) {
 
     // Build the modification request
     // The AI needs to know the dates, day names, and any existing selections
-    const planForAI = currentPlan.map((day: { day: string; date: string; proteinRecipeId: string; carbRecipeId: string }) => ({
+    const planForAI = currentPlan.map((day: { day: string; date: string; proteinRecipeId: string; carbRecipeId: string; vegetableRecipeId: string }) => ({
       date: new Date(day.date),
       dayOfWeek: day.day,
       proteinRecipeId: day.proteinRecipeId || null,
       carbRecipeId: day.carbRecipeId || null,
+      vegetableRecipeId: day.vegetableRecipeId || null,
       proteinRecipe: day.proteinRecipeId ? availableRecipes.find(r => r.id === day.proteinRecipeId) : null,
       carbRecipe: day.carbRecipeId ? availableRecipes.find(r => r.id === day.carbRecipeId) : null,
+      vegetableRecipe: day.vegetableRecipeId ? availableRecipes.find(r => r.id === day.vegetableRecipeId) : null,
     }))
 
     const modificationRequest: MealPlanModificationRequest = {

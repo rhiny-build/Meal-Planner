@@ -11,6 +11,7 @@ import { useState } from 'react'
 import type { RecipeWithIngredients, RecipeFormData, Ingredient } from '@/types'
 import Button from './Button'
 import Select from './Select'
+import { PROTEIN_OPTIONS, CARB_OPTIONS } from '@/lib/dishTypeConfig'
 
 // Format a structured ingredient for display
 function formatIngredient(ing: Ingredient): string {
@@ -23,23 +24,6 @@ function formatIngredient(ing: Ingredient): string {
 }
 
 // Select options
-const PROTEIN_OPTIONS = [
-  { value: '', label: 'None' },
-  { value: 'chicken', label: 'Chicken' },
-  { value: 'fish', label: 'Fish' },
-  { value: 'red-meat', label: 'Red Meat' },
-  { value: 'vegetarian', label: 'Vegetarian' },
-]
-
-const CARB_OPTIONS = [
-  { value: '', label: 'None' },
-  { value: 'rice', label: 'Rice' },
-  { value: 'pasta', label: 'Pasta' },
-  { value: 'couscous', label: 'Couscous' },
-  { value: 'fries', label: 'Fries' },
-  { value: 'other', label: 'Other' },
-]
-
 const PREP_TIME_OPTIONS = [
   { value: 'quick', label: 'Quick (<30 min)' },
   { value: 'medium', label: 'Medium (30-60 min)' },
@@ -79,6 +63,7 @@ export default function RecipeForm({
     structuredIngredients: undefined,
     proteinType: (recipe?.proteinType as any) || '',
     carbType: (recipe?.carbType as any) || '',
+    vegetableType: (recipe?.vegetableType as any) || '',
     prepTime: (recipe?.prepTime as any) || 'quick',
     tier: (recipe?.tier as any) || 'favorite',
   })
@@ -234,6 +219,26 @@ export default function RecipeForm({
         options={CARB_OPTIONS}
         label="Carb Type"
       />
+
+      {/* Vegetable Checkbox */}
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          id="vegetableType"
+          name="vegetableType"
+          checked={!!formData.vegetableType}
+          onChange={(e) => {
+            setFormData({
+              ...formData,
+              vegetableType: e.target.checked ? 'vegetable' : undefined,
+            })
+          }}
+          className="w-4 h-4 rounded border-gray-300 dark:border-gray-600"
+        />
+        <label htmlFor="vegetableType" className="text-sm font-medium">
+          Includes vegetables
+        </label>
+      </div>
 
       {/* Prep Time */}
       <Select

@@ -91,6 +91,12 @@ export default function RecipeCard({
             <span className="capitalize">{recipe.carbType}</span>
           </div>
         )}
+        {recipe.vegetableType && (
+          <div className="flex items-center">
+            <span className="font-medium mr-2">Vegetable:</span>
+            <span className="capitalize">Yes</span>
+          </div>
+        )}
         {recipe.prepTime && (
           <div className="flex items-center">
             <span className="font-medium mr-2">Prep Time:</span>
