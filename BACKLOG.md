@@ -5,7 +5,7 @@ Living document for tracking features, bugs, and improvements.
 ## This Week
 
 ### Meal Plan Improvements
-- [ ] Add day notes field (for context like "kid has soccer until 7pm")
+(no items)
 
 ### Shopping List
 (no items)
@@ -46,6 +46,7 @@ Living document for tracking features, bugs, and improvements.
 
 ## Completed
 
+- [x] Add day notes field (localStorage, auto-clears after week passes)
 - [x] Add vegetable dish support (checkbox in recipes, third column in meal plan grid)
 - [x] Remember last viewed week (localStorage persistence)
 - [x] Refresh recipes list on navigation (visibilitychange listener)
