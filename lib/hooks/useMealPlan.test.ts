@@ -8,6 +8,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { useMealPlan } from './useMealPlan'
+import { getMonday } from '@/lib/dateUtils'
 import type { Recipe, WeekPlan } from '@/types'
 
 // Mock window.confirm for clear confirmation
@@ -83,7 +84,8 @@ function createMockFetchResponse(data: unknown, ok = true) {
 }
 
 describe('useMealPlan', () => {
-  const startDate = new Date('2025-01-27') // A Monday
+  // Use current week's Monday to avoid isWeekPast clearing notes
+  const startDate = getMonday(new Date())
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -263,15 +265,20 @@ describe('useMealPlan', () => {
         expect(result.current.isLoading).toBe(false)
       })
 
+      // Use dates relative to startDate (current week's Monday)
+      const monday = new Date(startDate)
+      const tuesday = new Date(startDate)
+      tuesday.setDate(tuesday.getDate() + 1)
+
       const generatedPlan = [
         {
-          date: new Date('2025-01-27'),
+          date: monday,
           proteinRecipeId: '1',
           carbRecipeId: '2',
           vegetableRecipeId: '3',
         },
         {
-          date: new Date('2025-01-28'),
+          date: tuesday,
           proteinRecipeId: '4',
           carbRecipeId: '',
           vegetableRecipeId: '3',
@@ -357,8 +364,10 @@ describe('useMealPlan', () => {
     })
 
     it('should use different storage keys for different weeks', async () => {
-      const week1 = new Date('2025-01-27')
-      const week2 = new Date('2025-02-03')
+      // Use current week and next week (not past weeks which get cleared)
+      const week1 = getMonday(new Date())
+      const week2 = new Date(week1)
+      week2.setDate(week2.getDate() + 7) // Next week
 
       // Set notes for week 1
       const storageKey1 = `mealPlanNotes_${week1.toISOString().split('T')[0]}`
@@ -408,6 +417,27 @@ describe('useMealPlan', () => {
         Friday: 'Movie night',
         Sunday: 'Meal prep',
       })
+    })
+
+    it('should auto-clear notes for past weeks', async () => {
+      // Use a date from 2 weeks ago
+      const pastWeek = new Date(startDate)
+      pastWeek.setDate(pastWeek.getDate() - 14)
+
+      // Pre-populate localStorage with notes for past week
+      const storageKey = `mealPlanNotes_${pastWeek.toISOString().split('T')[0]}`
+      localStorage.setItem(storageKey, JSON.stringify({ Monday: 'Old note' }))
+
+      const { result } = renderHook(() => useMealPlan(pastWeek))
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false)
+      })
+
+      // Notes should be cleared for past weeks
+      expect(result.current.dayNotes).toEqual({})
+      // localStorage should also be cleared
+      expect(localStorage.getItem(storageKey)).toBeNull()
     })
   })
 })
