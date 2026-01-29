@@ -129,25 +129,27 @@ export default function MealPlanGrid({
      * All DraggableRecipeCell components inside will participate in drag operations.
      */
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-      <div className="bg-white dark:bg-neutral-900 rounded-lg overflow-hidden shadow-md dark:shadow-xl">
-        {/* Table Header */}
-        <div className="grid grid-cols-[85px_90px_1fr_1fr_1fr_1fr] gap-4 px-5 py-3 bg-gray-100 dark:bg-neutral-800">
-          <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Day</div>
-          <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Date</div>
-          <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Notes</div>
-          <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Protein</div>
-          <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Carb</div>
-          <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Vegetable</div>
-        </div>
+      <div className="overflow-x-auto">
+        {/* Parent grid defines columns once - rows use subgrid to inherit them */}
+        <div className="grid grid-cols-[80px_90px_150px_minmax(120px,auto)_minmax(120px,auto)_minmax(120px,auto)] bg-white dark:bg-neutral-900 rounded-lg overflow-hidden shadow-md dark:shadow-xl min-w-fit">
+          {/* Table Header - spans all columns, uses subgrid */}
+          <div className="col-span-6 grid grid-cols-subgrid gap-4 px-5 py-3 bg-gray-100 dark:bg-neutral-800">
+            <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Day</div>
+            <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Date</div>
+            <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Notes</div>
+            <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Protein</div>
+            <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Carb</div>
+            <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Vegetable</div>
+          </div>
 
-        {/* Table Rows - One per day */}
-        {weekPlan.map((dayPlan, index) => (
-          <div
-            key={dayPlan.day}
-            className={`grid grid-cols-[85px_90px_1fr_1fr_1fr_1fr] gap-4 px-5 py-4 ${
-              index !== weekPlan.length - 1 ? 'border-b border-gray-200 dark:border-neutral-800' : ''
-            } hover:bg-gray-50 dark:hover:bg-neutral-800/50 transition-colors`}
-          >
+          {/* Table Rows - each spans all columns, uses subgrid */}
+          {weekPlan.map((dayPlan, index) => (
+            <div
+              key={dayPlan.day}
+              className={`col-span-6 grid grid-cols-subgrid gap-4 px-5 py-4 ${
+                index !== weekPlan.length - 1 ? 'border-b border-gray-200 dark:border-neutral-800' : ''
+              } hover:bg-gray-50 dark:hover:bg-neutral-800/50 transition-colors`}
+            >
             {/* Day Name */}
             <div className="font-semibold text-gray-900 dark:text-white self-center">
               {dayPlan.day}
@@ -212,6 +214,7 @@ export default function MealPlanGrid({
             </DraggableRecipeCell>
           </div>
         ))}
+        </div>
       </div>
     </DndContext>
   )

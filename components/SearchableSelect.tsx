@@ -99,6 +99,9 @@ export default function SearchableSelect({
         placeholder={placeholder}
         isClearable={isClearable}
         isSearchable
+        menuPlacement="auto"
+        menuPortalTarget={document.body}
+        styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
         classNames={{
           control: (state) =>
             `!bg-neutral-800 !rounded ${styles.border} !min-h-[38px] !shadow-none ${
@@ -133,6 +136,9 @@ export default function SearchableSelect({
       placeholder={placeholder}
       isClearable={isClearable}
       isSearchable
+      menuPlacement="auto"
+      menuPortalTarget={document.body}
+      styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
       classNames={{
         control: (state) =>
           `!bg-white !rounded ${styles.border} !min-h-[38px] !shadow-none ${
