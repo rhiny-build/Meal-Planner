@@ -137,6 +137,41 @@ export function useMealPlan(startDate: Date) {
     setWeekPlan(newPlan)
   }
 
+  /**
+   * Swap recipes between two days within the same column
+   *
+   * This is called by the drag-and-drop functionality in MealPlanGrid.
+   * When a user drags a cell (e.g., Monday's protein) and drops it on
+   * another cell in the same column (e.g., Thursday's protein), this
+   * function swaps the recipe IDs between those two days.
+   *
+   * @param column - Which column to swap: 'protein', 'carb', or 'vegetable'
+   * @param fromDayIndex - Index of the source day (0 = Monday, 6 = Sunday)
+   * @param toDayIndex - Index of the target day
+   */
+  const handleSwapRecipes = (
+    column: 'protein' | 'carb' | 'vegetable',
+    fromDayIndex: number,
+    toDayIndex: number
+  ) => {
+    // Create a new plan array (immutable update)
+    const newPlan = [...weekPlan]
+
+    // Determine which property to swap based on column
+    const recipeKey = column === 'protein'
+      ? 'proteinRecipeId'
+      : column === 'carb'
+      ? 'carbRecipeId'
+      : 'vegetableRecipeId'
+
+    // Swap the values
+    const temp = newPlan[fromDayIndex][recipeKey]
+    newPlan[fromDayIndex] = { ...newPlan[fromDayIndex], [recipeKey]: newPlan[toDayIndex][recipeKey] }
+    newPlan[toDayIndex] = { ...newPlan[toDayIndex], [recipeKey]: temp }
+
+    setWeekPlan(newPlan)
+  }
+
   // Get recipes filtered by type
   const proteinRecipes = allRecipes.filter(r => r.proteinType)
   const carbRecipes = allRecipes.filter(r => r.carbType)
@@ -183,6 +218,7 @@ export function useMealPlan(startDate: Date) {
     handleNoteChange,
     handleSave,
     handleClear,
+    handleSwapRecipes,
     applyGeneratedPlan,
   }
 }
