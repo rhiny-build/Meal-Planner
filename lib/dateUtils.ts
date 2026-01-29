@@ -36,3 +36,15 @@ export const formatDate = (date: Date): string => {
 export const isMonday = (date: Date): boolean => {
   return date.getDay() === 1
 }
+
+// Check if a week has passed (current date is on or after the following Monday)
+export const isWeekPast = (weekStart: Date): boolean => {
+  const nextMonday = new Date(weekStart)
+  nextMonday.setDate(nextMonday.getDate() + 7)
+  nextMonday.setHours(0, 0, 0, 0)
+
+  const today = getMonday(new Date())
+  today.setHours(0, 0, 0, 0)
+
+  return today >= nextMonday
+}

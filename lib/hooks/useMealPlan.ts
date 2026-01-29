@@ -7,7 +7,7 @@
 import { useState, useEffect } from 'react'
 import type { Recipe, WeekPlan } from '@/types'
 import { fetchMealPlan as fetchMealPlanService, fetchAllRecipes, saveMealPlan } from '@/lib/apiService'
-import { getMonday } from '@/lib/dateUtils'
+import { getMonday, isWeekPast } from '@/lib/dateUtils'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -20,16 +20,7 @@ function getNotesStorageKey(startDate: Date): string {
 }
 
 // Check if a week has passed (current date is on or after the following Monday)
-function isWeekPast(weekStart: Date): boolean {
-  const nextMonday = new Date(weekStart)
-  nextMonday.setDate(nextMonday.getDate() + 7)
-  nextMonday.setHours(0, 0, 0, 0)
 
-  const today = getMonday(new Date())
-  today.setHours(0, 0, 0, 0)
-
-  return today >= nextMonday
-}
 
 export function useMealPlan(startDate: Date) {
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([])
