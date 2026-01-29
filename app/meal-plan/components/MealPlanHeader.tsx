@@ -2,6 +2,7 @@
  * MealPlanHeader Component
  *
  * Week navigation and action buttons for the meal plan page
+ * Supports light and dark themes
  */
 
 import Button from '@/components/Button'
@@ -37,11 +38,11 @@ export default function MealPlanHeader({
   return (
     <>
       {/* Week Navigation */}
-      <div className="flex items-center justify-between mb-6 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+      <div className="flex items-center justify-between mb-6 bg-gray-100 dark:bg-neutral-800 rounded-lg p-4">
         <Button variant="secondary" onClick={onPreviousWeek}>
           ← Previous Week
         </Button>
-        <h2 className="text-xl font-semibold">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
           Week of {formatDate(startDate)}
         </h2>
         <Button variant="secondary" onClick={onNextWeek}>
@@ -66,11 +67,9 @@ export default function MealPlanHeader({
       </div>
 
       {/* Meal Count */}
-      <div className="mb-4 text-lg">
-        <span className="font-medium">Selected meals:</span> {selectedCount} / 14
+      <div className="mb-4 text-lg text-gray-600 dark:text-neutral-300">
+        <span className="font-medium text-gray-900 dark:text-white">Selected meals:</span> {selectedCount} / 21
       </div>
     </>
-
-    //TODO: Add AI instruction field with a default of generate plan for this week. At the moment, it will be heardcoded.
   )
 }

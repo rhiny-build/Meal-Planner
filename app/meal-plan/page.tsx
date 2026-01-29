@@ -120,12 +120,16 @@ export default function MealPlanPage() {
   }
 
   if (isLoading) {
-    return <div className="text-center py-12">Loading meal plan...</div>
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-gray-500 dark:text-neutral-400 text-lg">Loading meal plan...</div>
+      </div>
+    )
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Weekly Meal Plan</h1>
+    <div className="max-w-6xl mx-auto py-8 px-4">
+      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Weekly Meal Plan</h1>
 
       <MealPlanHeader
         startDate={startDate}
@@ -142,19 +146,19 @@ export default function MealPlanPage() {
       />
 
       {/* Debug: Test different prompts */}
-      <div className="my-4 p-4 border border-dashed border-gray-400 rounded bg-gray-50 dark:bg-gray-800">
-        <label className="block text-sm font-medium mb-2 text-gray-600 dark:text-gray-400">
+      <div className="my-4 p-4 border border-dashed border-gray-300 dark:border-neutral-700 rounded-lg bg-gray-50 dark:bg-neutral-900">
+        <label className="block text-sm font-medium mb-2 text-gray-600 dark:text-neutral-400">
           Debug: AI Prompt (edit to test different prompts)
         </label>
         <textarea
           value={debugPrompt}
           onChange={(e) => setDebugPrompt(e.target.value)}
-          className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 font-mono text-sm"
+          className="w-full p-3 bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded text-gray-900 dark:text-neutral-100 font-mono text-sm focus:border-blue-500 dark:focus:border-fuchsia-500 focus:ring-0 focus:outline-none"
           rows={3}
         />
         <button
           onClick={() => setDebugPrompt(DEFAULT_PROMPT)}
-          className="mt-2 text-sm text-blue-600 hover:underline"
+          className="mt-2 text-sm text-blue-600 dark:text-fuchsia-400 hover:text-blue-800 dark:hover:text-fuchsia-300 transition-colors"
         >
           Reset to default
         </button>
