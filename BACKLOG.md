@@ -10,7 +10,12 @@ Living document for tracking features, bugs, and improvements.
 ### Shopping List
 (no items)
 
-### AI Fixes
+### UX Quick Wins
+- [ ] Convert select elements to react-select and complete styling
+- [ ] Modernise UX: experiment with different themes (let user choose), consider drag and drop functionality - is it a quick fix?
+
+### AI Fixes/Adds
+- [ ] Experiment with using Open AI for better aggregation of shopping list material.
 - [ ] URL extraction returning wrong recipe (investigate HTML parsing/prompt) - e.g., honey garlic chicken URL returned "Classic Tomato Basil Pasta"
 - [ ] Meal plan completion overwrites user selections (prompt not constraining properly)
 

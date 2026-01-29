@@ -50,6 +50,7 @@ export default function MealPlanPage() {
     handleNoteChange,
     handleSave,
     handleClear,
+    handleSwapRecipes,
     applyGeneratedPlan,
   } = useMealPlan(startDate)
 
@@ -172,6 +173,7 @@ export default function MealPlanPage() {
         vegetableRecipes={vegetableRecipes}
         onRecipeChange={handleRecipeChange}
         onNoteChange={handleNoteChange}
+        onSwapRecipes={handleSwapRecipes}
       />
     </div>
   )
