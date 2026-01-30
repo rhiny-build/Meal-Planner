@@ -16,10 +16,6 @@
  * 1. vi.mock() tells Vitest to replace a module
  * 2. vi.mocked() gives us type-safe access to mock functions
  * 3. mockResolvedValue() sets up what the mock should return
- *
- * TODO: Fix failing test "should return all recipes when no filters provided" -
- * test expectation needs to include `structuredIngredients` in the expected Prisma call
- * since the route now includes structured ingredients in the query.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -102,6 +98,11 @@ describe('GET /api/recipes', () => {
     expect(prisma.recipe.findMany).toHaveBeenCalledWith({
       where: {},
       orderBy: [{ tier: 'asc' }, { name: 'asc' }],
+      include: {
+        structuredIngredients: {
+          orderBy: { order: 'asc' },
+        },
+      },
     })
   })
 
