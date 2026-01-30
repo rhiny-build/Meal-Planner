@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
         ingredients: body.ingredients,
         proteinType: body.proteinType || null,
         carbType: body.carbType || null,
+        isLunchAppropriate: body.isLunchAppropriate || false,
         prepTime: body.prepTime || null,
         tier: body.tier || 'favorite',
         structuredIngredients: {

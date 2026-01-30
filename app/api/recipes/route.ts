@@ -16,11 +16,13 @@ export async function GET(request: NextRequest) {
   try {
     // Extract filter parameters from URL search params
     const searchParams = request.nextUrl.searchParams
+    const lunchParam = searchParams.get('isLunchAppropriate')
     const filters: RecipeFilters = {
       tier: (searchParams.get('tier') as any) || undefined,
       proteinType: (searchParams.get('proteinType') as any) || undefined,
       carbType: (searchParams.get('carbType') as any) || undefined,
       prepTime: (searchParams.get('prepTime') as any) || undefined,
+      isLunchAppropriate: lunchParam === 'true' ? true : lunchParam === 'false' ? false : undefined,
     }
 
     // Build the where clause based on filters
@@ -30,6 +32,7 @@ export async function GET(request: NextRequest) {
     if (filters.proteinType) where.proteinType = filters.proteinType
     if (filters.carbType) where.carbType = filters.carbType
     if (filters.prepTime) where.prepTime = filters.prepTime
+    if (filters.isLunchAppropriate !== undefined) where.isLunchAppropriate = filters.isLunchAppropriate
 
     // Fetch recipes from database with structured ingredients
     const recipes = await prisma.recipe.findMany({

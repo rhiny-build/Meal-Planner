@@ -47,8 +47,10 @@ const mockRecipes: Recipe[] = [
     proteinType: 'chicken',
     carbType: null,
     vegetableType: null,
+    isLunchAppropriate: false,
     prepTime: 'quick',
     tier: 'favorite',
+    recipeUrl: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -59,8 +61,10 @@ const mockRecipes: Recipe[] = [
     proteinType: null,
     carbType: 'pasta',
     vegetableType: null,
+    isLunchAppropriate: false,
     prepTime: 'medium',
     tier: 'regular',
+    recipeUrl: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -71,8 +75,24 @@ const mockRecipes: Recipe[] = [
     proteinType: 'fish',
     carbType: 'rice',
     vegetableType: null,
+    isLunchAppropriate: false,
     prepTime: 'medium',
     tier: 'favorite',
+    recipeUrl: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: '4',
+    name: 'Greek Salad',
+    ingredients: 'lettuce, tomatoes, feta, olives',
+    proteinType: null,
+    carbType: null,
+    vegetableType: 'vegetable',
+    isLunchAppropriate: true,
+    prepTime: 'quick',
+    tier: 'favorite',
+    recipeUrl: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -164,10 +184,10 @@ describe('useRecipes', () => {
       result.current.handleFilterChange('tier', 'favorite')
     })
 
-    // Assert: Only favorites shown
+    // Assert: Only favorites shown (Grilled Chicken, Salmon with Rice, Greek Salad)
     // Wait for the filter effect to run
     await waitFor(() => {
-      expect(result.current.filteredRecipes).toHaveLength(2)
+      expect(result.current.filteredRecipes).toHaveLength(3)
     })
 
     // All filtered recipes should be favorites
@@ -176,7 +196,7 @@ describe('useRecipes', () => {
     ).toBe(true)
 
     // Original recipes unchanged
-    expect(result.current.recipes).toHaveLength(3)
+    expect(result.current.recipes).toHaveLength(4)
   })
 
   /**
@@ -202,6 +222,40 @@ describe('useRecipes', () => {
   })
 
   /**
+   * Test 3b: Filtering by Lunch Appropriate
+   */
+  it('should filter recipes by isLunchAppropriate', async () => {
+    const { result } = renderHook(() => useRecipes())
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
+    })
+
+    // Apply lunch filter (true)
+    act(() => {
+      result.current.handleFilterChange('isLunchAppropriate', 'true')
+    })
+
+    await waitFor(() => {
+      expect(result.current.filteredRecipes).toHaveLength(1)
+    })
+
+    expect(result.current.filteredRecipes[0].name).toBe('Greek Salad')
+    expect(result.current.filteredRecipes[0].isLunchAppropriate).toBe(true)
+
+    // Clear and filter for not lunch appropriate (3 of 4 recipes)
+    act(() => {
+      result.current.handleFilterChange('isLunchAppropriate', 'false')
+    })
+
+    await waitFor(() => {
+      expect(result.current.filteredRecipes).toHaveLength(3)
+    })
+
+    expect(result.current.filteredRecipes.every(r => r.isLunchAppropriate === false)).toBe(true)
+  })
+
+  /**
    * Test 4: Clearing a Filter
    *
    * Setting a filter to 'all' should remove that filter.
@@ -219,7 +273,7 @@ describe('useRecipes', () => {
     })
 
     await waitFor(() => {
-      expect(result.current.filteredRecipes).toHaveLength(2)
+      expect(result.current.filteredRecipes).toHaveLength(3)
     })
 
     // Clear filter by setting to 'all'
@@ -228,7 +282,7 @@ describe('useRecipes', () => {
     })
 
     await waitFor(() => {
-      expect(result.current.filteredRecipes).toHaveLength(3)
+      expect(result.current.filteredRecipes).toHaveLength(4)
     })
 
     // Filter should be undefined in state
@@ -310,9 +364,9 @@ describe('useRecipes', () => {
       body: expect.stringContaining('New Recipe'),
     })
 
-    // Wait for refresh
+    // Wait for refresh (4 original + 1 new = 5)
     await waitFor(() => {
-      expect(result.current.recipes).toHaveLength(4)
+      expect(result.current.recipes).toHaveLength(5)
     })
   })
 
@@ -423,7 +477,7 @@ describe('useRecipes', () => {
 
     // Wait for refresh
     await waitFor(() => {
-      expect(result.current.recipes).toHaveLength(2)
+      expect(result.current.recipes).toHaveLength(3)
     })
   })
 

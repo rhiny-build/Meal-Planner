@@ -50,11 +50,23 @@ export function useRecipes() {
     if (filters.prepTime) {
       filtered = filtered.filter(r => r.prepTime === filters.prepTime)
     }
+    if (filters.isLunchAppropriate !== undefined) {
+      filtered = filtered.filter(r => r.isLunchAppropriate === filters.isLunchAppropriate)
+    }
 
     setFilteredRecipes(filtered)
   }
 
   const handleFilterChange = (filterName: keyof RecipeFilters, value: string) => {
+    // Handle boolean conversion for isLunchAppropriate
+    if (filterName === 'isLunchAppropriate') {
+      setFilters({
+        ...filters,
+        isLunchAppropriate: value === 'all' ? undefined : value === 'true',
+      })
+      return
+    }
+
     setFilters({
       ...filters,
       [filterName]: value === 'all' ? undefined : value,

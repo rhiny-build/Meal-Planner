@@ -47,6 +47,7 @@ export interface RecipeFormData {
   proteinType?: ProteinType
   carbType?: CarbType
   vegetableType?: string // 'vegetable' when dish includes vegetables
+  isLunchAppropriate?: boolean // Whether this recipe is suitable for lunch
   prepTime: PrepTime
   tier: RecipeTier
 }
@@ -57,6 +58,7 @@ export interface RecipeFilters {
   proteinType?: ProteinType
   carbType?: CarbType
   prepTime?: PrepTime
+  isLunchAppropriate?: boolean
 }
 
 // AI-related types

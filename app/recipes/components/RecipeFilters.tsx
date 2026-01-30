@@ -15,7 +15,7 @@ export default function RecipeFilters({ filters, onFilterChange }: RecipeFilters
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
       <h2 className="text-lg font-semibold mb-3">Filters</h2>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         {/* Tier Filter */}
         <div>
           <label className="block text-sm font-medium mb-1">Tier</label>
@@ -76,6 +76,20 @@ export default function RecipeFilters({ filters, onFilterChange }: RecipeFilters
             <option value="quick">Quick</option>
             <option value="medium">Medium</option>
             <option value="long">Long</option>
+          </select>
+        </div>
+
+        {/* Lunch Filter */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Lunch</label>
+          <select
+            value={filters.isLunchAppropriate === undefined ? 'all' : filters.isLunchAppropriate ? 'true' : 'false'}
+            onChange={e => onFilterChange('isLunchAppropriate', e.target.value)}
+            className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600"
+          >
+            <option value="all">All</option>
+            <option value="true">Lunch Only</option>
+            <option value="false">Not for Lunch</option>
           </select>
         </div>
       </div>

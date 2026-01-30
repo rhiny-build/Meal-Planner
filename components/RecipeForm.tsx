@@ -64,6 +64,7 @@ export default function RecipeForm({
     proteinType: (recipe?.proteinType as any) || '',
     carbType: (recipe?.carbType as any) || '',
     vegetableType: (recipe?.vegetableType as any) || '',
+    isLunchAppropriate: recipe?.isLunchAppropriate || false,
     prepTime: (recipe?.prepTime as any) || 'quick',
     tier: (recipe?.tier as any) || 'favorite',
   })
@@ -237,6 +238,26 @@ export default function RecipeForm({
         />
         <label htmlFor="vegetableType" className="text-sm font-medium">
           Includes vegetables
+        </label>
+      </div>
+
+      {/* Lunch Appropriate Checkbox */}
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          id="isLunchAppropriate"
+          name="isLunchAppropriate"
+          checked={!!formData.isLunchAppropriate}
+          onChange={(e) => {
+            setFormData({
+              ...formData,
+              isLunchAppropriate: e.target.checked,
+            })
+          }}
+          className="w-4 h-4 rounded border-gray-300 dark:border-gray-600"
+        />
+        <label htmlFor="isLunchAppropriate" className="text-sm font-medium">
+          Good for lunch
         </label>
       </div>
 
