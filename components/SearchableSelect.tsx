@@ -14,7 +14,7 @@ interface SelectOption {
   label: string
 }
 
-type AccentColor = 'fuchsia' | 'cyan' | 'lime' | 'default'
+type AccentColor = 'amber' | 'fuchsia' | 'cyan' | 'lime' | 'default'
 
 interface SearchableSelectProps {
   options: SelectOption[]
@@ -27,6 +27,11 @@ interface SearchableSelectProps {
 
 // Dark mode accent styles (neon colors)
 const darkAccentStyles = {
+  amber: {
+    border: '!border-l-4 !border-l-amber-500 !border-y-0 !border-r-0',
+    text: '!text-amber-400',
+    focus: '!border-l-amber-400',
+  },
   fuchsia: {
     border: '!border-l-4 !border-l-fuchsia-500 !border-y-0 !border-r-0',
     text: '!text-fuchsia-400',
@@ -51,6 +56,11 @@ const darkAccentStyles = {
 
 // Light mode accent styles
 const lightAccentStyles = {
+  amber: {
+    border: '!border-l-4 !border-l-amber-500 !border-y !border-r !border-y-gray-300 !border-r-gray-300',
+    text: '!text-amber-600',
+    focus: '!border-l-amber-600',
+  },
   fuchsia: {
     border: '!border-l-4 !border-l-fuchsia-500 !border-y !border-r !border-y-gray-300 !border-r-gray-300',
     text: '!text-fuchsia-600',

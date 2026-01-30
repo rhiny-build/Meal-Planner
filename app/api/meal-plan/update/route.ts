@@ -44,11 +44,13 @@ export async function PATCH(request: NextRequest) {
     const updated = await prisma.mealPlan.update({
       where: { id },
       data: {
+        lunchRecipeId: updateData.lunchRecipeId ?? existing.lunchRecipeId,
         proteinRecipeId: updateData.proteinRecipeId ?? existing.proteinRecipeId,
         carbRecipeId: updateData.carbRecipeId ?? existing.carbRecipeId,
         vegetableRecipeId: updateData.vegetableRecipeId ?? existing.vegetableRecipeId,
       },
       include: {
+        lunchRecipe: true,
         proteinRecipe: true,
         carbRecipe: true,
         vegetableRecipe: true,

@@ -22,6 +22,7 @@ export async function modifyMealPlan(
       .map(
         mp =>
           `${mp.dayOfWeek} (${mp.date.toLocaleDateString()}):
+      - Lunch: ${mp.lunchRecipe?.name || 'none'}
       - Protein: ${mp.proteinRecipe?.name || 'none'} (${mp.proteinRecipe?.proteinType}, ${mp.proteinRecipe?.prepTime})
       - Carb: ${mp.carbRecipe?.name || 'none'} (${mp.carbRecipe?.carbType}, ${mp.carbRecipe?.prepTime})
       - Vegetable: ${mp.vegetableRecipe?.name || 'none'}`
@@ -32,7 +33,7 @@ export async function modifyMealPlan(
     const recipesText = request.availableRecipes
       .map(
         r =>
-          `ID: ${r.id}, Name: ${r.name}, Protein: ${r.proteinType || 'none'}, Carb: ${r.carbType || 'none'}, Vegetable: ${r.vegetableType ? 'yes' : 'no'}, Prep: ${r.prepTime}, Tier: ${r.tier}`
+          `ID: ${r.id}, Name: ${r.name}, Protein: ${r.proteinType || 'none'}, Carb: ${r.carbType || 'none'}, Vegetable: ${r.vegetableType ? 'yes' : 'no'}, Prep: ${r.prepTime}, Tier: ${r.tier}, LunchAppropriate: ${r.isLunchAppropriate ? 'yes' : 'no'}`
       )
       .join('\n')
 
@@ -61,7 +62,7 @@ If a plan has the same carb on two consecutive days, change the second day's car
 - A parital plan that follows the rules is absolutely acceptable. A full plan that breaks the rules is not and you would have failed in your task.
 
 Return JSON with:
-- "modifiedPlan": array of {date: ISO date string, proteinRecipeId: string, carbRecipeId: string, vegetableRecipeId: string} for changed meals only
+- "modifiedPlan": array of {date: ISO date string, lunchRecipeId: string, proteinRecipeId: string, carbRecipeId: string, vegetableRecipeId: string} for changed meals only
 - "explanation": string explaining what you changed and why`
 
 console.log('Modification prompt:', prompt)
@@ -85,7 +86,7 @@ console.log('Modification prompt:', prompt)
     }
 
     const parsed = JSON.parse(result) as {
-      modifiedPlan: { date: string; proteinRecipeId: string; carbRecipeId: string; vegetableRecipeId: string }[]
+      modifiedPlan: { date: string; lunchRecipeId: string; proteinRecipeId: string; carbRecipeId: string; vegetableRecipeId: string }[]
       explanation: string
     }
 
@@ -93,6 +94,7 @@ console.log('Modification prompt:', prompt)
     return {
       modifiedPlan: parsed.modifiedPlan.map(mp => ({
         date: new Date(mp.date),
+        lunchRecipeId: mp.lunchRecipeId || '',
         proteinRecipeId: mp.proteinRecipeId,
         carbRecipeId: mp.carbRecipeId,
         vegetableRecipeId: mp.vegetableRecipeId,

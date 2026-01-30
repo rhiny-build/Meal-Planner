@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     const mealPlans = await prisma.mealPlan.findMany({
       where: { date: { gte: weekStart, lte: weekEnd } },
-      include: { proteinRecipe: true, carbRecipe: true, vegetableRecipe: true },
+      include: { lunchRecipe: true, proteinRecipe: true, carbRecipe: true, vegetableRecipe: true },
       orderBy: { date: 'asc' },
     })
 

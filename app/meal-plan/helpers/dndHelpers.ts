@@ -7,7 +7,7 @@
 import type { Recipe } from '@/types'
 
 /** Valid column types for the meal plan grid */
-export type MealColumn = 'protein' | 'carb' | 'vegetable'
+export type MealColumn = 'lunch' | 'protein' | 'carb' | 'vegetable'
 
 /** Parsed cell ID containing column and day index */
 export interface ParsedCellId {
@@ -33,7 +33,7 @@ export function parseCellId(id: string): ParsedCellId | null {
   const column = parts[0] as MealColumn
   const dayIndex = parseInt(parts[1], 10)
 
-  if (!['protein', 'carb', 'vegetable'].includes(column)) return null
+  if (!['lunch', 'protein', 'carb', 'vegetable'].includes(column)) return null
   if (isNaN(dayIndex)) return null
 
   return { column, dayIndex }

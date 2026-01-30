@@ -21,7 +21,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import RecipeCard from '@/components/RecipeCard'
-import type { Recipe } from '@/types'
+import type { RecipeWithIngredients } from '@/types'
 
 /**
  * Create a complete mock Recipe object
@@ -29,7 +29,7 @@ import type { Recipe } from '@/types'
  * This factory function creates a valid Recipe with sensible defaults.
  * You can override any property when needed for specific test cases.
  */
-function createMockRecipe(overrides: Partial<Recipe> = {}): Recipe {
+function createMockRecipe(overrides: Partial<RecipeWithIngredients> = {}): RecipeWithIngredients {
   return {
     id: 'test-recipe-id',
     name: 'Test Recipe',
@@ -37,10 +37,13 @@ function createMockRecipe(overrides: Partial<Recipe> = {}): Recipe {
     proteinType: 'chicken',
     carbType: 'rice',
     vegetableType: null,
+    recipeUrl: null,
+    isLunchAppropriate: false,
     prepTime: 'quick',
     tier: 'favorite',
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
+    structuredIngredients: [],
     ...overrides,
   }
 }

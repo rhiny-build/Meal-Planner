@@ -98,9 +98,11 @@ export function useMealPlan(startDate: Date) {
     }
   }
 
-  const handleRecipeChange = (dayIndex: number, column: 'protein' | 'carb' | 'vegetable', recipeId: string) => {
+  const handleRecipeChange = (dayIndex: number, column: 'lunch' | 'protein' | 'carb' | 'vegetable', recipeId: string) => {
     const newPlan = [...weekPlan]
-    if (column === 'protein') {
+    if (column === 'lunch') {
+      newPlan[dayIndex].lunchRecipeId = recipeId
+    } else if (column === 'protein') {
       newPlan[dayIndex].proteinRecipeId = recipeId
     } else if (column === 'carb') {
       newPlan[dayIndex].carbRecipeId = recipeId
@@ -132,7 +134,7 @@ export function useMealPlan(startDate: Date) {
     const newPlan = DAYS.map((day, index) => {
       const date = new Date(startDate)
       date.setDate(date.getDate() + index)
-      return { day, date, proteinRecipeId: '', carbRecipeId: '', vegetableRecipeId: '' }
+      return { day, date, lunchRecipeId: '', proteinRecipeId: '', carbRecipeId: '', vegetableRecipeId: '' }
     })
     setWeekPlan(newPlan)
   }
@@ -145,12 +147,12 @@ export function useMealPlan(startDate: Date) {
    * another cell in the same column (e.g., Thursday's protein), this
    * function swaps the recipe IDs between those two days.
    *
-   * @param column - Which column to swap: 'protein', 'carb', or 'vegetable'
+   * @param column - Which column to swap: 'lunch', 'protein', 'carb', or 'vegetable'
    * @param fromDayIndex - Index of the source day (0 = Monday, 6 = Sunday)
    * @param toDayIndex - Index of the target day
    */
   const handleSwapRecipes = (
-    column: 'protein' | 'carb' | 'vegetable',
+    column: 'lunch' | 'protein' | 'carb' | 'vegetable',
     fromDayIndex: number,
     toDayIndex: number
   ) => {
@@ -158,7 +160,9 @@ export function useMealPlan(startDate: Date) {
     const newPlan = [...weekPlan]
 
     // Determine which property to swap based on column
-    const recipeKey = column === 'protein'
+    const recipeKey = column === 'lunch'
+      ? 'lunchRecipeId'
+      : column === 'protein'
       ? 'proteinRecipeId'
       : column === 'carb'
       ? 'carbRecipeId'
@@ -173,12 +177,14 @@ export function useMealPlan(startDate: Date) {
   }
 
   // Get recipes filtered by type
+  const lunchRecipes = allRecipes.filter(r => r.isLunchAppropriate)
   const proteinRecipes = allRecipes.filter(r => r.proteinType)
   const carbRecipes = allRecipes.filter(r => r.carbType)
   const vegetableRecipes = allRecipes.filter(r => r.vegetableType)
 
   // Calculate selected count
   const selectedCount = weekPlan.reduce((count, day) => {
+    if (day.lunchRecipeId) count++
     if (day.proteinRecipeId) count++
     if (day.carbRecipeId) count++
     if (day.vegetableRecipeId) count++
@@ -186,7 +192,7 @@ export function useMealPlan(startDate: Date) {
   }, 0)
 
   // Apply AI-generated plan to current state
-  const applyGeneratedPlan = (modifiedPlan: { date: Date | string; proteinRecipeId: string; carbRecipeId: string; vegetableRecipeId: string }[]) => {
+  const applyGeneratedPlan = (modifiedPlan: { date: Date | string; lunchRecipeId?: string; proteinRecipeId: string; carbRecipeId: string; vegetableRecipeId: string }[]) => {
     const newPlan = weekPlan.map(day => {
       const modification = modifiedPlan.find(m => {
         const modDate = new Date(m.date)
@@ -195,6 +201,7 @@ export function useMealPlan(startDate: Date) {
       if (modification) {
         return {
           ...day,
+          lunchRecipeId: modification.lunchRecipeId || '',
           proteinRecipeId: modification.proteinRecipeId || '',
           carbRecipeId: modification.carbRecipeId || '',
           vegetableRecipeId: modification.vegetableRecipeId || '',
@@ -208,6 +215,7 @@ export function useMealPlan(startDate: Date) {
   return {
     weekPlan,
     dayNotes,
+    lunchRecipes,
     proteinRecipes,
     carbRecipes,
     vegetableRecipes,

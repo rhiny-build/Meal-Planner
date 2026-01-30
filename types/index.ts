@@ -18,10 +18,10 @@ export type RecipeWithIngredients = Recipe & {
 // Type for a meal plan with the recipe details included
 // This is useful when displaying the meal plan since we want to show recipe info
 export type MealPlanWithRecipe = MealPlan & {
+  lunchRecipe?: Recipe | null
   proteinRecipe?: Recipe | null
   carbRecipe?: Recipe | null
   vegetableRecipe?: Recipe | null
-  
 }
 
 // Enum-like types for recipe attributes (helps with type safety)
@@ -32,6 +32,7 @@ export type RecipeTier = 'favorite' | 'non-regular' | 'new'
 export type WeekPlan = {
     day: string
     date: Date
+    lunchRecipeId: string
     proteinRecipeId: string
     carbRecipeId: string
     vegetableRecipeId: string
@@ -83,9 +84,11 @@ export interface ExtractedRecipeData {
 export interface PlanEntryForAI {
   date: Date
   dayOfWeek: string
+  lunchRecipeId: string | null
   proteinRecipeId: string | null
   carbRecipeId: string | null
   vegetableRecipeId: string | null
+  lunchRecipe?: Recipe | null
   proteinRecipe?: Recipe | null
   carbRecipe?: Recipe | null
   vegetableRecipe?: Recipe | null
@@ -96,6 +99,7 @@ export interface BulkMealPlanRequest {
   startDate: string
   mealPlans: {
     dayOfWeek: string
+    lunchRecipeId?: string | null
     proteinRecipeId?: string | null
     carbRecipeId?: string | null
     vegetableRecipeId?: string | null
@@ -113,6 +117,7 @@ export interface MealPlanModificationRequest {
 export interface MealPlanModificationResult {
   modifiedPlan: {
     date: Date
+    lunchRecipeId: string
     proteinRecipeId: string
     carbRecipeId: string
     vegetableRecipeId: string

@@ -62,14 +62,16 @@ export async function POST(request: NextRequest) {
           data: {
             date,
             dayOfWeek: dayPlan.dayOfWeek,
+            lunchRecipeId: dayPlan.lunchRecipeId || null,
             proteinRecipeId: dayPlan.proteinRecipeId || null,
             carbRecipeId: dayPlan.carbRecipeId || null,
             vegetableRecipeId: dayPlan.vegetableRecipeId || null,
           },
           include: {
+            lunchRecipe: true,
             proteinRecipe: true,
             carbRecipe: true,
-            vegetableRecipe: true
+            vegetableRecipe: true,
           },
         })
       })

@@ -40,6 +40,7 @@ export default function MealPlanPage() {
   const {
     weekPlan,
     dayNotes,
+    lunchRecipes,
     proteinRecipes,
     carbRecipes,
     vegetableRecipes,
@@ -168,6 +169,7 @@ export default function MealPlanPage() {
       <MealPlanGrid
         weekPlan={weekPlan}
         dayNotes={dayNotes}
+        lunchRecipes={lunchRecipes}
         proteinRecipes={proteinRecipes}
         carbRecipes={carbRecipes}
         vegetableRecipes={vegetableRecipes}

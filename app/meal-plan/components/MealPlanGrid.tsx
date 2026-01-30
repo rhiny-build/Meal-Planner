@@ -35,18 +35,20 @@ import { parseCellId, getRecipeName } from '../helpers/dndHelpers'
 interface MealPlanGridProps {
   weekPlan: WeekPlan[]
   dayNotes: Record<string, string>
+  lunchRecipes: Recipe[]
   proteinRecipes: Recipe[]
   carbRecipes: Recipe[]
   vegetableRecipes: Recipe[]
-  onRecipeChange: (dayIndex: number, column: 'protein' | 'carb' | 'vegetable', recipeId: string) => void
+  onRecipeChange: (dayIndex: number, column: 'lunch' | 'protein' | 'carb' | 'vegetable', recipeId: string) => void
   onNoteChange: (day: string, note: string) => void
   /** Handler for swapping recipes between days via drag and drop */
-  onSwapRecipes: (column: 'protein' | 'carb' | 'vegetable', fromDayIndex: number, toDayIndex: number) => void
+  onSwapRecipes: (column: 'lunch' | 'protein' | 'carb' | 'vegetable', fromDayIndex: number, toDayIndex: number) => void
 }
 
 export default function MealPlanGrid({
   weekPlan,
   dayNotes,
+  lunchRecipes,
   proteinRecipes,
   carbRecipes,
   vegetableRecipes,
@@ -104,6 +106,11 @@ export default function MealPlanGrid({
   }
 
   // Convert recipes to options format for SearchableSelect
+  const lunchOptions = lunchRecipes.map(recipe => ({
+    value: String(recipe.id),
+    label: recipe.name
+  }))
+
   const proteinOptions = proteinRecipes.map(recipe => ({
     value: String(recipe.id),
     label: recipe.name
@@ -131,12 +138,13 @@ export default function MealPlanGrid({
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <div className="overflow-x-auto">
         {/* Parent grid defines columns once - rows use subgrid to inherit them */}
-        <div className="grid grid-cols-[80px_90px_150px_minmax(120px,auto)_minmax(120px,auto)_minmax(120px,auto)] bg-white dark:bg-neutral-900 rounded-lg overflow-hidden shadow-md dark:shadow-xl min-w-fit">
+        <div className="grid grid-cols-[80px_90px_150px_minmax(120px,auto)_minmax(120px,auto)_minmax(120px,auto)_minmax(120px,auto)] bg-white dark:bg-neutral-900 rounded-lg overflow-hidden shadow-md dark:shadow-xl min-w-fit">
           {/* Table Header - spans all columns, uses subgrid */}
-          <div className="col-span-6 grid grid-cols-subgrid gap-4 px-5 py-3 bg-gray-100 dark:bg-neutral-800">
+          <div className="col-span-7 grid grid-cols-subgrid gap-4 px-5 py-3 bg-gray-100 dark:bg-neutral-800">
             <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Day</div>
             <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Date</div>
             <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Notes</div>
+            <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Lunch</div>
             <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Protein</div>
             <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Carb</div>
             <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Vegetable</div>
@@ -146,7 +154,7 @@ export default function MealPlanGrid({
           {weekPlan.map((dayPlan, index) => (
             <div
               key={dayPlan.day}
-              className={`col-span-6 grid grid-cols-subgrid gap-4 px-5 py-4 ${
+              className={`col-span-7 grid grid-cols-subgrid gap-4 px-5 py-4 ${
                 index !== weekPlan.length - 1 ? 'border-b border-gray-200 dark:border-neutral-800' : ''
               } hover:bg-gray-50 dark:hover:bg-neutral-800/50 transition-colors`}
             >
@@ -170,6 +178,20 @@ export default function MealPlanGrid({
                 className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-neutral-800/50 border border-gray-300 dark:border-neutral-700 rounded text-gray-900 dark:text-neutral-100 focus:border-blue-500 focus:ring-0 focus:outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-neutral-600"
               />
             </div>
+
+            {/* Lunch Dropdown - Draggable */}
+            <DraggableRecipeCell
+              id={`lunch-${index}`}
+              recipeName={getRecipeName(dayPlan.lunchRecipeId, lunchRecipes)}
+            >
+              <SearchableSelect
+                options={lunchOptions}
+                value={dayPlan.lunchRecipeId}
+                onChange={(value) => onRecipeChange(index, 'lunch', value)}
+                placeholder="Select..."
+                accent="amber"
+              />
+            </DraggableRecipeCell>
 
             {/* Protein Dropdown - Draggable */}
             <DraggableRecipeCell

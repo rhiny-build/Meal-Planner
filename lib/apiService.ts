@@ -37,24 +37,17 @@ export const fetchMealPlan = async (startDate: Date, days: string[]): Promise<We
             mp.dayOfWeek === day
         )
 
-        // Separate protein, carb, and vegetable
-        const proteinMeal = dayMealPlans.find((mp: MealPlanWithRecipe) =>
-            mp.proteinRecipeId
-        )
-        const carbMeal = dayMealPlans.find((mp: MealPlanWithRecipe) =>
-            mp.carbRecipe
-        )
-        const vegetableMeal = dayMealPlans.find((mp: MealPlanWithRecipe) =>
-            mp.vegetableRecipeId
-        )
+        // Find meal data - all columns are on the same meal plan record now
+        const mealPlan = dayMealPlans[0]
 
         return {
             day,
             date,
-            proteinRecipeId: proteinMeal?.proteinRecipeId || '',
-            carbRecipeId: carbMeal?.carbRecipeId || '',
-            vegetableRecipeId: vegetableMeal?.vegetableRecipeId || '',
-            mealPlanId: proteinMeal?.id || carbMeal?.id || vegetableMeal?.id
+            lunchRecipeId: mealPlan?.lunchRecipeId || '',
+            proteinRecipeId: mealPlan?.proteinRecipeId || '',
+            carbRecipeId: mealPlan?.carbRecipeId || '',
+            vegetableRecipeId: mealPlan?.vegetableRecipeId || '',
+            mealPlanId: mealPlan?.id
         }
     })
 
@@ -80,6 +73,7 @@ try {
       const updates = weekPlan.map(weekDay => ({
             date: weekDay.date.toISOString(),
             dayOfWeek: weekDay.day,
+            lunchRecipeId: weekDay.lunchRecipeId || null,
             proteinRecipeId: weekDay.proteinRecipeId || null,
             carbRecipeId: weekDay.carbRecipeId || null,
             vegetableRecipeId: weekDay.vegetableRecipeId || null

@@ -63,7 +63,7 @@ const mockRecipes: Recipe[] = [
     vegetableType: null,
     isLunchAppropriate: false,
     prepTime: 'medium',
-    tier: 'regular',
+    tier: 'non-regular',
     recipeUrl: null,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -350,7 +350,7 @@ describe('useRecipes', () => {
         name: 'New Recipe',
         ingredients: 'stuff',
         prepTime: 'quick',
-        tier: 'regular',
+        tier: 'non-regular',
       })
     })
 
@@ -394,7 +394,7 @@ describe('useRecipes', () => {
         name: 'Bad Recipe',
         ingredients: '',
         prepTime: 'quick',
-        tier: 'regular',
+        tier: 'non-regular',
       })
     })
 
