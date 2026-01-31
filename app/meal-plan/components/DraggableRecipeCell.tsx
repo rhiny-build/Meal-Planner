@@ -4,6 +4,11 @@
  * A cell in the meal plan grid that can be dragged to swap recipes between days.
  * Uses @dnd-kit for drag and drop functionality.
  *
+ * TODO: Hover tooltip for truncated recipe names not working properly.
+ * The title attribute on the outer div doesn't reliably show because hover
+ * events are captured by child elements (react-select). Need to investigate
+ * alternative tooltip solutions (e.g., custom tooltip component with portal).
+ *
  * === HOW DND-KIT WORKS ===
  *
  * dnd-kit is built around a few key concepts:
@@ -131,6 +136,7 @@ export default function DraggableRecipeCell({
     <div
       ref={setNodeRef}
       style={style}
+      // TODO: title tooltip doesn't work - see component header comment
       className={`
         relative
         transition-colors

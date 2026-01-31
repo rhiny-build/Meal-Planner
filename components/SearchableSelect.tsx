@@ -102,7 +102,7 @@ export default function SearchableSelect({
 
   if (isDark) {
     return (
-      <ReactSelect
+      <ReactSelect<SelectOption, false>
         options={options}
         value={selectedOption}
         onChange={handleChange}
@@ -111,7 +111,21 @@ export default function SearchableSelect({
         isSearchable
         menuPlacement="auto"
         menuPortalTarget={document.body}
-        styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+        styles={{
+          container: (base) => ({ ...base, width: '100%' }),
+          menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+          singleValue: (base) => ({
+            ...base,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            maxWidth: '100%',
+          }),
+          valueContainer: (base) => ({
+            ...base,
+            overflow: 'hidden',
+          }),
+        }}
         classNames={{
           control: (state) =>
             `!bg-neutral-800 !rounded ${styles.border} !min-h-[38px] !shadow-none ${
@@ -126,7 +140,7 @@ export default function SearchableSelect({
                 ? '!bg-neutral-700/50 !text-neutral-100'
                 : '!bg-transparent !text-neutral-300'
             }`,
-          singleValue: () => styles.text,
+          singleValue: () => `${styles.text}`,
           input: () => '!text-neutral-100',
           placeholder: () => '!text-neutral-500',
           indicatorSeparator: () => '!bg-neutral-700',
@@ -139,7 +153,7 @@ export default function SearchableSelect({
 
   // Light mode
   return (
-    <ReactSelect
+    <ReactSelect<SelectOption, false>
       options={options}
       value={selectedOption}
       onChange={handleChange}
@@ -148,7 +162,21 @@ export default function SearchableSelect({
       isSearchable
       menuPlacement="auto"
       menuPortalTarget={document.body}
-      styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+      styles={{
+        container: (base) => ({ ...base, width: '100%' }),
+        menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+        singleValue: (base) => ({
+          ...base,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          maxWidth: '100%',
+        }),
+        valueContainer: (base) => ({
+          ...base,
+          overflow: 'hidden',
+        }),
+      }}
       classNames={{
         control: (state) =>
           `!bg-white !rounded ${styles.border} !min-h-[38px] !shadow-none ${
@@ -163,7 +191,7 @@ export default function SearchableSelect({
               ? '!bg-gray-100 !text-gray-900'
               : '!bg-transparent !text-gray-700'
           }`,
-        singleValue: () => styles.text,
+        singleValue: () => `${styles.text}`,
         input: () => '!text-gray-900',
         placeholder: () => '!text-gray-400',
         indicatorSeparator: () => '!bg-gray-300',

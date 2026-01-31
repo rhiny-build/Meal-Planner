@@ -138,7 +138,7 @@ export default function MealPlanGrid({
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <div className="overflow-x-auto">
         {/* Parent grid defines columns once - rows use subgrid to inherit them */}
-        <div className="grid grid-cols-[80px_90px_150px_minmax(120px,auto)_minmax(120px,auto)_minmax(120px,auto)_minmax(120px,auto)] bg-white dark:bg-neutral-900 rounded-lg overflow-hidden shadow-md dark:shadow-xl min-w-fit">
+        <div className="grid grid-cols-[80px_90px_150px_200px_200px_200px_200px] bg-white dark:bg-neutral-900 rounded-lg overflow-hidden shadow-md dark:shadow-xl">
           {/* Table Header - spans all columns, uses subgrid */}
           <div className="col-span-7 grid grid-cols-subgrid gap-4 px-5 py-3 bg-gray-100 dark:bg-neutral-800">
             <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Day</div>

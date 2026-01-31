@@ -114,6 +114,7 @@ export function aggregateIngredients(ingredients: RawIngredient[]): AggregatedIt
  */
 export function collectIngredientsFromMealPlans(
   mealPlans: Array<{
+    lunchRecipe?: { name: string; structuredIngredients?: Array<{ name: string }> } | null
     proteinRecipe?: { name: string; structuredIngredients?: Array<{ name: string }> } | null
     carbRecipe?: { name: string; structuredIngredients?: Array<{ name: string }> } | null
     vegetableRecipe?: { name: string; structuredIngredients?: Array<{ name: string }> } | null
@@ -122,7 +123,7 @@ export function collectIngredientsFromMealPlans(
   const allIngredients: RawIngredient[] = []
 
   for (const plan of mealPlans) {
-    const recipes = [plan.proteinRecipe, plan.carbRecipe, plan.vegetableRecipe]
+    const recipes = [plan.lunchRecipe, plan.proteinRecipe, plan.carbRecipe, plan.vegetableRecipe]
 
     for (const recipe of recipes) {
       if (recipe?.structuredIngredients) {

@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
     const mealPlans = await prisma.mealPlan.findMany({
       where: { date: { gte: weekStart, lt: weekEnd } },
       include: {
+        lunchRecipe: { include: { structuredIngredients: { orderBy: { order: 'asc' } } } },
         proteinRecipe: { include: { structuredIngredients: { orderBy: { order: 'asc' } } } },
         carbRecipe: { include: { structuredIngredients: { orderBy: { order: 'asc' } } } },
         vegetableRecipe: { include: { structuredIngredients: { orderBy: { order: 'asc' } } } },
