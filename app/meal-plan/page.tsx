@@ -11,7 +11,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { getMonday } from '@/lib/dateUtils'
 import { useMealPlan } from '@/lib/hooks/useMealPlan'
@@ -21,18 +21,16 @@ import MealPlanGrid from './components/MealPlanGrid'
 const DEFAULT_PROMPT = 'Generate a balanced meal plan for the week following the rules. Do not change existing meals that are already set.'
 
 export default function MealPlanPage() {
-
-  //check local storage for saved date for the planner
-
-  const lastVisited = typeof window !== 'undefined' ? localStorage.getItem('mealPlanLastVisited') : null
-  let weekStart = getMonday(new Date());
-  if (lastVisited) {
-    const parsedDate = new Date(lastVisited)
-    weekStart = getMonday(parsedDate)
-  }
-
   const router = useRouter()
-  const [startDate, setStartDate] = useState<Date>(weekStart)
+  const [startDate, setStartDate] = useState<Date>(() => getMonday(new Date()))
+
+  // Restore last visited week from localStorage after hydration
+  useEffect(() => {
+    const lastVisited = localStorage.getItem('mealPlanLastVisited')
+    if (lastVisited) {
+      setStartDate(getMonday(new Date(lastVisited)))
+    }
+  }, [])
   const [isGenerating, setIsGenerating] = useState(false)
   const [isGeneratingList, setIsGeneratingList] = useState(false)
 
