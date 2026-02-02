@@ -104,10 +104,10 @@ The app follows a standard Next.js App Router architecture with React Server Com
 
 1. **Client Components** (`'use client'`) handle interactive UI (meal planning, recipe management)
 2. **API Routes** handle business logic and database operations via Prisma
-3. **Database** (SQLite) stores recipes and meal plans with relationships
+3. **Database** (PostgreSQL) stores recipes and meal plans with relationships
 4. **AI Integration** via OpenAI API for recipe extraction and meal plan generation
 
-Data flow: UI → API Route → Prisma → SQLite → Response → UI Update
+Data flow: UI → API Route → Prisma → PostgreSQL → Response → UI Update
 
 ### Component Hierarchy
 
@@ -218,7 +218,7 @@ Currently no test suite. Future implementation will focus on:
 
 ### Storage Service Pattern
 
-Not applicable - using Prisma ORM with SQLite database instead of localStorage or other client-side storage.
+Not applicable - using Prisma ORM with PostgreSQL database instead of localStorage or other client-side storage.
 
 ## Database Schema
 
@@ -281,7 +281,7 @@ npx prisma studio
 Required in `.env` file:
 
 ```
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="postgresql://user:password@localhost:5432/mealplanner"
 OPENAI_API_KEY="your-api-key-here"
 ```
 
@@ -307,7 +307,7 @@ npm start       # Runs production server
 - Ensure `DATABASE_URL` points to persistent storage
 - Set `OPENAI_API_KEY` in environment variables
 - Run `npx prisma migrate deploy` in production (not `migrate dev`)
-- SQLite database file must be writable by the application
+- PostgreSQL database must be accessible from the application
 
 ## Browser Compatibility
 
