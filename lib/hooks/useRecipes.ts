@@ -4,7 +4,7 @@
  * Manages state and operations for the recipe library
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import type { RecipeWithIngredients, RecipeFilters, RecipeFormData } from '@/types'
 
@@ -14,17 +14,7 @@ export function useRecipes() {
   const [filters, setFilters] = useState<RecipeFilters>({})
   const [isLoading, setIsLoading] = useState(true)
 
-  // Fetch recipes on mount
-  useEffect(() => {
-    fetchRecipes()
-  }, [])
-
-  // Apply filters when recipes or filters change
-  useEffect(() => {
-    applyFilters()
-  }, [recipes, filters])
-
-  const fetchRecipes = async () => {
+  const fetchRecipes = useCallback(async () => {
     try {
       const response = await fetch('/api/recipes')
       const data = await response.json()
@@ -34,9 +24,9 @@ export function useRecipes() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = [...recipes]
 
     if (filters.tier) {
@@ -56,7 +46,17 @@ export function useRecipes() {
     }
 
     setFilteredRecipes(filtered)
-  }
+  }, [recipes, filters])
+
+  // Fetch recipes on mount
+  useEffect(() => {
+    fetchRecipes()
+  }, [fetchRecipes])
+
+  // Apply filters when recipes or filters change
+  useEffect(() => {
+    applyFilters()
+  }, [applyFilters])
 
   const handleFilterChange = (filterName: keyof RecipeFilters, value: string) => {
     // Handle boolean conversion for isLunchAppropriate
