@@ -13,9 +13,9 @@ Living document for tracking features, bugs, and improvements.
 - [x] Fix localStorage hydration issue in meal-plan/page.tsx - [Code Review #6]
 - [x] Remove orphaned `validations.ts` comment in schema - [Code Review #12]
 
-**Refactoring:**
-- [ ] Create toast notification system and replace all `alert()` calls - [Code Review #3, #7]
-- [ ] Move `confirm()` from useRecipes hook to component level - [Code Review #11]
+**Refactoring:** ✅ All complete
+- [x] Create toast notification system and replace all `alert()` calls - [Code Review #3, #7]
+- [x] Move `confirm()` from useRecipes hook to component level - [Code Review #11]
 
 **Deferred (if time permits):**
 - [ ] File size refactoring (RecipeForm, MealPlanGrid, useMealPlan) - [Code Review #2]
