@@ -4,7 +4,7 @@
  * Shared utilities for meal plan API routes and hooks
  */
 
-import type { Recipe, WeekPlan } from '@/types'
+import type { RecipeWithIngredients, WeekPlan } from '@/types'
 
 /**
  * Calculate the start and end dates for a week (Monday-Sunday)
@@ -51,7 +51,7 @@ export function parseStartDate(paramValue: string | null): Date {
 /**
  * Filter recipes by type for meal plan dropdowns
  */
-export function filterRecipesByType(recipes: Recipe[]) {
+export function filterRecipesByType(recipes: RecipeWithIngredients[]) {
   return {
     lunchRecipes: recipes.filter(r => r.isLunchAppropriate),
     proteinRecipes: recipes.filter(r => r.proteinType),

@@ -7,7 +7,7 @@
  * as it grows. Currently manageable but approaching the point where separation would help.
  */
 
-import type { MealPlanWithRecipe, WeekPlan, Recipe, ShoppingListWithItems, ShoppingListItem } from '@/types'
+import type { MealPlanWithRecipe, WeekPlan, RecipeWithIngredients, ShoppingListWithItems, ShoppingListItem } from '@/types'
 import { toast } from 'sonner'
 
 
@@ -55,13 +55,13 @@ export const fetchMealPlan = async (startDate: Date, days: string[]): Promise<We
     return plan
 }
 
-export const fetchAllRecipes = async (): Promise<Recipe[]> => {
-    
+export const fetchAllRecipes = async (): Promise<RecipeWithIngredients[]> => {
+
     try {
       const response = await fetch('/api/recipes')
       const json = await response.json()
-      return json as Recipe[];
-    } 
+      return json as RecipeWithIngredients[];
+    }
     catch (error) {
       console.error('Error fetching recipes:', error)
       return []

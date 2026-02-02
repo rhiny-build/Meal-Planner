@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import type { Recipe, WeekPlan } from '@/types'
+import type { RecipeWithIngredients, WeekPlan } from '@/types'
 import { fetchMealPlan as fetchMealPlanService, fetchAllRecipes, saveMealPlan } from '@/lib/apiService'
 import { useDayNotes } from './useDayNotes'
 import { filterRecipesByType, calculateSelectedCount } from '@/lib/mealPlanHelpers'
@@ -14,7 +14,7 @@ const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
 
 
 export function useMealPlan(startDate: Date) {
-  const [allRecipes, setAllRecipes] = useState<Recipe[]>([])
+  const [allRecipes, setAllRecipes] = useState<RecipeWithIngredients[]>([])
   const [weekPlan, setWeekPlan] = useState<WeekPlan[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)

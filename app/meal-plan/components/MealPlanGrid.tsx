@@ -26,7 +26,7 @@
 'use client'
 
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
-import type { Recipe, WeekPlan } from '@/types'
+import type { RecipeWithIngredients, WeekPlan } from '@/types'
 import MealPlanGridRow from './MealPlanGridRow'
 import { parseCellId } from '../helpers/dndHelpers'
 import { recipesToOptions } from '../helpers/gridHelpers'
@@ -34,10 +34,10 @@ import { recipesToOptions } from '../helpers/gridHelpers'
 interface MealPlanGridProps {
   weekPlan: WeekPlan[]
   dayNotes: Record<string, string>
-  lunchRecipes: Recipe[]
-  proteinRecipes: Recipe[]
-  carbRecipes: Recipe[]
-  vegetableRecipes: Recipe[]
+  lunchRecipes: RecipeWithIngredients[]
+  proteinRecipes: RecipeWithIngredients[]
+  carbRecipes: RecipeWithIngredients[]
+  vegetableRecipes: RecipeWithIngredients[]
   onRecipeChange: (dayIndex: number, column: 'lunch' | 'protein' | 'carb' | 'vegetable', recipeId: string) => void
   onNoteChange: (day: string, note: string) => void
   /** Handler for swapping recipes between days via drag and drop */
@@ -122,7 +122,7 @@ export default function MealPlanGrid({
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <div className="overflow-x-auto">
         {/* Parent grid defines columns once - rows use subgrid to inherit them */}
-        <div className="grid grid-cols-[80px_90px_150px_200px_200px_200px_200px] bg-white dark:bg-neutral-900 rounded-lg overflow-hidden shadow-md dark:shadow-xl">
+        <div className="grid grid-cols-[110px_70px_150px_200px_200px_200px_200px] bg-white dark:bg-neutral-900 rounded-lg overflow-hidden shadow-md dark:shadow-xl">
           {/* Table Header - spans all columns, uses subgrid */}
           <div className="col-span-7 grid grid-cols-subgrid gap-4 px-5 py-3 bg-gray-100 dark:bg-neutral-800">
             <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Day</div>
