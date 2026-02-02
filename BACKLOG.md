@@ -27,7 +27,7 @@ Living document for tracking features, bugs, and improvements.
 ### Priority 1: Non-AI Functionality
 
 **Meal Plan UI:**
-- [ ] Add side panel for clearer meal visibility (details view)
+- [x] Add collapsible drawer for ingredient details (click day name to expand)
 
 **Shopping List:**
 - [ ] Add delete button for shopping list items - [Code Review #9]
