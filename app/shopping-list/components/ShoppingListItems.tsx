@@ -58,18 +58,18 @@ export default function ShoppingListItems({
     const recipeNames = parseRecipeNames(item.notes)
 
     return (
-      <label
-        className={`flex items-center gap-3 p-3 rounded-lg border dark:border-gray-700 cursor-pointer transition-colors ${
+      <div
+        className={`flex items-center gap-3 p-3 rounded-lg border dark:border-gray-700 transition-colors ${
           item.checked
             ? 'bg-gray-100 dark:bg-gray-800 opacity-60'
-            : 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
+            : 'bg-white dark:bg-gray-900'
         }`}
       >
         <input
           type="checkbox"
           checked={item.checked}
           onChange={(e) => onToggle(item.id, e.target.checked)}
-          className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+          className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
         />
         <div className="flex-1">
           <span className={item.checked ? 'line-through text-gray-500' : ''}>
@@ -89,7 +89,7 @@ export default function ShoppingListItems({
             <span className="text-xs text-blue-500 ml-2">(added manually)</span>
           )}
         </div>
-      </label>
+      </div>
     )
   }
 
@@ -101,7 +101,7 @@ export default function ShoppingListItems({
             To Buy ({uncheckedItems.length})
           </h2>
           <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
-            Tap an item to mark as purchased
+            Check the box to mark as purchased
           </p>
           <div className="space-y-2">
             {uncheckedItems.map((item) => (
