@@ -35,7 +35,6 @@ export default function MealPlanPage() {
   const [startDate, setStartDate] = useState<Date>(weekStart)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isGeneratingList, setIsGeneratingList] = useState(false)
-  const [debugPrompt, setDebugPrompt] = useState(DEFAULT_PROMPT)
 
   const {
     weekPlan,
@@ -78,7 +77,7 @@ export default function MealPlanPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          instruction: debugPrompt,
+          instruction: DEFAULT_PROMPT,
           currentPlan: weekPlan,
         }),
       })
@@ -146,25 +145,6 @@ export default function MealPlanPage() {
         onClear={handleClear}
         onGenerateShoppingList={handleGenerateShoppingList}
       />
-
-      {/* Debug: Test different prompts */}
-      <div className="my-4 p-4 border border-dashed border-gray-300 dark:border-neutral-700 rounded-lg bg-gray-50 dark:bg-neutral-900">
-        <label className="block text-sm font-medium mb-2 text-gray-600 dark:text-neutral-400">
-          Debug: AI Prompt (edit to test different prompts)
-        </label>
-        <textarea
-          value={debugPrompt}
-          onChange={(e) => setDebugPrompt(e.target.value)}
-          className="w-full p-3 bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded text-gray-900 dark:text-neutral-100 font-mono text-sm focus:border-blue-500 dark:focus:border-fuchsia-500 focus:ring-0 focus:outline-none"
-          rows={3}
-        />
-        <button
-          onClick={() => setDebugPrompt(DEFAULT_PROMPT)}
-          className="mt-2 text-sm text-blue-600 dark:text-fuchsia-400 hover:text-blue-800 dark:hover:text-fuchsia-300 transition-colors"
-        >
-          Reset to default
-        </button>
-      </div>
 
       <MealPlanGrid
         weekPlan={weekPlan}
