@@ -27,10 +27,9 @@
 
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import type { Recipe, WeekPlan } from '@/types'
-import { formatDate } from '@/lib/dateUtils'
-import SearchableSelect from '@/components/SearchableSelect'
-import DraggableRecipeCell from './DraggableRecipeCell'
-import { parseCellId, getRecipeName } from '../helpers/dndHelpers'
+import MealPlanGridRow from './MealPlanGridRow'
+import { parseCellId } from '../helpers/dndHelpers'
+import { recipesToOptions } from '../helpers/gridHelpers'
 
 interface MealPlanGridProps {
   weekPlan: WeekPlan[]
@@ -106,25 +105,10 @@ export default function MealPlanGrid({
   }
 
   // Convert recipes to options format for SearchableSelect
-  const lunchOptions = lunchRecipes.map(recipe => ({
-    value: String(recipe.id),
-    label: recipe.name
-  }))
-
-  const proteinOptions = proteinRecipes.map(recipe => ({
-    value: String(recipe.id),
-    label: recipe.name
-  }))
-
-  const carbOptions = carbRecipes.map(recipe => ({
-    value: String(recipe.id),
-    label: recipe.name
-  }))
-
-  const vegetableOptions = vegetableRecipes.map(recipe => ({
-    value: String(recipe.id),
-    label: recipe.name
-  }))
+  const lunchOptions = recipesToOptions(lunchRecipes)
+  const proteinOptions = recipesToOptions(proteinRecipes)
+  const carbOptions = recipesToOptions(carbRecipes)
+  const vegetableOptions = recipesToOptions(vegetableRecipes)
 
   return (
     /**
@@ -150,92 +134,26 @@ export default function MealPlanGrid({
             <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Vegetable</div>
           </div>
 
-          {/* Table Rows - each spans all columns, uses subgrid */}
+          {/* Table Rows */}
           {weekPlan.map((dayPlan, index) => (
-            <div
+            <MealPlanGridRow
               key={dayPlan.day}
-              className={`col-span-7 grid grid-cols-subgrid gap-4 px-5 py-4 ${
-                index !== weekPlan.length - 1 ? 'border-b border-gray-200 dark:border-neutral-800' : ''
-              } hover:bg-gray-50 dark:hover:bg-neutral-800/50 transition-colors`}
-            >
-            {/* Day Name */}
-            <div className="font-semibold text-gray-900 dark:text-white self-center">
-              {dayPlan.day}
-            </div>
-
-            {/* Date */}
-            <div className="text-gray-500 dark:text-neutral-500 text-sm self-center">
-              {formatDate(dayPlan.date)}
-            </div>
-
-            {/* Notes - not draggable */}
-            <div>
-              <input
-                type="text"
-                value={dayNotes[dayPlan.day] || ''}
-                onChange={(e) => onNoteChange(dayPlan.day, e.target.value)}
-                placeholder="Add note..."
-                className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-neutral-800/50 border border-gray-300 dark:border-neutral-700 rounded text-gray-900 dark:text-neutral-100 focus:border-blue-500 focus:ring-0 focus:outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-neutral-600"
-              />
-            </div>
-
-            {/* Lunch Dropdown - Draggable */}
-            <DraggableRecipeCell
-              id={`lunch-${index}`}
-              recipeName={getRecipeName(dayPlan.lunchRecipeId, lunchRecipes)}
-            >
-              <SearchableSelect
-                options={lunchOptions}
-                value={dayPlan.lunchRecipeId}
-                onChange={(value) => onRecipeChange(index, 'lunch', value)}
-                placeholder="Select..."
-                accent="amber"
-              />
-            </DraggableRecipeCell>
-
-            {/* Protein Dropdown - Draggable */}
-            <DraggableRecipeCell
-              id={`protein-${index}`}
-              recipeName={getRecipeName(dayPlan.proteinRecipeId, proteinRecipes)}
-            >
-              <SearchableSelect
-                options={proteinOptions}
-                value={dayPlan.proteinRecipeId}
-                onChange={(value) => onRecipeChange(index, 'protein', value)}
-                placeholder="Select..."
-                accent="fuchsia"
-              />
-            </DraggableRecipeCell>
-
-            {/* Carb Dropdown - Draggable */}
-            <DraggableRecipeCell
-              id={`carb-${index}`}
-              recipeName={getRecipeName(dayPlan.carbRecipeId, carbRecipes)}
-            >
-              <SearchableSelect
-                options={carbOptions}
-                value={dayPlan.carbRecipeId}
-                onChange={(value) => onRecipeChange(index, 'carb', value)}
-                placeholder="Select..."
-                accent="cyan"
-              />
-            </DraggableRecipeCell>
-
-            {/* Vegetable Dropdown - Draggable */}
-            <DraggableRecipeCell
-              id={`vegetable-${index}`}
-              recipeName={getRecipeName(dayPlan.vegetableRecipeId, vegetableRecipes)}
-            >
-              <SearchableSelect
-                options={vegetableOptions}
-                value={dayPlan.vegetableRecipeId}
-                onChange={(value) => onRecipeChange(index, 'vegetable', value)}
-                placeholder="Select..."
-                accent="lime"
-              />
-            </DraggableRecipeCell>
-          </div>
-        ))}
+              dayPlan={dayPlan}
+              dayIndex={index}
+              isLastRow={index === weekPlan.length - 1}
+              dayNote={dayNotes[dayPlan.day] || ''}
+              lunchOptions={lunchOptions}
+              proteinOptions={proteinOptions}
+              carbOptions={carbOptions}
+              vegetableOptions={vegetableOptions}
+              lunchRecipes={lunchRecipes}
+              proteinRecipes={proteinRecipes}
+              carbRecipes={carbRecipes}
+              vegetableRecipes={vegetableRecipes}
+              onRecipeChange={onRecipeChange}
+              onNoteChange={onNoteChange}
+            />
+          ))}
         </div>
       </div>
     </DndContext>

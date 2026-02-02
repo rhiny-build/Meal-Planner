@@ -18,7 +18,7 @@ Living document for tracking features, bugs, and improvements.
 - [x] Move `confirm()` from useRecipes hook to component level - [Code Review #11]
 
 **Deferred (if time permits):**
-- [ ] File size refactoring (RecipeForm, MealPlanGrid, useMealPlan) - [Code Review #2]
+- [x] File size refactoring (RecipeForm, MealPlanGrid, useMealPlan) - [Code Review #2]
 - [ ] Add useCallback optimizations in useRecipes - [Code Review #8]
 - [ ] Add response validation with Zod or type guards - [Code Review #10]
 

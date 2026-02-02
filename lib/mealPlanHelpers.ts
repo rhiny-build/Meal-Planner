@@ -1,8 +1,10 @@
 /**
  * Meal Plan Helper Functions
  *
- * Shared utilities for meal plan API routes
+ * Shared utilities for meal plan API routes and hooks
  */
+
+import type { Recipe, WeekPlan } from '@/types'
 
 /**
  * Calculate the start and end dates for a week (Monday-Sunday)
@@ -44,4 +46,29 @@ export function parseStartDate(paramValue: string | null): Date {
   monday.setDate(today.getDate() + diff)
 
   return monday
+}
+
+/**
+ * Filter recipes by type for meal plan dropdowns
+ */
+export function filterRecipesByType(recipes: Recipe[]) {
+  return {
+    lunchRecipes: recipes.filter(r => r.isLunchAppropriate),
+    proteinRecipes: recipes.filter(r => r.proteinType),
+    carbRecipes: recipes.filter(r => r.carbType),
+    vegetableRecipes: recipes.filter(r => r.vegetableType),
+  }
+}
+
+/**
+ * Calculate the number of selected meals in a week plan
+ */
+export function calculateSelectedCount(weekPlan: WeekPlan[]): number {
+  return weekPlan.reduce((count, day) => {
+    if (day.lunchRecipeId) count++
+    if (day.proteinRecipeId) count++
+    if (day.carbRecipeId) count++
+    if (day.vegetableRecipeId) count++
+    return count
+  }, 0)
 }
