@@ -13,6 +13,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { getMonday } from '@/lib/dateUtils'
 import { useMealPlan } from '@/lib/hooks/useMealPlan'
 import MealPlanHeader from './components/MealPlanHeader'
@@ -87,10 +88,10 @@ export default function MealPlanPage() {
 
       const result = await response.json()
       applyGeneratedPlan(result.modifiedPlan)
-      alert(result.explanation)
+      toast.success(result.explanation, { duration: 5000 })
     } catch (error) {
       console.error('Error generating meal plan:', error)
-      alert(error instanceof Error ? error.message : 'Failed to generate meal plan')
+      toast.error(error instanceof Error ? error.message : 'Failed to generate meal plan')
     } finally {
       setIsGenerating(false)
     }
@@ -112,7 +113,7 @@ export default function MealPlanPage() {
       router.push(`/shopping-list?week=${startDate.toISOString()}`)
     } catch (error) {
       console.error('Error generating shopping list:', error)
-      alert('Failed to generate shopping list')
+      toast.error('Failed to generate shopping list')
     } finally {
       setIsGeneratingList(false)
     }

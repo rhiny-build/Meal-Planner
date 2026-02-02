@@ -9,6 +9,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import Header from '@/components/Header'
+import { Toaster } from 'sonner'
 
 export const metadata: Metadata = {
   title: 'Family Meal Planner',
@@ -35,6 +36,9 @@ export default function RootLayout({
               <p>Family Meal Planner - Making dinner planning easy</p>
             </div>
           </footer>
+
+          {/* Toast notifications */}
+          <Toaster position="top-right" richColors />
         </ThemeProvider>
       </body>
     </html>

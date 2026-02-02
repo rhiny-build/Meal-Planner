@@ -8,6 +8,7 @@
  */
 
 import type { MealPlanWithRecipe, WeekPlan, Recipe, ShoppingListWithItems, ShoppingListItem } from '@/types'
+import { toast } from 'sonner'
 
 
 export const fetchMealPlan = async (startDate: Date, days: string[]): Promise<WeekPlan[]> => {
@@ -97,17 +98,17 @@ try {
       })
 
       if (response.ok) {
-        alert('Meal plan saved!')
+        toast.success('Meal plan saved!')
         const response = await fetchMealPlan(startDate, days)
         return response
       } else {
         const error = await response.json()
-        alert(error.error || 'Failed to save meal plan')
+        toast.error(error.error || 'Failed to save meal plan')
         return []
       }
     } catch (error) {
       console.error('Error saving:', error)
-      alert('Failed to save meal plan')
+      toast.error('Failed to save meal plan')
       return []
     }
 }

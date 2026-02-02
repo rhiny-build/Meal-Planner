@@ -2,12 +2,10 @@
  * useShoppingList Hook
  *
  * Manages shopping list state and week navigation
- *
- * TODO: Standardize error handling - currently generateList shows alert on failure,
- * but toggleItem and addItem fail silently. Should be consistent across all operations.
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { toast } from 'sonner'
 import { getMonday } from '@/lib/dateUtils'
 import {
   fetchShoppingList,
@@ -55,7 +53,7 @@ export function useShoppingList(initialWeek?: Date) {
       setShoppingList(data)
     } catch (error) {
       console.error('Error generating shopping list:', error)
-      alert('Failed to generate shopping list')
+      toast.error('Failed to generate shopping list')
     } finally {
       setIsGenerating(false)
     }

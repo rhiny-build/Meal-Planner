@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import type { RecipeWithIngredients, RecipeFilters, RecipeFormData } from '@/types'
 
 export function useRecipes() {
@@ -88,7 +89,7 @@ export function useRecipes() {
       return false
     } catch (error) {
       console.error('Error creating recipe:', error)
-      alert('Failed to create recipe')
+      toast.error('Failed to create recipe')
       return false
     }
   }
@@ -108,7 +109,7 @@ export function useRecipes() {
       return false
     } catch (error) {
       console.error('Error updating recipe:', error)
-      alert('Failed to update recipe')
+      toast.error('Failed to update recipe')
       return false
     }
   }
@@ -128,7 +129,7 @@ export function useRecipes() {
       return false
     } catch (error) {
       console.error('Error deleting recipe:', error)
-      alert('Failed to delete recipe')
+      toast.error('Failed to delete recipe')
       return false
     }
   }

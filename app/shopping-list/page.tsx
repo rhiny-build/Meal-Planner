@@ -13,6 +13,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { toast } from 'sonner'
 import { useShoppingList } from '@/lib/hooks/useShoppingList'
 import { formatShoppingListAsText } from '@/lib/shoppingListHelpers'
 import type { Recipe } from '@/types'
@@ -59,14 +60,14 @@ function ShoppingListContent() {
 
   const handleExportText = () => {
     if (!shoppingList || shoppingList.items.length === 0) {
-      alert('No items to export')
+      toast.warning('No items to export')
       return
     }
 
     const text = formatShoppingListAsText(shoppingList.items)
 
     navigator.clipboard.writeText(text).then(() => {
-      alert('Shopping list copied to clipboard!')
+      toast.success('Shopping list copied to clipboard!')
     }).catch(() => {
       const textarea = document.createElement('textarea')
       textarea.value = text
@@ -74,7 +75,7 @@ function ShoppingListContent() {
       textarea.select()
       document.execCommand('copy')
       document.body.removeChild(textarea)
-      alert('Shopping list copied to clipboard!')
+      toast.success('Shopping list copied to clipboard!')
     })
   }
 
