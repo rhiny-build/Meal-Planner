@@ -17,10 +17,10 @@ Living document for tracking features, bugs, and improvements.
 - [x] Create toast notification system and replace all `alert()` calls - [Code Review #3, #7]
 - [x] Move `confirm()` from useRecipes hook to component level - [Code Review #11]
 
-**Deferred (if time permits):**
+**Deferred (if time permits):** ✅ Complete
 - [x] File size refactoring (RecipeForm, MealPlanGrid, useMealPlan) - [Code Review #2]
-- [ ] Add useCallback optimizations in useRecipes - [Code Review #8]
-- [ ] Add response validation with Zod or type guards - [Code Review #10]
+- [x] Add useCallback optimizations in useRecipes - [Code Review #8]
+- [~] Add response validation with Zod - [Code Review #10] - Rejected (previously removed Zod for simplicity)
 
 ---
 
