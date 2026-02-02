@@ -1,6 +1,5 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
-// IMPORTANT: Changes in the schema must be duplicated to validations.ts for consistency
 
 generator client {
   provider = "prisma-client-js"
