@@ -5,23 +5,14 @@
  * Used in the recipe library to show recipes in a grid.
  */
 
-import type { RecipeWithIngredients, Ingredient } from '@/types'
+import type { RecipeWithIngredients } from '@/types'
 import Button from './Button'
+import { formatIngredient } from '@/lib/ingredientHelpers'
 
 interface RecipeCardProps {
   recipe: RecipeWithIngredients
   onEdit: (recipe: RecipeWithIngredients) => void
   onDelete: (id: string) => void
-}
-
-// Format a structured ingredient for display
-function formatIngredient(ing: Ingredient): string {
-  const parts: string[] = []
-  if (ing.quantity) parts.push(ing.quantity)
-  if (ing.unit) parts.push(ing.unit)
-  parts.push(ing.name)
-  if (ing.notes) parts.push(`(${ing.notes})`)
-  return parts.join(' ')
 }
 
 export default function RecipeCard({

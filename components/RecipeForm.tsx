@@ -8,20 +8,11 @@
 'use client'
 
 import { useState } from 'react'
-import type { RecipeWithIngredients, RecipeFormData, Ingredient } from '@/types'
+import type { RecipeWithIngredients, RecipeFormData } from '@/types'
 import Button from './Button'
 import Select from './Select'
 import { PROTEIN_OPTIONS, CARB_OPTIONS } from '@/lib/dishTypeConfig'
-
-// Format a structured ingredient for display
-function formatIngredient(ing: Ingredient): string {
-  const parts: string[] = []
-  if (ing.quantity) parts.push(ing.quantity)
-  if (ing.unit) parts.push(ing.unit)
-  parts.push(ing.name)
-  if (ing.notes) parts.push(`(${ing.notes})`)
-  return parts.join(' ')
-}
+import { formatIngredient } from '@/lib/ingredientHelpers'
 
 // Select options
 const PREP_TIME_OPTIONS = [
