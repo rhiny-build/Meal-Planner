@@ -62,6 +62,12 @@ export default function RecipesPage() {
     setEditingRecipe(undefined)
   }
 
+  const onDelete = (id: string) => {
+    if (confirm('Are you sure you want to delete this recipe?')) {
+      handleDelete(id)
+    }
+  }
+
   const onAcceptSuggestion = async (recipe: RecipeSuggestion): Promise<void> => {
     await handleCreate(recipe)
   }
@@ -123,7 +129,7 @@ export default function RecipesPage() {
               key={recipe.id}
               recipe={recipe}
               onEdit={onEdit}
-              onDelete={handleDelete}
+              onDelete={onDelete}
             />
           ))}
         </div>

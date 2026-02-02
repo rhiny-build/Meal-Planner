@@ -115,8 +115,6 @@ export function useRecipes() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this recipe?')) return false
-
     try {
       const response = await fetch(`/api/recipes/${id}`, {
         method: 'DELETE',

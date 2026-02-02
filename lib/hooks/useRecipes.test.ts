@@ -442,8 +442,11 @@ describe('useRecipes', () => {
 
   /**
    * Test 9: Deleting a Recipe
+   *
+   * Note: Confirmation dialog is now handled at the component level,
+   * not in the hook. The hook just performs the delete directly.
    */
-  it('should delete a recipe after confirmation', async () => {
+  it('should delete a recipe', async () => {
     const afterDelete = mockRecipes.slice(1) // Remove first recipe
 
     global.fetch = vi
@@ -465,11 +468,6 @@ describe('useRecipes', () => {
 
     expect(deleteResult).toBe(true)
 
-    // Verify confirm was called
-    expect(confirm).toHaveBeenCalledWith(
-      'Are you sure you want to delete this recipe?'
-    )
-
     // Verify DELETE was called
     expect(fetch).toHaveBeenCalledWith('/api/recipes/1', {
       method: 'DELETE',
@@ -479,37 +477,6 @@ describe('useRecipes', () => {
     await waitFor(() => {
       expect(result.current.recipes).toHaveLength(3)
     })
-  })
-
-  /**
-   * Test 10: Delete Cancelled by User
-   *
-   * If user clicks "Cancel" on confirm dialog, delete should not proceed.
-   */
-  it('should not delete when user cancels confirmation', async () => {
-    // Mock confirm to return false (user clicked Cancel)
-    vi.mocked(confirm).mockReturnValueOnce(false)
-
-    global.fetch = vi
-      .fn()
-      .mockResolvedValue(createMockFetchResponse(mockRecipes))
-
-    const { result } = renderHook(() => useRecipes())
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false)
-    })
-
-    let deleteResult: boolean | undefined
-    await act(async () => {
-      deleteResult = await result.current.handleDelete('1')
-    })
-
-    expect(deleteResult).toBe(false)
-
-    // Fetch should only have been called once (initial load)
-    // No DELETE request should have been made
-    expect(fetch).toHaveBeenCalledTimes(1)
   })
 
   /**
