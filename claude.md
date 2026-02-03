@@ -37,7 +37,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
      ```
 
 3. **Completing Work**
-   - When the feature is complete and tested, ask the user for approval to merge
+   - When the feature is complete and tested, ask the user to run /push-to-prod and folllow the directions there. Comments below here are for historic reference. If you're unclear, ask the user.
    - After approval: merge back to main, complete any documentation updates, commit, and push to GitHub
    - Delete the feature branch after successful push: `git branch -d feature_branch_name`
 
@@ -47,6 +47,44 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Test before committing**: Ensure code works and tests pass (if applicable)
 - **Descriptive messages**: Future you (or others) should understand the commit without reading the diff
 - **Don't commit broken code**: Every commit should leave the codebase in a working state
+
+## Planning Features
+
+When planning bigger features (multi-file changes, new modules, refactors), follow this approach:
+
+### 1. Structure Work in Phases
+
+Break the work into small, end-to-end milestones. Each phase must have:
+
+- **Clear outcome**: What can the user do at the end that they couldn't before? (Not just "code is written" but "user can X")
+- **Implementation tasks**: The specific work items
+- **Tests**: What tests are needed (unit, integration)
+- **Docs**: What documentation needs updating
+
+### 2. Phase Completion Criteria
+
+A phase is only "done" when:
+- The outcome is achieved and working
+- Tests are written and passing
+- Relevant docs are updated
+
+### 3. Architecture Reference
+
+For module structure, server actions vs API routes, and other architectural decisions, see **ARCHITECTURE.md** (Target Architecture section).
+
+Key patterns:
+- **Server components** for data fetching (reads)
+- **Server actions** for mutations (writes)
+- **API routes** only for external integrations (AI, webhooks)
+
+### 4. Design Documents
+
+For significant features, create a design doc in `/docs/` that includes:
+- Overview and data model
+- User workflow
+- Architecture approach (how it fits the module pattern)
+- Implementation phases with outcomes
+- Open questions
 
 ## Custom Commands
 
@@ -98,59 +136,7 @@ npm test -- --grep "RecipeCard"
 
 ## Architecture
 
-### Data Flow Pattern
-
-The app follows a standard Next.js App Router architecture with React Server Components where appropriate:
-
-1. **Client Components** (`'use client'`) handle interactive UI (meal planning, recipe management)
-2. **API Routes** handle business logic and database operations via Prisma
-3. **Database** (PostgreSQL) stores recipes and meal plans with relationships
-4. **AI Integration** via OpenAI API for recipe extraction and meal plan generation
-
-Data flow: UI → API Route → Prisma → PostgreSQL → Response → UI Update
-
-### Component Hierarchy
-
-```
-app/
-├── page.tsx                    # Landing page (~90 lines)
-├── layout.tsx                  # Root layout (~60 lines)
-├── recipes/
-│   ├── page.tsx               # Recipe management orchestration (~100 lines)
-│   └── components/
-│       ├── RecipeFilters.tsx  # Filter dropdowns (~70 lines)
-│       └── RecipeModal.tsx    # Modal wrapper (~40 lines)
-├── meal-plan/
-│   ├── page.tsx               # Meal plan orchestration (~120 lines)
-│   └── components/
-│       ├── MealPlanGrid.tsx   # 7×2 grid table (~80 lines)
-│       └── MealPlanHeader.tsx # Week nav + actions (~40 lines)
-└── api/
-    ├── recipes/
-    │   ├── route.ts           # GET, POST (~80 lines)
-    │   └── [id]/route.ts      # GET, PATCH, DELETE (~96 lines)
-    └── meal-plan/
-        ├── route.ts           # GET only (~50 lines)
-        ├── create/route.ts    # POST handler (~60 lines)
-        ├── update/route.ts    # PATCH handler (~45 lines)
-        ├── delete/route.ts    # DELETE handler (~45 lines)
-        └── modify/route.ts    # AI modifications (~97 lines)
-
-components/
-├── Button.tsx                 # Reusable button (~49 lines)
-├── Select.tsx                 # Reusable select (~55 lines)
-├── RecipeCard.tsx            # Recipe display (~105 lines)
-└── RecipeForm.tsx            # Recipe form (~150 lines)
-
-lib/
-├── apiService.ts              # API calls (~105 lines)
-├── aiService.ts               # AI operations (~43 lines)
-├── dateUtils.ts               # Date helpers (~38 lines)
-├── mealPlanHelpers.ts         # Shared meal plan logic (~50 lines)
-├── recipeFormHelpers.ts       # Form validation/formatting (~50 lines)
-└── hooks/
-    ├── useMealPlan.ts         # Meal plan state management (~60 lines)
-    └── useRecipes.ts          # Recipe state + filtering (~70 lines)
+Review up to date architecure.md for reference
 ```
 
 ### File Size Guidelines

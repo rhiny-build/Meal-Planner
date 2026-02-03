@@ -350,7 +350,7 @@ function createMockItem(overrides: Partial<ShoppingListItem>): ShoppingListItem 
     unit: null,
     notes: null,
     checked: false,
-    isManual: false,
+    source: 'meal',
     order: 0,
     createdAt: new Date(),
     updatedAt: new Date(),

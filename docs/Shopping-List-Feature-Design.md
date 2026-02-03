@@ -145,30 +145,91 @@ Leverage purchase history to provide insights:
 
 ---
 
+## Architecture Approach
+
+This feature will be built as a **module** following the target architecture (see ARCHITECTURE.md).
+
+### Module Structure
+
+```
+/app/(modules)/shopping-list/    # Route group keeps URL as /shopping-list
+  page.tsx              # Server component - fetches list data via Prisma
+  actions.ts            # Server actions for all mutations
+  components/
+    ShoppingListClient.tsx  # Client component - state management
+    ShoppingListItems.tsx   # Client component - item display and interactions
+    ShoppingListHeader.tsx  # Client component - navigation and actions
+    AddItemForm.tsx         # Client component - manual item entry
+    StaplesManager.tsx      # Client component - staples CRUD (Phase 2)
+    RestockManager.tsx      # Client component - restock items CRUD (Phase 2)
+```
+
+### Data Flow Pattern
+
+| Operation | Mechanism |
+|-----------|-----------|
+| Load shopping list | Server component (`page.tsx`) queries Prisma |
+| Load staples/restock lists | Server component queries Prisma |
+| Add/update/delete item | Server action in `actions.ts` |
+| Check/uncheck item | Server action |
+| Generate list from meal plan | Server action (creates items, revalidates page) |
+| Manage staples/restock items | Server actions |
+
+### Why No API Routes?
+
+This module has no external integration needs - all operations are internal UI mutations. Server actions provide:
+- Type safety between client and server
+- Built-in CSRF protection
+- Simpler code (no fetch boilerplate)
+
+---
+
 ## Implementation Phases
 
-### Phase 1: Foundation
+### Phase 1: Module Setup & Foundation
+
+**Outcome:** Shopping list works exactly as before, but code is restructured as a module with server actions. New data model in place. No user-facing changes.
+
+- [ ] Create module structure (`/app/shopping-list/` with `actions.ts`, `components/`)
 - [ ] Add `Staple` and `RestockItem` tables to schema
 - [ ] Add `source` field to `ShoppingListItem` (replace `isManual`)
 - [ ] Run migration, convert existing data
-- [ ] Update types in `types/index.ts`
+- [ ] Migrate existing shopping list code into module structure
+- [ ] Remove legacy API routes and hooks
+- [ ] Tests: Unit tests for server actions, existing functionality still works
+- [ ] Docs: Update ARCHITECTURE.md with actual module structure
 
 ### Phase 2: Master List Management
-- [ ] Create `/staples` page (or section in settings)
-- [ ] CRUD API for staples: add, edit, delete, reorder
+
+**Outcome:** Users can create and manage their staples list and restock items list. These are "set once, use weekly" master lists.
+
+- [ ] Create staples management UI (within shopping-list module)
+- [ ] Server actions for staples: add, edit, delete, reorder
 - [ ] Simple UI: list view with add input, delete buttons
 - [ ] Repeat for RestockItem
+- [ ] Tests: Unit tests for staples/restock server actions
+- [ ] Docs: Update design doc with any UX decisions made
 
 ### Phase 3: Assembly Flow
+
+**Outcome:** Users can generate a complete weekly shopping list that combines meal ingredients + staples + selected restock items + manual additions. Full workflow functional.
+
 - [ ] Update "Generate" to include staples by default
 - [ ] Add UI for reviewing/removing staples from current week
 - [ ] Add UI for selecting restocking items to include
 - [ ] Update shopping list display to show source
+- [ ] Tests: Integration tests for assembly flow
+- [ ] Docs: Update user-facing README with new workflow
 
 ### Phase 4: Polish
+
+**Outcome:** Shopping list is production-ready with good UX across devices.
+
 - [ ] UX review and iteration on assembly flow
 - [ ] Consider grouping/filtering options
 - [ ] Mobile experience optimization
+- [ ] Tests: Review coverage, add edge case tests
+- [ ] Docs: Final review, ensure all docs are current
 
 ---
 
@@ -182,12 +243,17 @@ Leverage purchase history to provide insights:
 
 ## Related Files
 
-- `prisma/schema.prisma` - Database schema
-- `app/shopping-list/` - Shopping list UI
-- `lib/hooks/useShoppingList.ts` - Shopping list state management
-- `app/api/shopping-list/` - API routes
+**Module:**
+- `app/(modules)/shopping-list/page.tsx` - Server component, data fetching
+- `app/(modules)/shopping-list/actions.ts` - Server actions for mutations
+- `app/(modules)/shopping-list/actions.test.ts` - Unit tests
+- `app/(modules)/shopping-list/components/` - Client components
+
+**Shared:**
+- `prisma/schema.prisma` - Database schema (source of truth)
+- `lib/shoppingListHelpers.ts` - Business logic (aggregation, formatting)
 
 ---
 
 *Document created: 2026-02-02*
-*Last updated: 2026-02-02*
+*Last updated: 2026-02-03*

@@ -99,7 +99,7 @@ model ShoppingListItem {
   unit           String?  // The unit (when units match during aggregation)
   notes          String?  // Source recipes or additional notes
   checked        Boolean  @default(false) // Whether item has been purchased
-  isManual       Boolean  @default(false) // Whether item was manually added
+  source         String   @default("meal") // Item source: 'meal' | 'staple' | 'restock' | 'manual'
   order          Int      // Display order
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -108,4 +108,26 @@ model ShoppingListItem {
   shoppingList ShoppingList @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
 
   @@index([shoppingListId])
+}
+
+// Staple model stores items bought every week (bread, milk, eggs)
+model Staple {
+  id        String   @id @default(cuid())
+  name      String
+  quantity  String?  // Optional default quantity
+  unit      String?  // Optional default unit
+  order     Int      // Display order
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// RestockItem model stores household goods replenished as needed
+model RestockItem {
+  id        String   @id @default(cuid())
+  name      String
+  quantity  String?  // Optional default quantity
+  unit      String?  // Optional default unit
+  order     Int      // Display order
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

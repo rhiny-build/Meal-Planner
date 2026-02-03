@@ -85,7 +85,7 @@ export default function ShoppingListItems({
               ))}
             </p>
           )}
-          {item.isManual && (
+          {item.source === 'manual' && (
             <span className="text-xs text-blue-500 ml-2">(added manually)</span>
           )}
         </div>

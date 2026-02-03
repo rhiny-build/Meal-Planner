@@ -7,7 +7,7 @@
  * as it grows. Currently manageable but approaching the point where separation would help.
  */
 
-import type { MealPlanWithRecipe, WeekPlan, RecipeWithIngredients, ShoppingListWithItems, ShoppingListItem } from '@/types'
+import type { MealPlanWithRecipe, WeekPlan, RecipeWithIngredients } from '@/types'
 import { toast } from 'sonner'
 
 
@@ -113,58 +113,4 @@ try {
     }
 }
 
-// Shopping List API functions
-
-export const fetchShoppingList = async (weekStart: Date): Promise<ShoppingListWithItems | null> => {
-  try {
-    const response = await fetch(
-      `/api/shopping-list?weekStart=${weekStart.toISOString()}`
-    )
-    return await response.json()
-  } catch (error) {
-    console.error('Error fetching shopping list:', error)
-    return null
-  }
-}
-
-export const generateShoppingList = async (weekStart: Date): Promise<ShoppingListWithItems | null> => {
-  const response = await fetch('/api/shopping-list/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ weekStart: weekStart.toISOString() }),
-  })
-
-  if (!response.ok) {
-    throw new Error('Failed to generate shopping list')
-  }
-
-  return await response.json()
-}
-
-export const updateShoppingListItem = async (
-  itemId: string,
-  updates: Partial<{ checked: boolean; name: string }>
-): Promise<ShoppingListItem | null> => {
-  const response = await fetch('/api/shopping-list/item/update', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id: itemId, ...updates }),
-  })
-
-  if (!response.ok) return null
-  return await response.json()
-}
-
-export const addShoppingListItem = async (
-  shoppingListId: string,
-  name: string
-): Promise<ShoppingListItem | null> => {
-  const response = await fetch('/api/shopping-list/item', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ shoppingListId, name }),
-  })
-
-  if (!response.ok) return null
-  return await response.json()
-}
+// Shopping List API functions moved to server actions in app/shopping-list/actions.ts

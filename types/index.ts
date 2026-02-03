@@ -150,6 +150,9 @@ export interface GenerateShoppingListRequest {
   weekStart: string // ISO date string for the Monday of the week
 }
 
+// Shopping list item source types
+export type ShoppingListItemSource = 'meal' | 'staple' | 'restock' | 'manual'
+
 // Shopping list item for creating/updating
 export interface ShoppingListItemData {
   name: string
@@ -157,6 +160,6 @@ export interface ShoppingListItemData {
   unit?: string | null
   notes?: string | null
   checked?: boolean
-  isManual?: boolean
+  source?: ShoppingListItemSource
   order: number
 }

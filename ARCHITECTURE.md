@@ -19,7 +19,7 @@ This document explains the technical architecture of the Family Meal Planner app
 - **OpenAI API** - GPT models for intelligent features
 - **Abstraction Layer** - Easy to swap to Claude or other providers
 
-## Project Structure
+## Project Structure - Note: accurate as of 03/02 and about to change in the next couple of weeks
 
 ```
 /app                    # Next.js App Router pages and API
@@ -80,6 +80,64 @@ This document explains the technical architecture of the Family Meal Planner app
 /types               # TypeScript type definitions
 └── index.ts         # All shared types
 ```
+
+## Target Architecture (WIP)
+
+To simplify the structure of the application and to enable faster iteration (and clearer boundaries between components), the architecture will evolve into a modules-based monolith.
+
+### Core Principles
+
+**1. Module-Based Structure**
+
+The application will be structured around 3 core modules: `shopping-list`, `meal-plan`, `recipes`. Each module encapsulates its own pages, components, and business logic.
+
+Modules live in a route group `(modules)` to organize them without affecting URLs:
+
+```
+/app/
+  (modules)/              # Route group - doesn't affect URLs
+    shopping-list/
+      page.tsx            # Server component → /shopping-list
+      actions.ts          # Server actions - mutations
+      components/
+    meal-plan/            # Future: migrate here
+    recipes/              # Future: migrate here
+  api/                    # External integrations only
+  layout.tsx
+  page.tsx                # Home → /
+```
+
+**2. Module Independence**
+
+Modules should be "mostly independent" - they can query each other's data via Prisma (the database is the shared contract), but should never import code from other modules. Shared utilities live in `/lib/shared/`.
+
+**3. Server Components for Reads, Server Actions for Writes**
+
+| Operation Type | Mechanism | Location |
+|----------------|-----------|----------|
+| Data fetching (reads) | Server component with Prisma | `page.tsx` |
+| Mutations (create/update/delete) | Server actions | `actions.ts` |
+| External integrations (AI, auth, webhooks) | API routes | `/app/api/` |
+
+**Why this split?**
+- Server actions are POST-only, not suitable for cached/cacheable reads
+- Server components can fetch data directly and pass to client components as props
+- API routes remain necessary for external services that need HTTP endpoints
+
+**4. When to Keep API Routes**
+
+API routes are still appropriate for:
+- AI integrations (recipe extraction, meal plan generation)
+- Webhooks from external services
+- Endpoints that external clients need to call
+- Complex multi-step operations that benefit from HTTP semantics
+
+### Migration Approach
+
+We will migrate incrementally, starting with new features:
+1. Build `shopping-list` as a module first (new feature, low risk)
+2. Use it as a template for refactoring `meal-plan` and `recipes`
+3. Add test coverage before refactoring existing modules
 
 ## Data Flow
 
@@ -142,26 +200,33 @@ Returns explanation + updated plans
 UI shows changes and AI explanation
 ```
 
-### Shopping List Generation Flow
+### Shopping List Flow (Module Pattern)
 ```
+User visits /shopping-list
+  ↓
+Server component (page.tsx) fetches list via Prisma
+  ↓
+Data passed to client component (ShoppingListClient)
+  ↓
 User clicks "Generate Shopping List"
   ↓
-POST /api/shopping-list/generate with weekStart
+Client calls generateShoppingList() server action
   ↓
-API fetches meal plans for the week with recipes
+Server action fetches meal plans for the week
   ↓
-API collects all structured ingredients from recipes
+Aggregation logic groups ingredients by name
   ↓
-Aggregation logic groups by ingredient name (case-insensitive)
+Server action creates/updates ShoppingList records
   ↓
-Quantities combined when units match
-  ↓
-API creates/updates ShoppingList and ShoppingListItem records
-  ↓
-Returns shopping list with all items
+revalidatePath() triggers page refresh with new data
   ↓
 UI displays items with checkboxes for tracking
 ```
+
+**Note:** The shopping-list module is the first to use the new modular architecture:
+- `app/shopping-list/page.tsx` - Server component for data fetching
+- `app/shopping-list/actions.ts` - Server actions for mutations
+- `app/shopping-list/components/` - Client components
 
 ## Key Design Patterns
 
@@ -351,7 +416,7 @@ model ShoppingList {
 }
 ```
 
-### ShoppingListItem Table (New)
+### ShoppingListItem Table
 ```prisma
 model ShoppingListItem {
   id             String       @id @default(cuid())
@@ -361,13 +426,39 @@ model ShoppingListItem {
   unit           String?      // Unit of measurement
   notes          String?      // Additional notes
   checked        Boolean      @default(false)  // Purchased status
-  isManual       Boolean      @default(false)  // User-added vs generated
+  source         String       @default("meal") // 'meal' | 'staple' | 'restock' | 'manual'
   order          Int          // Display order
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   shoppingList   ShoppingList @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
 
   @@index([shoppingListId])
+}
+```
+
+### Staple Table (Master list of weekly staples)
+```prisma
+model Staple {
+  id        String   @id @default(cuid())
+  name      String
+  quantity  String?  // Optional default quantity
+  unit      String?  // Optional default unit
+  order     Int      // Display order
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+```
+
+### RestockItem Table (Household items bought as needed)
+```prisma
+model RestockItem {
+  id        String   @id @default(cuid())
+  name      String
+  quantity  String?  // Optional default quantity
+  unit      String?  // Optional default unit
+  order     Int      // Display order
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 ```
 
