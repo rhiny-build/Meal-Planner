@@ -1,25 +1,189 @@
 /**
  * Database Seed Script
  *
- * This script populates the database with example recipes for testing
- * and development purposes.
+ * This script seeds the database with:
+ * - Categories and MasterListItems (staples/restock) - runs in ALL environments (idempotent)
+ * - Example recipes - runs in DEVELOPMENT only (destructive)
  *
  * Run with: npm run db:seed
  */
 
 import { PrismaClient } from '@prisma/client'
 
-// Simple Prisma client for Prisma 5
 const prisma = new PrismaClient()
 
-async function main() {
-  console.log('Seeding database...')
+// =============================================================================
+// MASTER LIST DATA (Categories + Items)
+// =============================================================================
 
-  // Clear existing data
-  await prisma.mealPlan.deleteMany()
-  await prisma.recipe.deleteMany()
+const categories = [
+  { name: 'Fresh Produce', order: 1 },
+  { name: 'Dairy & Eggs', order: 2 },
+  { name: 'Dairy & Alternatives', order: 3 },
+  { name: 'Meat & Poultry', order: 4 },
+  { name: 'Bakery', order: 5 },
+  { name: 'Pantry', order: 6 },
+  { name: 'Frozen', order: 7 },
+  { name: 'Condiments & Sauces', order: 8 },
+  { name: 'Herbs & Spices', order: 9 },
+  { name: 'Ready Meals & Soups', order: 10 },
+  { name: 'Beverages', order: 11 },
+]
 
-  // Create example recipes
+const masterListItems = [
+  // Fresh Produce - Staples
+  { name: "Sainsbury's Baby Plum Tomatoes 325g", type: 'staple', category: 'Fresh Produce' },
+  { name: "Sainsbury's Closed Cup Mushrooms Vitamin D 400g", type: 'staple', category: 'Fresh Produce' },
+  { name: "Sainsbury's Fairtrade Bananas x5", type: 'staple', category: 'Fresh Produce' },
+  { name: "Sainsbury's Large Whole Cucumber", type: 'staple', category: 'Fresh Produce' },
+  { name: "Sainsbury's Lemons", type: 'staple', category: 'Fresh Produce' },
+  { name: "Sainsbury's Little Gem Lettuce x2", type: 'staple', category: 'Fresh Produce' },
+  { name: "Sainsbury's Pineapple 160g", type: 'staple', category: 'Fresh Produce' },
+  { name: "Sainsbury's Red Pepper", type: 'staple', category: 'Fresh Produce' },
+  { name: "Sainsbury's Red Seedless Grapes 500g", type: 'staple', category: 'Fresh Produce' },
+  { name: "Sainsbury's Royal Gala Apples x6", type: 'staple', category: 'Fresh Produce' },
+  { name: "Sainsbury's Spring Onions Bunch 100g", type: 'staple', category: 'Fresh Produce' },
+  { name: "Sainsbury's Strawberries 400g", type: 'staple', category: 'Fresh Produce' },
+  { name: "Sainsbury's White Seedless Grapes 500g", type: 'staple', category: 'Fresh Produce' },
+
+  // Dairy & Eggs - Staples
+  { name: "Sainsbury's British Free Range Eggs Large x12", type: 'staple', category: 'Dairy & Eggs' },
+  { name: "Sainsbury's British Semi Skimmed Milk 2.27L", type: 'staple', category: 'Dairy & Eggs' },
+  { name: "Sainsbury's Gouda Cheese Slices 250g", type: 'staple', category: 'Dairy & Eggs' },
+  { name: "Sainsbury's Grated Mozzarella Cheese 250g", type: 'staple', category: 'Dairy & Eggs' },
+  { name: 'Müller Light Fat Free Strawberry Yogurt 160g', type: 'staple', category: 'Dairy & Eggs' },
+
+  // Dairy & Alternatives - Staples
+  { name: 'Alpro Plain No Sugars Soya Dairy Free Yoghurt Alternative 500g', type: 'staple', category: 'Dairy & Alternatives' },
+
+  // Meat & Poultry - Staples
+  { name: "Sainsbury's German Salami Slices x17 170g", type: 'staple', category: 'Meat & Poultry' },
+  { name: "Sainsbury's Unsmoked Streaky Bacon Rashers x14 300g", type: 'staple', category: 'Meat & Poultry' },
+
+  // Bakery - Staples
+  { name: 'Fitzgeralds Family Bakery Deli Style Sourdough Bagels Pre-Sliced x5 425g', type: 'staple', category: 'Bakery' },
+  { name: 'Warburtons White Soft Pittas x4', type: 'staple', category: 'Bakery' },
+  { name: 'Kingsmill Medium Sliced 50/50 Bread 800g', type: 'staple', category: 'Bakery' },
+
+  // Pantry - Staples
+  { name: "Sainsbury's Salted Cashew 200g", type: 'staple', category: 'Pantry' },
+  { name: 'Jordans No Added Sugar Apple & Berry Granola Breakfast Cereal 425g', type: 'staple', category: 'Pantry' },
+
+  // Pantry - Restock
+  { name: 'Allinson Wholemeal Plain Flour 1kg', type: 'restock', category: 'Pantry' },
+  { name: 'Crazy Jack Organic Pine Nuts 100g', type: 'restock', category: 'Pantry' },
+  { name: 'Frylight 1 Cal Golden Sunflower Oil Cooking Spray 190ml', type: 'restock', category: 'Pantry' },
+  { name: "Sainsbury's Basmati Rice 1kg", type: 'restock', category: 'Pantry' },
+  { name: "Sainsbury's Cornflour 500g", type: 'restock', category: 'Pantry' },
+  { name: "Sainsbury's Fusilli Pasta 500g", type: 'restock', category: 'Pantry' },
+  { name: "Sainsbury's Macaroni Pasta 500g", type: 'restock', category: 'Pantry' },
+  { name: "Sainsbury's Scottish Porridge Oats 1kg", type: 'restock', category: 'Pantry' },
+  { name: "Sharwood's Medium Egg Noodles 226g", type: 'restock', category: 'Pantry' },
+  { name: 'Whitworths Golden Apricots 140g', type: 'restock', category: 'Pantry' },
+  { name: 'Natco Popping Corn 500g', type: 'restock', category: 'Pantry' },
+  { name: 'Green Giant Salt Free Sweet Corn 4x198g', type: 'restock', category: 'Pantry' },
+
+  // Frozen - Staples
+  { name: "Sainsbury's Frozen Blueberries 360g", type: 'staple', category: 'Frozen' },
+
+  // Condiments & Sauces - Staples
+  { name: 'Sabra Houmous Extra 200g', type: 'staple', category: 'Condiments & Sauces' },
+
+  // Condiments & Sauces - Restock
+  { name: 'Amoy Soy Sauce Light 150ml', type: 'restock', category: 'Condiments & Sauces' },
+  { name: 'Rowse Original Squeezy Honey 250g', type: 'restock', category: 'Condiments & Sauces' },
+  { name: "Sainsbury's Dijon Mustard 185g", type: 'restock', category: 'Condiments & Sauces' },
+  { name: "Sainsbury's Mirin Inspired to Cook 150ml", type: 'restock', category: 'Condiments & Sauces' },
+  { name: "Sainsbury's Pitted Green Olives 340g", type: 'restock', category: 'Condiments & Sauces' },
+
+  // Herbs & Spices - Restock
+  { name: "Sainsbury's Garlic Granules 58g", type: 'restock', category: 'Herbs & Spices' },
+
+  // Ready Meals & Soups - Staples
+  { name: "Sainsbury's Carrot & Honey Roast Parsnip Soup Taste the Difference 600g", type: 'staple', category: 'Ready Meals & Soups' },
+  { name: "Sainsbury's Petits Pois & Ham Soup Taste the Difference 600g", type: 'staple', category: 'Ready Meals & Soups' },
+  { name: "Sainsbury's Tomato & Basil Soup 600g", type: 'staple', category: 'Ready Meals & Soups' },
+
+  // Beverages - Staples
+  { name: 'Pepsi Max No Sugar Cola Bottle 2L', type: 'staple', category: 'Beverages' },
+  { name: 'Pepsi Max Lime No Sugar Cola Bottle 2L', type: 'staple', category: 'Beverages' },
+
+  // Beverages - Restock
+  { name: "Sainsbury's Quadruple Strength Summer Fruits Squash 1.5L", type: 'restock', category: 'Beverages' },
+]
+
+// =============================================================================
+// SEED FUNCTIONS
+// =============================================================================
+
+/**
+ * Seeds categories and master list items (idempotent - safe for production)
+ */
+async function seedMasterListData() {
+  console.log('Seeding categories and master list items...')
+
+  // Upsert categories
+  const categoryMap = new Map<string, string>()
+  for (const cat of categories) {
+    const result = await prisma.category.upsert({
+      where: { name: cat.name },
+      update: { order: cat.order },
+      create: cat,
+    })
+    categoryMap.set(cat.name, result.id)
+  }
+  console.log(`✅ Upserted ${categories.length} categories`)
+
+  // Upsert master list items
+  let itemCount = 0
+  for (let i = 0; i < masterListItems.length; i++) {
+    const item = masterListItems[i]
+    const categoryId = categoryMap.get(item.category)
+    if (!categoryId) {
+      console.warn(`⚠️ Category not found for item: ${item.name}`)
+      continue
+    }
+
+    // Use name + type as unique identifier for upsert
+    const existing = await prisma.masterListItem.findFirst({
+      where: { name: item.name, type: item.type },
+    })
+
+    if (existing) {
+      await prisma.masterListItem.update({
+        where: { id: existing.id },
+        data: { categoryId, order: i },
+      })
+    } else {
+      await prisma.masterListItem.create({
+        data: {
+          name: item.name,
+          type: item.type,
+          categoryId,
+          order: i,
+        },
+      })
+    }
+    itemCount++
+  }
+  console.log(`✅ Upserted ${itemCount} master list items`)
+}
+
+/**
+ * Seeds example recipes (additive - won't overwrite existing data)
+ * Note: Don't use NODE_ENV checks here - Prisma CLI doesn't set it reliably.
+ * The existingCount check is the real safeguard.
+ */
+async function seedExampleRecipes() {
+  console.log('Checking example recipes...')
+
+  // Real safeguard: skip if recipes already exist
+  const existingCount = await prisma.recipe.count()
+  if (existingCount > 0) {
+    console.log(`⏭️ Skipping recipe seeding - ${existingCount} recipes already exist`)
+    return
+  }
+
   const recipes = [
     {
       name: 'Walnut-Rosemary Crusted Salmon',
@@ -213,6 +377,21 @@ salt and white pepper, to taste
   }
 
   console.log(`✅ Created ${recipes.length} example recipes`)
+}
+
+// =============================================================================
+// MAIN
+// =============================================================================
+
+async function main() {
+  console.log('🌱 Starting database seed...')
+  console.log('')
+
+  await seedMasterListData()
+  await seedExampleRecipes()
+
+  console.log('')
+  console.log('🎉 Seed complete!')
 }
 
 main()
