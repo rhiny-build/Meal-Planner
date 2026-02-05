@@ -23,7 +23,7 @@ import MasterListTab from './MasterListTab'
 
 type ShoppingListWithItems = ShoppingList & { items: ShoppingListItem[] }
 type CategoryWithItems = Category & { items: MasterListItem[] }
-type Tab = 'thisWeek' | 'staples' | 'restock'
+type Tab = 'meals' | 'staples' | 'restock' | 'list'
 
 interface ShoppingListClientProps {
   initialList: ShoppingListWithItems | null
@@ -36,7 +36,7 @@ interface ShoppingListClientProps {
 export default function ShoppingListClient({
   initialList,
   initialWeekStart,
-  initialTab = 'thisWeek',
+  initialTab = 'meals',
   recipes,
   categories,
 }: ShoppingListClientProps) {
@@ -56,7 +56,7 @@ export default function ShoppingListClient({
 
   const setActiveTab = (tab: Tab) => {
     const params = new URLSearchParams(searchParams.toString())
-    if (tab === 'thisWeek') {
+    if (tab === 'meals') {
       params.delete('tab')
     } else {
       params.set('tab', tab)
@@ -177,14 +177,14 @@ export default function ShoppingListClient({
       {/* Tab Navigation */}
       <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
         <button
-          onClick={() => setActiveTab('thisWeek')}
+          onClick={() => setActiveTab('meals')}
           className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'thisWeek'
+            activeTab === 'meals'
               ? 'border-blue-500 text-blue-600 dark:text-blue-400'
               : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
           }`}
         >
-          This Week
+          This Week&apos;s Meals
         </button>
         <button
           onClick={() => setActiveTab('staples')}
@@ -206,10 +206,52 @@ export default function ShoppingListClient({
         >
           Restock
         </button>
+        <button
+          onClick={() => setActiveTab('list')}
+          className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'list'
+              ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+        >
+          Shopping List
+        </button>
       </div>
 
-      {/* This Week Tab */}
-      {activeTab === 'thisWeek' && (
+      {/* This Week's Meals Tab */}
+      {activeTab === 'meals' && (
+        <>
+          <ShoppingListHeader
+            startDate={currentWeekStart}
+            onPreviousWeek={goToPreviousWeek}
+            onNextWeek={goToNextWeek}
+            isGenerating={isGenerating}
+          />
+
+          {(() => {
+            const mealItems = initialList?.items.filter(item => item.source === 'meal') ?? []
+            if (mealItems.length === 0) {
+              return (
+                <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <p className="text-gray-600 dark:text-gray-400">
+                    No meal ingredients yet. Generate a shopping list from the Shopping List tab.
+                  </p>
+                </div>
+              )
+            }
+            return (
+              <ShoppingListItems
+                items={mealItems}
+                recipes={recipes}
+                onToggle={handleToggle}
+              />
+            )
+          })()}
+        </>
+      )}
+
+      {/* Shopping List Tab */}
+      {activeTab === 'list' && (
         <>
           <ShoppingListHeader
             startDate={currentWeekStart}
@@ -266,6 +308,7 @@ export default function ShoppingListClient({
           description="Items bought every week. Uncheck items you don't need this week."
           weekStart={currentWeekStart}
           includedItemNames={includedStapleNames}
+          listExists={initialList !== null}
         />
       )}
 
@@ -277,6 +320,7 @@ export default function ShoppingListClient({
           description="Household items to restock as needed. Check items you need this week."
           weekStart={currentWeekStart}
           includedItemNames={includedRestockNames}
+          listExists={initialList !== null}
         />
       )}
     </div>
