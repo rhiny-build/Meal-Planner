@@ -171,7 +171,7 @@ export default function ShoppingListClient({
   )
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto px-4">
       <h1 className="text-3xl font-bold mb-6">Shopping List</h1>
 
       {/* Tab Navigation */}

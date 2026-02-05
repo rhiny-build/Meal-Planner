@@ -5,7 +5,7 @@
  * Supports light and dark themes with toggle.
  */
 
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import Header from '@/components/Header'
@@ -14,6 +14,12 @@ import { Toaster } from 'sonner'
 export const metadata: Metadata = {
   title: 'Family Meal Planner',
   description: 'Plan your family meals for the week',
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
 }
 
 export default function RootLayout({

@@ -81,7 +81,7 @@ export default function RecipesPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto px-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Recipe Library</h1>
         <div className="flex gap-2">
