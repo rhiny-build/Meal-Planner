@@ -28,6 +28,7 @@
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import type { RecipeWithIngredients, WeekPlan } from '@/types'
 import MealPlanGridRow from './MealPlanGridRow'
+import MealPlanMobile from './MealPlanMobile'
 import { parseCellId } from '../helpers/dndHelpers'
 import { recipesToOptions } from '../helpers/gridHelpers'
 
@@ -111,51 +112,67 @@ export default function MealPlanGrid({
   const vegetableOptions = recipesToOptions(vegetableRecipes)
 
   return (
-    /**
-     * DndContext - The root component for drag and drop
-     *
-     * - sensors: How drags are initiated (pointer with 8px activation distance)
-     * - onDragEnd: Called when a drag operation completes
-     *
-     * All DraggableRecipeCell components inside will participate in drag operations.
-     */
-    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-      <div className="overflow-x-auto">
-        {/* Parent grid defines columns once - rows use subgrid to inherit them */}
-        <div className="grid grid-cols-[110px_70px_150px_200px_200px_200px_200px] bg-white dark:bg-neutral-900 rounded-lg overflow-hidden shadow-md dark:shadow-xl">
-          {/* Table Header - spans all columns, uses subgrid */}
-          <div className="col-span-7 grid grid-cols-subgrid gap-4 px-5 py-3 bg-gray-100 dark:bg-neutral-800">
-            <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Day</div>
-            <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Date</div>
-            <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Notes</div>
-            <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Lunch</div>
-            <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Protein</div>
-            <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Carb</div>
-            <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Vegetable</div>
-          </div>
-
-          {/* Table Rows */}
-          {weekPlan.map((dayPlan, index) => (
-            <MealPlanGridRow
-              key={dayPlan.day}
-              dayPlan={dayPlan}
-              dayIndex={index}
-              isLastRow={index === weekPlan.length - 1}
-              dayNote={dayNotes[dayPlan.day] || ''}
-              lunchOptions={lunchOptions}
-              proteinOptions={proteinOptions}
-              carbOptions={carbOptions}
-              vegetableOptions={vegetableOptions}
-              lunchRecipes={lunchRecipes}
-              proteinRecipes={proteinRecipes}
-              carbRecipes={carbRecipes}
-              vegetableRecipes={vegetableRecipes}
-              onRecipeChange={onRecipeChange}
-              onNoteChange={onNoteChange}
-            />
-          ))}
-        </div>
+    <>
+      {/* Mobile view - hidden on md and up */}
+      <div className="md:hidden">
+        <MealPlanMobile
+          weekPlan={weekPlan}
+          lunchRecipes={lunchRecipes}
+          proteinRecipes={proteinRecipes}
+          carbRecipes={carbRecipes}
+          vegetableRecipes={vegetableRecipes}
+        />
       </div>
-    </DndContext>
+
+      {/* Desktop view - hidden on mobile */}
+      <div className="hidden md:block">
+        {/**
+         * DndContext - The root component for drag and drop
+         *
+         * - sensors: How drags are initiated (pointer with 8px activation distance)
+         * - onDragEnd: Called when a drag operation completes
+         *
+         * All DraggableRecipeCell components inside will participate in drag operations.
+         */}
+        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+          <div className="overflow-x-auto">
+            {/* Parent grid defines columns once - rows use subgrid to inherit them */}
+            <div className="grid grid-cols-[110px_70px_150px_200px_200px_200px_200px] bg-white dark:bg-neutral-900 rounded-lg overflow-hidden shadow-md dark:shadow-xl">
+              {/* Table Header - spans all columns, uses subgrid */}
+              <div className="col-span-7 grid grid-cols-subgrid gap-4 px-5 py-3 bg-gray-100 dark:bg-neutral-800">
+                <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Day</div>
+                <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Date</div>
+                <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Notes</div>
+                <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Lunch</div>
+                <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Protein</div>
+                <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Carb</div>
+                <div className="text-sm font-medium text-gray-600 dark:text-neutral-300">Vegetable</div>
+              </div>
+
+              {/* Table Rows */}
+              {weekPlan.map((dayPlan, index) => (
+                <MealPlanGridRow
+                  key={dayPlan.day}
+                  dayPlan={dayPlan}
+                  dayIndex={index}
+                  isLastRow={index === weekPlan.length - 1}
+                  dayNote={dayNotes[dayPlan.day] || ''}
+                  lunchOptions={lunchOptions}
+                  proteinOptions={proteinOptions}
+                  carbOptions={carbOptions}
+                  vegetableOptions={vegetableOptions}
+                  lunchRecipes={lunchRecipes}
+                  proteinRecipes={proteinRecipes}
+                  carbRecipes={carbRecipes}
+                  vegetableRecipes={vegetableRecipes}
+                  onRecipeChange={onRecipeChange}
+                  onNoteChange={onNoteChange}
+                />
+              ))}
+            </div>
+          </div>
+        </DndContext>
+      </div>
+    </>
   )
 }
