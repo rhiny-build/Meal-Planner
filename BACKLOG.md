@@ -87,7 +87,7 @@ Living document for tracking features, bugs, and improvements.
 ### Visual & Interaction
 - [ ] Visual refresh - modernize look and feel
 - [ ] Drag-and-drop meals between days
-- [ ] Mobile responsiveness (viewing + editing on phone)
+- [ ] Mobile responsiveness: editing on phone (viewing complete)
 
 ### Shopping List Enhancements
 - [ ] Manage master lists (add/edit/delete staples and restock items permanently)
@@ -101,6 +101,7 @@ Living document for tracking features, bugs, and improvements.
 
 ## Completed
 
+- [x] Mobile meal plan view with day navigation (2026-02-05)
 - [x] Shopping list tab separation - 4 tabs: Meals | Staples | Restock | Shopping List (2026-02-05)
 - [x] Testing infrastructure with Vitest - 150 tests (2026-02-05)
 - [x] Shopping list staples/restock feature (2026-02-04)
