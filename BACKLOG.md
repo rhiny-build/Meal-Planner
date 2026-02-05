@@ -37,7 +37,11 @@ Living document for tracking features, bugs, and improvements.
 - [x] Staples: Auto-included when generating list, uncheck to exclude
 - [x] Restock: Check to include in this week's list
 - [x] Generate list now includes meal ingredients + all staples
-- [ ] **UI Fixes needed** (see below)
+
+**UI Fixes:** ✅ All complete
+- [x] Checkbox default bug in Staples tab: all staples should be checked by default (currently unchecked)
+- [x] Shopping list tab separation: Split into 4 tabs (This Week's Meals | Staples | Restock | Shopping List)
+- [x] Group Staples and Restock items by category with collapsible accordion (collapsed by default)
 
 **Remaining Shopping List Work:**
 - [ ] Master list management UI (add/edit/delete staples and restock items permanently) - Phase 2 from design doc
@@ -46,12 +50,11 @@ Living document for tracking features, bugs, and improvements.
 
 ---
 
-### Priority 1.5: Testing Infrastructure
+### Priority 1.5: Testing Infrastructure ✅ COMPLETE
 
-- [ ] Add basic integration tests for main flows (safety net for regressions)
-  - Shopping list generation from meal plan
-  - Meal plan CRUD operations
-  - Recipe CRUD operations
+- [x] Testing infrastructure with Vitest (150 tests: 132 unit + 18 integration)
+- [x] Separate test database for integration tests
+- [x] Coverage: Shopping list, recipes, meal plan, hooks, components, AI functions
 
 ---
 
@@ -98,6 +101,8 @@ Living document for tracking features, bugs, and improvements.
 
 ## Completed
 
+- [x] Shopping list tab separation - 4 tabs: Meals | Staples | Restock | Shopping List (2026-02-05)
+- [x] Testing infrastructure with Vitest - 150 tests (2026-02-05)
 - [x] Shopping list staples/restock feature (2026-02-04)
 - [x] Add day notes field (localStorage, auto-clears after week passes)
 - [x] Add vegetable dish support (checkbox in recipes, third column in meal plan grid)
