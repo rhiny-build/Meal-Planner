@@ -186,48 +186,53 @@ This module has no external integration needs - all operations are internal UI m
 
 ## Implementation Phases
 
-### Phase 1: Module Setup & Foundation
+### Phase 1: Module Setup & Foundation ✅ COMPLETE
 
 **Outcome:** Shopping list works exactly as before, but code is restructured as a module with server actions. New data model in place. No user-facing changes.
 
-- [ ] Create module structure (`/app/shopping-list/` with `actions.ts`, `components/`)
-- [ ] Add `Staple` and `RestockItem` tables to schema
-- [ ] Add `source` field to `ShoppingListItem` (replace `isManual`)
-- [ ] Run migration, convert existing data
-- [ ] Migrate existing shopping list code into module structure
-- [ ] Remove legacy API routes and hooks
-- [ ] Tests: Unit tests for server actions, existing functionality still works
-- [ ] Docs: Update ARCHITECTURE.md with actual module structure
+- [x] Create module structure (`/app/(modules)/shopping-list/` with `actions.ts`, `components/`)
+- [x] Add `Category` and `MasterListItem` tables to schema (unified approach instead of separate Staple/RestockItem)
+- [x] Add `source` field to `ShoppingListItem` (replace `isManual`)
+- [x] Run migration, convert existing data
+- [x] Migrate existing shopping list code into module structure
+- [x] Remove legacy API routes and hooks
+- [ ] Tests: Unit tests for server actions (deferred)
+- [x] Docs: Update ARCHITECTURE.md with actual module structure
 
-### Phase 2: Master List Management
+### Phase 2: Master List Management ⏳ NOT STARTED
 
 **Outcome:** Users can create and manage their staples list and restock items list. These are "set once, use weekly" master lists.
 
 - [ ] Create staples management UI (within shopping-list module)
 - [ ] Server actions for staples: add, edit, delete, reorder
 - [ ] Simple UI: list view with add input, delete buttons
-- [ ] Repeat for RestockItem
+- [ ] Repeat for restock items
 - [ ] Tests: Unit tests for staples/restock server actions
 - [ ] Docs: Update design doc with any UX decisions made
 
-### Phase 3: Assembly Flow
+*Note: Currently using seed data for master lists. No CRUD UI exists yet.*
+
+### Phase 3: Assembly Flow ✅ COMPLETE
 
 **Outcome:** Users can generate a complete weekly shopping list that combines meal ingredients + staples + selected restock items + manual additions. Full workflow functional.
 
-- [ ] Update "Generate" to include staples by default
-- [ ] Add UI for reviewing/removing staples from current week
-- [ ] Add UI for selecting restocking items to include
-- [ ] Update shopping list display to show source
-- [ ] Tests: Integration tests for assembly flow
+- [x] Update "Generate" to include staples by default
+- [x] Add UI for reviewing/removing staples from current week (Staples tab with checkboxes)
+- [x] Add UI for selecting restocking items to include (Restock tab with checkboxes)
+- [x] Update shopping list display to show source (via notes field)
+- [ ] Tests: Integration tests for assembly flow (deferred)
 - [ ] Docs: Update user-facing README with new workflow
 
-### Phase 4: Polish
+### Phase 4: Polish ⏳ IN PROGRESS
 
 **Outcome:** Shopping list is production-ready with good UX across devices.
 
+- [ ] UI bug fixes (current session)
+- [ ] Remove mockup pages (`/mockups/*`)
 - [ ] UX review and iteration on assembly flow
 - [ ] Consider grouping/filtering options
 - [ ] Mobile experience optimization
+- [ ] Remove auto-seed from build script once data is stable
 - [ ] Tests: Review coverage, add edge case tests
 - [ ] Docs: Final review, ensure all docs are current
 
@@ -256,4 +261,4 @@ This module has no external integration needs - all operations are internal UI m
 ---
 
 *Document created: 2026-02-02*
-*Last updated: 2026-02-03*
+*Last updated: 2026-02-04*

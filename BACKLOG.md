@@ -29,10 +29,29 @@ Living document for tracking features, bugs, and improvements.
 **Meal Plan UI:**
 - [x] Add collapsible drawer for ingredient details (click day name to expand)
 
-**Shopping List:**
-- [ ] Add delete button for shopping list items - [Code Review #9]
-- [ ] Manage staples (persistent items that don't need to be on the list)
-- [ ] Generate full shopping list (combining meal ingredients + manual items)
+**Shopping List:** Assembly flow complete, master list management pending
+- [x] Add delete button for shopping list items - [Code Review #9] - ignored as per user instruction
+- [x] Add tabs UI (This Week | Staples | Restock)
+- [x] Schema: Category and MasterListItem tables
+- [x] Seed data: 11 categories, 52 master list items (34 staples, 18 restock)
+- [x] Staples: Auto-included when generating list, uncheck to exclude
+- [x] Restock: Check to include in this week's list
+- [x] Generate list now includes meal ingredients + all staples
+- [ ] **UI Fixes needed** (see below)
+
+**Remaining Shopping List Work:**
+- [ ] Master list management UI (add/edit/delete staples and restock items permanently) - Phase 2 from design doc
+- [ ] Polish: Remove mockup pages (`/mockups/tabs`, `/mockups/accordion`, `/mockups/modal`)
+- [ ] Later: Remove auto-seed from build script once data is stable
+
+---
+
+### Priority 1.5: Testing Infrastructure
+
+- [ ] Add basic integration tests for main flows (safety net for regressions)
+  - Shopping list generation from meal plan
+  - Meal plan CRUD operations
+  - Recipe CRUD operations
 
 ---
 
@@ -68,6 +87,8 @@ Living document for tracking features, bugs, and improvements.
 - [ ] Mobile responsiveness (viewing + editing on phone)
 
 ### Shopping List Enhancements
+- [ ] Manage master lists (add/edit/delete staples and restock items permanently)
+- [ ] Reorder items within categories (drag-and-drop)
 - [ ] Fuzzy matching for semantic duplicates (mayo/mayonnaise, salt/salt and pepper)
 
 ### AI Quality
@@ -77,6 +98,7 @@ Living document for tracking features, bugs, and improvements.
 
 ## Completed
 
+- [x] Shopping list staples/restock feature (2026-02-04)
 - [x] Add day notes field (localStorage, auto-clears after week passes)
 - [x] Add vegetable dish support (checkbox in recipes, third column in meal plan grid)
 - [x] Remember last viewed week (localStorage persistence)
@@ -89,6 +111,8 @@ Living document for tracking features, bugs, and improvements.
 
 ## Notes
 
+- **2026-02-04**: Critical issue - seed script data loss. See [Critical-Issues-Log.md](docs/Critical-Issues-Log.md)
 - Perplexity integration for "Inspire Me" search working well
 - Shopping list schema discussion resolved: keeping simple text-based approach (no foreign keys to ingredients)
 - Code review completed 2026-01-31 - see [Code-Review-2026-01-31.md](Code-Review-2026-01-31.md) for full details
+- Shopping list feature design doc: [Shopping-List-Feature-Design.md](docs/Shopping-List-Feature-Design.md) - Phase 1 & 2 complete

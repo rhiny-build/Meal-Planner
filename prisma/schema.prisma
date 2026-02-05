@@ -110,24 +110,31 @@ model ShoppingListItem {
   @@index([shoppingListId])
 }
 
-// Staple model stores items bought every week (bread, milk, eggs)
-model Staple {
+// Category model for grouping master list items by store section
+model Category {
   id        String   @id @default(cuid())
-  name      String
-  quantity  String?  // Optional default quantity
-  unit      String?  // Optional default unit
+  name      String   @unique // e.g., "Fresh Produce", "Pantry", "Dairy & Eggs"
   order     Int      // Display order
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Relationship: A category has many master list items
+  items MasterListItem[]
 }
 
-// RestockItem model stores household goods replenished as needed
-model RestockItem {
-  id        String   @id @default(cuid())
-  name      String
-  quantity  String?  // Optional default quantity
-  unit      String?  // Optional default unit
-  order     Int      // Display order
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// MasterListItem model stores staples and restock items (unified table)
+model MasterListItem {
+  id         String   @id @default(cuid())
+  name       String   // Product name (e.g., "Sainsbury's British Free Range Eggs Large x12")
+  type       String   // 'staple' | 'restock'
+  categoryId String
+  order      Int      // Display order within category
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relationship: Each item belongs to one category (Restrict = can't delete category with items)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@index([categoryId])
+  @@index([type])
 }

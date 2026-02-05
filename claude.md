@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## User Interaction
+
+Always try not to overwhelm the user. Remember that most users will need a bit of time to digest your repsonse so whenever it is a big response (as a guideline more than 3 paragraphs), break it down and ask the user whether it's ok to continue or they wish to discuss. Likewise, when you have multiple questions to ask (again more than 2 or 3) state that you have a few questions and engage with the user one questions at a time.
+
 ## Development Workflow
 
 ### Git Branching Strategy

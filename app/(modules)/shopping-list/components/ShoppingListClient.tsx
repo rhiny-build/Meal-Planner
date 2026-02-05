@@ -14,24 +14,31 @@ import { getMonday } from '@/lib/dateUtils'
 import { formatShoppingListAsText } from '@/lib/shoppingListHelpers'
 import { generateShoppingList, toggleItem, addItem } from '../actions'
 import type { Recipe } from '@/types'
-import type { ShoppingList, ShoppingListItem } from '@prisma/client'
+import type { ShoppingList, ShoppingListItem, Category, MasterListItem } from '@prisma/client'
 import Button from '@/components/Button'
 import ShoppingListHeader from './ShoppingListHeader'
 import ShoppingListItems from './ShoppingListItems'
 import AddItemForm from './AddItemForm'
+import MasterListTab from './MasterListTab'
 
 type ShoppingListWithItems = ShoppingList & { items: ShoppingListItem[] }
+type CategoryWithItems = Category & { items: MasterListItem[] }
+type Tab = 'thisWeek' | 'staples' | 'restock'
 
 interface ShoppingListClientProps {
   initialList: ShoppingListWithItems | null
   initialWeekStart: Date
+  initialTab?: Tab
   recipes: Recipe[]
+  categories: CategoryWithItems[]
 }
 
 export default function ShoppingListClient({
   initialList,
   initialWeekStart,
+  initialTab = 'thisWeek',
   recipes,
+  categories,
 }: ShoppingListClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -39,13 +46,28 @@ export default function ShoppingListClient({
   const [isGenerating, setIsGenerating] = useState(false)
   const [showAddForm, setShowAddForm] = useState(false)
 
+  // Current tab is derived from URL or initial props
+  const tabParam = searchParams.get('tab') as Tab | null
+  const activeTab = tabParam || initialTab
+
   // Current week is derived from URL or initial props
   const weekParam = searchParams.get('week')
   const currentWeekStart = weekParam ? getMonday(new Date(weekParam)) : initialWeekStart
 
+  const setActiveTab = (tab: Tab) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (tab === 'thisWeek') {
+      params.delete('tab')
+    } else {
+      params.set('tab', tab)
+    }
+    router.push(`/shopping-list?${params.toString()}`)
+  }
+
   const navigateToWeek = (date: Date) => {
-    const isoDate = date.toISOString().split('T')[0]
-    router.push(`/shopping-list?week=${isoDate}`)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('week', date.toISOString().split('T')[0])
+    router.push(`/shopping-list?${params.toString()}`)
   }
 
   const goToPreviousWeek = () => {
@@ -121,53 +143,141 @@ export default function ShoppingListClient({
     })
   }
 
+  // Filter categories by item type for staples/restock tabs
+  const staplesCategories = categories
+    .map(cat => ({
+      ...cat,
+      items: cat.items.filter(item => item.type === 'staple'),
+    }))
+    .filter(cat => cat.items.length > 0)
+
+  const restockCategories = categories
+    .map(cat => ({
+      ...cat,
+      items: cat.items.filter(item => item.type === 'restock'),
+    }))
+    .filter(cat => cat.items.length > 0)
+
+  // Get sets of item names that are in the current shopping list by source
+  const includedStapleNames = new Set(
+    initialList?.items
+      .filter(item => item.source === 'staple')
+      .map(item => item.name) ?? []
+  )
+  const includedRestockNames = new Set(
+    initialList?.items
+      .filter(item => item.source === 'restock')
+      .map(item => item.name) ?? []
+  )
+
   return (
     <div className="max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Shopping List</h1>
 
-      <ShoppingListHeader
-        startDate={currentWeekStart}
-        onPreviousWeek={goToPreviousWeek}
-        onNextWeek={goToNextWeek}
-        onGenerate={handleGenerate}
-        onExport={handleExport}
-        isGenerating={isGenerating}
-        hasItems={initialList?.items && initialList.items.length > 0}
-      />
+      {/* Tab Navigation */}
+      <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
+        <button
+          onClick={() => setActiveTab('thisWeek')}
+          className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'thisWeek'
+              ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+        >
+          This Week
+        </button>
+        <button
+          onClick={() => setActiveTab('staples')}
+          className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'staples'
+              ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+        >
+          Staples
+        </button>
+        <button
+          onClick={() => setActiveTab('restock')}
+          className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'restock'
+              ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+        >
+          Restock
+        </button>
+      </div>
 
-      {!initialList || initialList.items.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            No shopping list for this week yet.
-          </p>
-          <Button onClick={handleGenerate} disabled={isGenerating}>
-            {isGenerating ? 'Generating...' : 'Generate from Meal Plan'}
-          </Button>
-        </div>
-      ) : (
+      {/* This Week Tab */}
+      {activeTab === 'thisWeek' && (
         <>
-          <ShoppingListItems
-            items={initialList.items}
-            recipes={recipes}
-            onToggle={handleToggle}
+          <ShoppingListHeader
+            startDate={currentWeekStart}
+            onPreviousWeek={goToPreviousWeek}
+            onNextWeek={goToNextWeek}
+            onGenerate={handleGenerate}
+            onExport={handleExport}
+            isGenerating={isGenerating}
+            hasItems={initialList?.items && initialList.items.length > 0}
           />
 
-          {showAddForm ? (
-            <AddItemForm
-              onAdd={handleAddItem}
-              onCancel={() => setShowAddForm(false)}
-            />
+          {!initialList || initialList.items.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                No shopping list for this week yet.
+              </p>
+              <Button onClick={handleGenerate} disabled={isGenerating}>
+                {isGenerating ? 'Generating...' : 'Generate from Meal Plan'}
+              </Button>
+            </div>
           ) : (
-            <Button
-              variant="secondary"
-              onClick={() => setShowAddForm(true)}
-              className="mt-4"
-              disabled={isPending}
-            >
-              + Add Item
-            </Button>
+            <>
+              <ShoppingListItems
+                items={initialList.items}
+                recipes={recipes}
+                onToggle={handleToggle}
+              />
+
+              {showAddForm ? (
+                <AddItemForm
+                  onAdd={handleAddItem}
+                  onCancel={() => setShowAddForm(false)}
+                />
+              ) : (
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowAddForm(true)}
+                  className="mt-4"
+                  disabled={isPending}
+                >
+                  + Add Item
+                </Button>
+              )}
+            </>
           )}
         </>
+      )}
+
+      {/* Staples Tab */}
+      {activeTab === 'staples' && (
+        <MasterListTab
+          type="staple"
+          categories={staplesCategories}
+          description="Items bought every week. Uncheck items you don't need this week."
+          weekStart={currentWeekStart}
+          includedItemNames={includedStapleNames}
+        />
+      )}
+
+      {/* Restock Tab */}
+      {activeTab === 'restock' && (
+        <MasterListTab
+          type="restock"
+          categories={restockCategories}
+          description="Household items to restock as needed. Check items you need this week."
+          weekStart={currentWeekStart}
+          includedItemNames={includedRestockNames}
+        />
       )}
     </div>
   )

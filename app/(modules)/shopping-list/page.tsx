@@ -11,12 +11,13 @@ import { getMonday } from '@/lib/dateUtils'
 import ShoppingListClient from './components/ShoppingListClient'
 
 interface PageProps {
-  searchParams: Promise<{ week?: string }>
+  searchParams: Promise<{ week?: string; tab?: string }>
 }
 
 async function ShoppingListContent({ searchParams }: PageProps) {
   const params = await searchParams
   const weekParam = params.week
+  const tabParam = params.tab
 
   // Determine the week to display
   const weekStart = weekParam ? getMonday(new Date(weekParam)) : getMonday(new Date())
@@ -41,11 +42,23 @@ async function ShoppingListContent({ searchParams }: PageProps) {
     },
   })
 
+  // Fetch categories with their master list items (for staples/restock tabs)
+  const categories = await prisma.category.findMany({
+    orderBy: { order: 'asc' },
+    include: {
+      items: {
+        orderBy: { order: 'asc' },
+      },
+    },
+  })
+
   return (
     <ShoppingListClient
       initialList={shoppingList}
       initialWeekStart={weekStart}
+      initialTab={tabParam as 'thisWeek' | 'staples' | 'restock' | undefined}
       recipes={recipes as any}
+      categories={categories}
     />
   )
 }

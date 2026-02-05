@@ -13,13 +13,11 @@ interface MealPlanHeaderProps {
   selectedCount: number
   isGenerating: boolean
   isSaving: boolean
-  isGeneratingList: boolean
   onPreviousWeek: () => void
   onNextWeek: () => void
   onGenerate: () => void
   onSave: () => void
   onClear: () => void
-  onGenerateShoppingList: () => void
 }
 
 export default function MealPlanHeader({
@@ -27,13 +25,11 @@ export default function MealPlanHeader({
   selectedCount,
   isGenerating,
   isSaving,
-  isGeneratingList,
   onPreviousWeek,
   onNextWeek,
   onGenerate,
   onSave,
   onClear,
-  onGenerateShoppingList,
 }: MealPlanHeaderProps) {
   return (
     <>
@@ -60,9 +56,6 @@ export default function MealPlanHeader({
         </Button>
         <Button onClick={onClear} variant="secondary">
           Clear All
-        </Button>
-        <Button onClick={onGenerateShoppingList} disabled={isGeneratingList || selectedCount === 0}>
-          {isGeneratingList ? 'Generating...' : 'Generate Shopping List'}
         </Button>
       </div>
 
