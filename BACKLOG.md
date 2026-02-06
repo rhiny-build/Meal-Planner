@@ -43,10 +43,10 @@ Living document for tracking features, bugs, and improvements.
 - [x] Shopping list tab separation: Split into 4 tabs (This Week's Meals | Staples | Restock | Shopping List)
 - [x] Group Staples and Restock items by category with collapsible accordion (collapsed by default)
 
-**Remaining Shopping List Work:**
-- [ ] Master list management UI (add/edit/delete staples and restock items permanently) - Phase 2 from design doc
-- [ ] Polish: Remove mockup pages (`/mockups/tabs`, `/mockups/accordion`, `/mockups/modal`)
-- [ ] Later: Remove auto-seed from build script once data is stable
+**Remaining Shopping List Work:** ✅ All complete
+- [x] Master list management UI (add/edit/delete staples and restock items permanently) - Settings page at `/settings`
+- [x] Polish: Remove mockup pages (`/mockups/tabs`, `/mockups/accordion`, `/mockups/modal`)
+- [x] Remove auto-seed from build script
 
 ---
 
@@ -90,7 +90,6 @@ Living document for tracking features, bugs, and improvements.
 - [ ] Mobile responsiveness: editing on phone (viewing complete)
 
 ### Shopping List Enhancements
-- [ ] Manage master lists (add/edit/delete staples and restock items permanently)
 - [ ] Reorder items within categories (drag-and-drop)
 - [ ] Fuzzy matching for semantic duplicates (mayo/mayonnaise, salt/salt and pepper)
 
@@ -101,6 +100,7 @@ Living document for tracking features, bugs, and improvements.
 
 ## Completed
 
+- [x] Settings page with master list management UI (2026-02-06)
 - [x] Mobile meal plan view with swipe navigation and day persistence (2026-02-06)
 - [x] Shopping list tab separation - 4 tabs: Meals | Staples | Restock | Shopping List (2026-02-05)
 - [x] Testing infrastructure with Vitest - 150 tests (2026-02-05)

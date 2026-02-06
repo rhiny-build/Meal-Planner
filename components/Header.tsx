@@ -12,6 +12,7 @@ export default function Header() {
     { href: '/recipes', label: 'Recipes' },
     { href: '/meal-plan', label: 'Meal Plan' },
     { href: '/shopping-list', label: 'Shopping List' },
+    { href: '/settings', label: 'Settings' },
   ]
 
   return (

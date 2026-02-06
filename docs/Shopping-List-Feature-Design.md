@@ -199,18 +199,15 @@ This module has no external integration needs - all operations are internal UI m
 - [ ] Tests: Unit tests for server actions (deferred)
 - [x] Docs: Update ARCHITECTURE.md with actual module structure
 
-### Phase 2: Master List Management ⏳ NOT STARTED
+### Phase 2: Master List Management ✅ COMPLETE
 
 **Outcome:** Users can create and manage their staples list and restock items list. These are "set once, use weekly" master lists.
 
-- [ ] Create staples management UI (within shopping-list module)
-- [ ] Server actions for staples: add, edit, delete, reorder
-- [ ] Simple UI: list view with add input, delete buttons
-- [ ] Repeat for restock items
-- [ ] Tests: Unit tests for staples/restock server actions
-- [ ] Docs: Update design doc with any UX decisions made
-
-*Note: Currently using seed data for master lists. No CRUD UI exists yet.*
+- [x] Create settings page with master list management UI (`/settings`)
+- [x] Server actions for staples/restock: add, edit, delete
+- [x] UI: Accordion by category, inline editing, add form with category dropdown
+- [ ] Reorder items within categories (deferred - future enhancement)
+- [ ] Tests: Unit tests for staples/restock server actions (deferred)
 
 ### Phase 3: Assembly Flow ✅ COMPLETE
 

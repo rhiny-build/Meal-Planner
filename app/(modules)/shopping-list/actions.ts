@@ -233,3 +233,62 @@ export async function excludeMasterListItem(
   revalidatePath('/shopping-list')
   return true
 }
+
+// ============================================================
+// Master List Management Actions
+// ============================================================
+
+/**
+ * Add a new item to the master list (staples or restock)
+ */
+export async function addMasterListItem(
+  categoryId: string,
+  name: string,
+  type: 'staple' | 'restock'
+) {
+  // Get max order within this category for this type
+  const maxOrder = await prisma.masterListItem.aggregate({
+    where: { categoryId, type },
+    _max: { order: true },
+  })
+
+  const item = await prisma.masterListItem.create({
+    data: {
+      categoryId,
+      name: name.trim(),
+      type,
+      order: (maxOrder._max.order ?? -1) + 1,
+    },
+  })
+
+  revalidatePath('/shopping-list')
+  revalidatePath('/settings')
+  return item
+}
+
+/**
+ * Update a master list item's name
+ */
+export async function updateMasterListItem(itemId: string, name: string) {
+  const item = await prisma.masterListItem.update({
+    where: { id: itemId },
+    data: { name: name.trim() },
+  })
+
+  revalidatePath('/shopping-list')
+  revalidatePath('/settings')
+  return item
+}
+
+/**
+ * Delete a master list item
+ */
+export async function deleteMasterListItem(itemId: string) {
+  await prisma.masterListItem.delete({
+    where: { id: itemId },
+  })
+
+  revalidatePath('/shopping-list')
+  revalidatePath('/settings')
+  return true
+}
