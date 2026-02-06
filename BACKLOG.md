@@ -101,7 +101,7 @@ Living document for tracking features, bugs, and improvements.
 
 ## Completed
 
-- [x] Mobile meal plan view with day navigation (2026-02-05)
+- [x] Mobile meal plan view with swipe navigation and day persistence (2026-02-06)
 - [x] Shopping list tab separation - 4 tabs: Meals | Staples | Restock | Shopping List (2026-02-05)
 - [x] Testing infrastructure with Vitest - 150 tests (2026-02-05)
 - [x] Shopping list staples/restock feature (2026-02-04)
