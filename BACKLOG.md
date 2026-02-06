@@ -100,6 +100,8 @@ Living document for tracking features, bugs, and improvements.
 
 ## Completed
 
+- [x] Dynamic dish types management (protein/carb types stored in database, manageable via Settings) (2026-02-06)
+- [x] Category management in Settings (add/edit/delete categories for staples/restock) (2026-02-06)
 - [x] Settings page with master list management UI (2026-02-06)
 - [x] Mobile meal plan view with swipe navigation and day persistence (2026-02-06)
 - [x] Shopping list tab separation - 4 tabs: Meals | Staples | Restock | Shopping List (2026-02-05)
