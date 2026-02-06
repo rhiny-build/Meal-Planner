@@ -28,11 +28,21 @@ async function SettingsContent({ searchParams }: PageProps) {
     },
   })
 
+  // Fetch dish types
+  const dishTypes = await prisma.dishType.findMany({
+    orderBy: [{ category: 'asc' }, { order: 'asc' }],
+  })
+
+  const proteinTypes = dishTypes.filter(t => t.category === 'protein')
+  const carbTypes = dishTypes.filter(t => t.category === 'carb')
+
   return (
     <SettingsClient
-      initialTab={tabParam as 'master-lists' | undefined}
+      initialTab={tabParam as 'master-lists' | 'categories' | 'dish-types' | undefined}
       initialType={typeParam as 'staple' | 'restock' | undefined}
       categories={categories}
+      proteinTypes={proteinTypes}
+      carbTypes={carbTypes}
     />
   )
 }

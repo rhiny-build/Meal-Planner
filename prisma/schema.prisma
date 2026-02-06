@@ -138,3 +138,18 @@ model MasterListItem {
   @@index([categoryId])
   @@index([type])
 }
+
+// DishType model stores dynamic protein and carb types
+model DishType {
+  id        String   @id @default(cuid())
+  value     String   // e.g., "chicken", "rice" (used in Recipe.proteinType/carbType)
+  label     String   // e.g., "Chicken", "Rice" (displayed in UI)
+  category  String   // "protein" | "carb"
+  order     Int      // Display order within category
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Unique constraint: no duplicate values within same category
+  @@unique([category, value])
+  @@index([category])
+}

@@ -1,34 +1,87 @@
 /**
  * Dish Type Configuration
  *
- * Centralized options for protein and carb types.
+ * Fetches protein and carb types from the database.
  * Used across recipe filters, forms, and meal plan components.
  */
 
-export const PROTEIN_OPTIONS = [
-  { value: '', label: 'None' },
-  { value: 'chicken', label: 'Chicken' },
-  { value: 'fish', label: 'Fish' },
-  { value: 'red-meat', label: 'Red Meat' },
-  { value: 'vegetarian', label: 'Vegetarian' },
-]
+import { prisma } from './prisma'
 
-export const CARB_OPTIONS = [
-  { value: '', label: 'None' },
-  { value: 'rice', label: 'Rice' },
-  { value: 'pasta', label: 'Pasta' },
-  { value: 'couscous', label: 'Couscous' },
-  { value: 'fries', label: 'Fries' },
-  { value: 'other', label: 'Other' },
-]
+export interface DishTypeOption {
+  value: string
+  label: string
+}
 
-// Filter variants with 'All' instead of 'None'
-export const PROTEIN_FILTER_OPTIONS = [
-  { value: '', label: 'All' },
-  ...PROTEIN_OPTIONS.slice(1),
-]
+/**
+ * Get protein options for forms (includes "None" option)
+ */
+export async function getProteinOptions(): Promise<DishTypeOption[]> {
+  const types = await prisma.dishType.findMany({
+    where: { category: 'protein' },
+    orderBy: { order: 'asc' },
+  })
 
-export const CARB_FILTER_OPTIONS = [
-  { value: '', label: 'All' },
-  ...CARB_OPTIONS.slice(1),
-]
+  return [
+    { value: '', label: 'None' },
+    ...types.map(t => ({ value: t.value, label: t.label })),
+  ]
+}
+
+/**
+ * Get carb options for forms (includes "None" option)
+ */
+export async function getCarbOptions(): Promise<DishTypeOption[]> {
+  const types = await prisma.dishType.findMany({
+    where: { category: 'carb' },
+    orderBy: { order: 'asc' },
+  })
+
+  return [
+    { value: '', label: 'None' },
+    ...types.map(t => ({ value: t.value, label: t.label })),
+  ]
+}
+
+/**
+ * Get protein options for filters (includes "All" option)
+ */
+export async function getProteinFilterOptions(): Promise<DishTypeOption[]> {
+  const types = await prisma.dishType.findMany({
+    where: { category: 'protein' },
+    orderBy: { order: 'asc' },
+  })
+
+  return [
+    { value: '', label: 'All' },
+    ...types.map(t => ({ value: t.value, label: t.label })),
+  ]
+}
+
+/**
+ * Get carb options for filters (includes "All" option)
+ */
+export async function getCarbFilterOptions(): Promise<DishTypeOption[]> {
+  const types = await prisma.dishType.findMany({
+    where: { category: 'carb' },
+    orderBy: { order: 'asc' },
+  })
+
+  return [
+    { value: '', label: 'All' },
+    ...types.map(t => ({ value: t.value, label: t.label })),
+  ]
+}
+
+/**
+ * Get all dish types for settings page
+ */
+export async function getAllDishTypes() {
+  const types = await prisma.dishType.findMany({
+    orderBy: [{ category: 'asc' }, { order: 'asc' }],
+  })
+
+  return {
+    proteinTypes: types.filter(t => t.category === 'protein'),
+    carbTypes: types.filter(t => t.category === 'carb'),
+  }
+}

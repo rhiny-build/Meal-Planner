@@ -5,15 +5,24 @@
  */
 
 import type { RecipeWithIngredients, RecipeFormData } from '@/types'
+import type { DishTypeOption } from '@/lib/dishTypeConfig'
 import RecipeForm from '@/components/RecipeForm'
 
 interface RecipeModalProps {
   recipe?: RecipeWithIngredients
   onSubmit: (data: RecipeFormData) => Promise<void>
   onCancel: () => void
+  proteinOptions: DishTypeOption[]
+  carbOptions: DishTypeOption[]
 }
 
-export default function RecipeModal({ recipe, onSubmit, onCancel }: RecipeModalProps) {
+export default function RecipeModal({
+  recipe,
+  onSubmit,
+  onCancel,
+  proteinOptions,
+  carbOptions,
+}: RecipeModalProps) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
       <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-2xl w-full my-8">
@@ -24,6 +33,8 @@ export default function RecipeModal({ recipe, onSubmit, onCancel }: RecipeModalP
           recipe={recipe}
           onSubmit={onSubmit}
           onCancel={onCancel}
+          proteinOptions={proteinOptions}
+          carbOptions={carbOptions}
         />
       </div>
     </div>

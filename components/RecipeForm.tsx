@@ -12,7 +12,7 @@ import type { RecipeWithIngredients, RecipeFormData } from '@/types'
 import Button from './Button'
 import Select from './Select'
 import AIImportSection from './AIImportSection'
-import { PROTEIN_OPTIONS, CARB_OPTIONS } from '@/lib/dishTypeConfig'
+import type { DishTypeOption } from '@/lib/dishTypeConfig'
 import { formatIngredient } from '@/lib/ingredientHelpers'
 import { PREP_TIME_OPTIONS, TIER_OPTIONS } from '@/lib/recipeFormConfig'
 
@@ -20,12 +20,16 @@ interface RecipeFormProps {
   recipe?: RecipeWithIngredients // If provided, we're editing; otherwise, creating
   onSubmit: (data: RecipeFormData) => Promise<void>
   onCancel: () => void
+  proteinOptions: DishTypeOption[]
+  carbOptions: DishTypeOption[]
 }
 
 export default function RecipeForm({
   recipe,
   onSubmit,
   onCancel,
+  proteinOptions,
+  carbOptions,
 }: RecipeFormProps) {
   // Build ingredients text from structured ingredients if available
   const getInitialIngredientsText = () => {
@@ -166,7 +170,7 @@ export default function RecipeForm({
         name="proteinType"
         value={formData.proteinType || ''}
         onChange={handleChange}
-        options={PROTEIN_OPTIONS}
+        options={proteinOptions}
         label="Protein Type"
       />
 
@@ -175,7 +179,7 @@ export default function RecipeForm({
         name="carbType"
         value={formData.carbType || ''}
         onChange={handleChange}
-        options={CARB_OPTIONS}
+        options={carbOptions}
         label="Carb Type"
       />
 

@@ -8,22 +8,28 @@
  */
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import type { Category, MasterListItem } from '@prisma/client'
+import type { Category, MasterListItem, DishType } from '@prisma/client'
 import MasterListsTab from './MasterListsTab'
+import CategoriesTab from './CategoriesTab'
+import DishTypesTab from './DishTypesTab'
 
 type CategoryWithItems = Category & { items: MasterListItem[] }
-type Tab = 'master-lists'
+type Tab = 'master-lists' | 'categories' | 'dish-types'
 
 interface SettingsClientProps {
   initialTab?: Tab
   initialType?: 'staple' | 'restock'
   categories: CategoryWithItems[]
+  proteinTypes: DishType[]
+  carbTypes: DishType[]
 }
 
 export default function SettingsClient({
   initialTab = 'master-lists',
   initialType = 'staple',
   categories,
+  proteinTypes,
+  carbTypes,
 }: SettingsClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -58,7 +64,26 @@ export default function SettingsClient({
         >
           Master Lists
         </button>
-        {/* Future tabs can be added here */}
+        <button
+          onClick={() => setActiveTab('categories')}
+          className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'categories'
+              ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+        >
+          Categories
+        </button>
+        <button
+          onClick={() => setActiveTab('dish-types')}
+          className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'dish-types'
+              ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          }`}
+        >
+          Dish Types
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -67,6 +92,12 @@ export default function SettingsClient({
           categories={categories}
           initialType={initialType}
         />
+      )}
+      {activeTab === 'categories' && (
+        <CategoriesTab categories={categories} />
+      )}
+      {activeTab === 'dish-types' && (
+        <DishTypesTab proteinTypes={proteinTypes} carbTypes={carbTypes} />
       )}
     </div>
   )

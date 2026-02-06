@@ -5,13 +5,16 @@
  */
 
 import type { RecipeFilters as RecipeFiltersType } from '@/types'
+import type { DishTypeOption } from '@/lib/dishTypeConfig'
 
 interface RecipeFiltersProps {
   filters: RecipeFiltersType
   onFilterChange: (filterName: keyof RecipeFiltersType, value: string) => void
+  proteinOptions: DishTypeOption[]
+  carbOptions: DishTypeOption[]
 }
 
-export default function RecipeFilters({ filters, onFilterChange }: RecipeFiltersProps) {
+export default function RecipeFilters({ filters, onFilterChange, proteinOptions, carbOptions }: RecipeFiltersProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
       <h2 className="text-lg font-semibold mb-3">Filters</h2>
@@ -39,11 +42,11 @@ export default function RecipeFilters({ filters, onFilterChange }: RecipeFilters
             onChange={e => onFilterChange('proteinType', e.target.value)}
             className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600"
           >
-            <option value="all">All</option>
-            <option value="chicken">Chicken</option>
-            <option value="fish">Fish</option>
-            <option value="red-meat">Red Meat</option>
-            <option value="vegetarian">Vegetarian</option>
+            {proteinOptions.map(opt => (
+              <option key={opt.value || 'all'} value={opt.value || 'all'}>
+                {opt.label}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -55,12 +58,11 @@ export default function RecipeFilters({ filters, onFilterChange }: RecipeFilters
             onChange={e => onFilterChange('carbType', e.target.value)}
             className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600"
           >
-            <option value="all">All</option>
-            <option value="rice">Rice</option>
-            <option value="pasta">Pasta</option>
-            <option value="couscous">Couscous</option>
-            <option value="fries">Fries</option>
-            <option value="other">Other</option>
+            {carbOptions.map(opt => (
+              <option key={opt.value || 'all'} value={opt.value || 'all'}>
+                {opt.label}
+              </option>
+            ))}
           </select>
         </div>
 
