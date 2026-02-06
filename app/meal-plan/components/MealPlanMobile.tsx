@@ -2,14 +2,18 @@
  * MealPlanMobile Component
  *
  * Mobile-optimized meal plan view showing one day at a time.
- * Users navigate between days using prev/next arrows or day indicator dots.
+ * Users navigate between days using swipe gestures, arrows, or day indicator dots.
+ * Current day is persisted in localStorage to survive navigation to recipe links.
  * Read-only view - editing is desktop only.
  */
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { RecipeWithIngredients, WeekPlan } from '@/types'
+
+const STORAGE_KEY = 'mealPlanMobileCurrentDay'
+const SWIPE_THRESHOLD = 50 // Minimum distance in pixels to trigger a swipe
 
 interface MealPlanMobileProps {
   weekPlan: WeekPlan[]
@@ -94,6 +98,47 @@ export default function MealPlanMobile({
   vegetableRecipes,
 }: MealPlanMobileProps) {
   const [currentDay, setCurrentDay] = useState(0)
+  const touchStartX = useRef<number | null>(null)
+
+  // Load saved day from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved) {
+      const dayIndex = parseInt(saved, 10)
+      if (!isNaN(dayIndex) && dayIndex >= 0 && dayIndex < weekPlan.length) {
+        setCurrentDay(dayIndex)
+      }
+    }
+  }, [weekPlan.length])
+
+  // Save current day to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, String(currentDay))
+  }, [currentDay])
+
+  // Touch handlers for swipe navigation
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return
+
+    const touchEndX = e.changedTouches[0].clientX
+    const diff = touchStartX.current - touchEndX
+
+    if (Math.abs(diff) > SWIPE_THRESHOLD) {
+      if (diff > 0 && currentDay < weekPlan.length - 1) {
+        // Swiped left - go to next day
+        setCurrentDay(currentDay + 1)
+      } else if (diff < 0 && currentDay > 0) {
+        // Swiped right - go to previous day
+        setCurrentDay(currentDay - 1)
+      }
+    }
+
+    touchStartX.current = null
+  }
 
   // Helper to find recipe by ID
   const findRecipe = (
@@ -135,8 +180,12 @@ export default function MealPlanMobile({
         ))}
       </div>
 
-      {/* Current Day Card */}
-      <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-md overflow-hidden">
+      {/* Current Day Card - swipeable */}
+      <div
+        className="bg-white dark:bg-neutral-800 rounded-lg shadow-md overflow-hidden"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         {/* Day Header with Navigation */}
         <div className="bg-blue-600 dark:bg-blue-700 px-4 py-3">
           <div className="flex justify-between items-center">
@@ -174,7 +223,7 @@ export default function MealPlanMobile({
 
       {/* Navigation hint */}
       <p className="text-center text-sm text-gray-500 dark:text-neutral-400 mt-4">
-        Tap the arrows or dots to navigate between days
+        Swipe or tap arrows to navigate between days
       </p>
     </div>
   )
