@@ -12,9 +12,7 @@ interface ShoppingListHeaderProps {
   startDate: Date
   onPreviousWeek: () => void
   onNextWeek: () => void
-  onGenerate?: () => void
   onExport?: () => void
-  isGenerating?: boolean
   hasItems?: boolean
 }
 
@@ -22,9 +20,7 @@ export default function ShoppingListHeader({
   startDate,
   onPreviousWeek,
   onNextWeek,
-  onGenerate,
   onExport,
-  isGenerating,
   hasItems,
 }: ShoppingListHeaderProps) {
   const endDate = new Date(startDate)
@@ -52,21 +48,10 @@ export default function ShoppingListHeader({
       </div>
 
       {/* Action Buttons */}
-      {onGenerate && (
-        <div className="flex gap-2">
-          <Button
-            onClick={onGenerate}
-            disabled={isGenerating}
-            size="sm"
-          >
-            {isGenerating ? 'Generating...' : 'Regenerate List'}
-          </Button>
-          {hasItems && onExport && (
-            <Button variant="secondary" size="sm" onClick={onExport}>
-              Copy to Clipboard
-            </Button>
-          )}
-        </div>
+      {hasItems && onExport && (
+        <Button variant="secondary" size="sm" onClick={onExport}>
+          Copy to Clipboard
+        </Button>
       )}
     </div>
   )

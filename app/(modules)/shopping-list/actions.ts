@@ -12,9 +12,46 @@ import { prisma } from '@/lib/prisma'
 import { aggregateIngredients, collectIngredientsFromMealPlans } from '@/lib/shoppingListHelpers'
 
 /**
- * Generate shopping list from the week's meal plan + all staples
+ * Ensure a shopping list exists for the week, creating one with default staples if needed.
+ * Used by page.tsx on load and as a safety net in other actions.
  */
-export async function generateShoppingList(weekStart: Date) {
+export async function ensureShoppingListExists(weekStart: Date) {
+  const normalizedWeekStart = new Date(weekStart)
+  normalizedWeekStart.setHours(0, 0, 0, 0)
+
+  const existing = await prisma.shoppingList.findUnique({
+    where: { weekStart: normalizedWeekStart },
+    include: { items: { orderBy: { order: 'asc' } } },
+  })
+
+  if (existing) return existing
+
+  const staples = await prisma.masterListItem.findMany({
+    where: { type: 'staple' },
+    orderBy: { order: 'asc' },
+  })
+
+  return prisma.shoppingList.create({
+    data: {
+      weekStart: normalizedWeekStart,
+      items: {
+        create: staples.map((staple, index) => ({
+          name: staple.name,
+          checked: false,
+          source: 'staple',
+          order: index,
+        })),
+      },
+    },
+    include: { items: { orderBy: { order: 'asc' } } },
+  })
+}
+
+/**
+ * Sync meal ingredients into the shopping list from the current meal plan.
+ * Replaces only source='meal' items, preserving staples/restock/manual.
+ */
+export async function syncMealIngredients(weekStart: Date) {
   const normalizedWeekStart = new Date(weekStart)
   normalizedWeekStart.setHours(0, 0, 0, 0)
 
@@ -32,55 +69,33 @@ export async function generateShoppingList(weekStart: Date) {
     },
   })
 
-  // Fetch all staples (to be included by default)
-  const staples = await prisma.masterListItem.findMany({
-    where: { type: 'staple' },
-    orderBy: { order: 'asc' },
-  })
-
   // Aggregate meal ingredients
   const allIngredients = collectIngredientsFromMealPlans(mealPlans)
   const aggregatedItems = aggregateIngredients(allIngredients)
 
-  // Prepare meal items
   const mealItems = aggregatedItems.map((item, index) => ({
     name: item.name,
     notes: `For: ${item.sources.join(', ')}`,
     checked: false,
-    source: 'meal',
+    source: 'meal' as const,
     order: index,
   }))
 
-  // Prepare staple items (start order after meal items)
-  const stapleItems = staples.map((staple, index) => ({
-    name: staple.name,
-    checked: false,
-    source: 'staple',
-    order: mealItems.length + index,
-  }))
+  // Ensure list exists (with staples if new)
+  const shoppingList = await ensureShoppingListExists(weekStart)
 
-  // Upsert shopping list, preserving manual and restock items
-  const shoppingList = await prisma.shoppingList.upsert({
-    where: { weekStart: normalizedWeekStart },
-    create: {
-      weekStart: normalizedWeekStart,
-      items: {
-        create: [...mealItems, ...stapleItems],
-      },
-    },
-    update: {
-      updatedAt: new Date(),
-      items: {
-        // Delete meal and staple items, preserve manual and restock
-        deleteMany: { source: { in: ['meal', 'staple'] } },
-        create: [...mealItems, ...stapleItems],
-      },
-    },
-    include: { items: { orderBy: { order: 'asc' } } },
+  // Replace only meal items
+  await prisma.shoppingListItem.deleteMany({
+    where: { shoppingListId: shoppingList.id, source: 'meal' },
   })
 
+  if (mealItems.length > 0) {
+    await prisma.shoppingListItem.createMany({
+      data: mealItems.map(item => ({ ...item, shoppingListId: shoppingList.id })),
+    })
+  }
+
   revalidatePath('/shopping-list')
-  return shoppingList
 }
 
 /**
@@ -209,17 +224,8 @@ export async function excludeMasterListItem(
   itemName: string,
   source: 'staple' | 'restock'
 ) {
-  const normalizedWeekStart = new Date(weekStart)
-  normalizedWeekStart.setHours(0, 0, 0, 0)
-
-  const shoppingList = await prisma.shoppingList.findUnique({
-    where: { weekStart: normalizedWeekStart },
-  })
-
-  if (!shoppingList) {
-    // No shopping list, nothing to exclude
-    return null
-  }
+  // Ensure list exists (auto-creates with staples if needed)
+  const shoppingList = await ensureShoppingListExists(weekStart)
 
   // Delete the item by name and source
   await prisma.shoppingListItem.deleteMany({

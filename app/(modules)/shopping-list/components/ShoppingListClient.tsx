@@ -12,7 +12,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { getMonday } from '@/lib/dateUtils'
 import { formatShoppingListAsText } from '@/lib/shoppingListHelpers'
-import { generateShoppingList, toggleItem, addItem } from '../actions'
+import { toggleItem, addItem } from '../actions'
 import type { Recipe } from '@/types'
 import type { ShoppingList, ShoppingListItem, Category, MasterListItem } from '@prisma/client'
 import Button from '@/components/Button'
@@ -26,7 +26,7 @@ type CategoryWithItems = Category & { items: MasterListItem[] }
 type Tab = 'meals' | 'staples' | 'restock' | 'list'
 
 interface ShoppingListClientProps {
-  initialList: ShoppingListWithItems | null
+  initialList: ShoppingListWithItems
   initialWeekStart: Date
   initialTab?: Tab
   recipes: Recipe[]
@@ -43,7 +43,6 @@ export default function ShoppingListClient({
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
-  const [isGenerating, setIsGenerating] = useState(false)
   const [showAddForm, setShowAddForm] = useState(false)
 
   // Current tab is derived from URL or initial props
@@ -80,19 +79,6 @@ export default function ShoppingListClient({
     const newDate = new Date(currentWeekStart)
     newDate.setDate(newDate.getDate() + 7)
     navigateToWeek(newDate)
-  }
-
-  const handleGenerate = async () => {
-    setIsGenerating(true)
-    try {
-      await generateShoppingList(currentWeekStart)
-      toast.success('Shopping list generated!')
-    } catch (error) {
-      console.error('Error generating shopping list:', error)
-      toast.error('Failed to generate shopping list')
-    } finally {
-      setIsGenerating(false)
-    }
   }
 
   const handleToggle = (itemId: string, checked: boolean) => {
@@ -225,7 +211,6 @@ export default function ShoppingListClient({
             startDate={currentWeekStart}
             onPreviousWeek={goToPreviousWeek}
             onNextWeek={goToNextWeek}
-            isGenerating={isGenerating}
           />
 
           {(() => {
@@ -234,7 +219,7 @@ export default function ShoppingListClient({
               return (
                 <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <p className="text-gray-600 dark:text-gray-400">
-                    No meal ingredients yet. Generate a shopping list from the Shopping List tab.
+                    No meal ingredients yet. Save a meal plan to see ingredients here.
                   </p>
                 </div>
               )
@@ -257,20 +242,15 @@ export default function ShoppingListClient({
             startDate={currentWeekStart}
             onPreviousWeek={goToPreviousWeek}
             onNextWeek={goToNextWeek}
-            onGenerate={handleGenerate}
             onExport={handleExport}
-            isGenerating={isGenerating}
             hasItems={initialList?.items && initialList.items.length > 0}
           />
 
-          {!initialList || initialList.items.length === 0 ? (
+          {initialList.items.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                No shopping list for this week yet.
+              <p className="text-gray-600 dark:text-gray-400">
+                No items yet. Save a meal plan or customise your staples and restock items.
               </p>
-              <Button onClick={handleGenerate} disabled={isGenerating}>
-                {isGenerating ? 'Generating...' : 'Generate from Meal Plan'}
-              </Button>
             </div>
           ) : (
             <>
@@ -308,7 +288,6 @@ export default function ShoppingListClient({
           description="Items bought every week. Uncheck items you don't need this week."
           weekStart={currentWeekStart}
           includedItemNames={includedStapleNames}
-          listExists={initialList !== null}
         />
       )}
 
@@ -320,7 +299,6 @@ export default function ShoppingListClient({
           description="Household items to restock as needed. Check items you need this week."
           weekStart={currentWeekStart}
           includedItemNames={includedRestockNames}
-          listExists={initialList !== null}
         />
       )}
     </div>

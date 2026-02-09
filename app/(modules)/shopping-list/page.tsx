@@ -8,6 +8,7 @@
 import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
 import { getMonday } from '@/lib/dateUtils'
+import { ensureShoppingListExists } from './actions'
 import ShoppingListClient from './components/ShoppingListClient'
 
 interface PageProps {
@@ -23,15 +24,8 @@ async function ShoppingListContent({ searchParams }: PageProps) {
   const weekStart = weekParam ? getMonday(new Date(weekParam)) : getMonday(new Date())
   weekStart.setHours(0, 0, 0, 0)
 
-  // Fetch shopping list for the week
-  const shoppingList = await prisma.shoppingList.findUnique({
-    where: { weekStart },
-    include: {
-      items: {
-        orderBy: { order: 'asc' },
-      },
-    },
-  })
+  // Ensure shopping list exists (auto-creates with staples if first visit)
+  const shoppingList = await ensureShoppingListExists(weekStart)
 
   // Fetch recipes for linking in items
   const recipes = await prisma.recipe.findMany({

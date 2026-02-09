@@ -21,7 +21,6 @@ interface MasterListTabProps {
   description: string
   weekStart: Date
   includedItemNames: Set<string> // Names of items already in the shopping list
-  listExists: boolean // Whether a shopping list has been generated for this week
 }
 
 export default function MasterListTab({
@@ -30,7 +29,6 @@ export default function MasterListTab({
   description,
   weekStart,
   includedItemNames,
-  listExists,
 }: MasterListTabProps) {
   const [isPending, startTransition] = useTransition()
   // Track which categories are expanded (all collapsed by default)
@@ -49,17 +47,10 @@ export default function MasterListTab({
     })
   }
 
-  // For staples: checked by default (before list exists) OR if in the list
-  // For restock: only checked if explicitly in the list
+  // Staples: checked if in the shopping list. Restock: same.
+  // The list always exists now (auto-created on page visit with all staples).
   const isItemChecked = (itemName: string): boolean => {
-    if (type === 'staple') {
-      // Staples: if no list yet, show as checked (will be included on generate)
-      // If list exists, only checked if actually in the list
-      return !listExists || includedItemNames.has(itemName)
-    } else {
-      // Restock: only checked if explicitly added to the list
-      return includedItemNames.has(itemName)
-    }
+    return includedItemNames.has(itemName)
   }
 
   const handleToggle = (item: MasterListItem, currentlyChecked: boolean) => {

@@ -17,12 +17,12 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     shoppingList: {
       findUnique: vi.fn(),
-      upsert: vi.fn(),
       create: vi.fn(),
     },
     shoppingListItem: {
       update: vi.fn(),
       create: vi.fn(),
+      createMany: vi.fn(),
       aggregate: vi.fn(),
       findFirst: vi.fn(),
       deleteMany: vi.fn(),
@@ -41,7 +41,8 @@ import {
   getShoppingList,
   toggleItem,
   addItem,
-  generateShoppingList,
+  ensureShoppingListExists,
+  syncMealIngredients,
   includeMasterListItem,
   excludeMasterListItem,
 } from './actions'
@@ -51,12 +52,12 @@ import { prisma } from '@/lib/prisma'
 const mockPrisma = prisma as unknown as {
   shoppingList: {
     findUnique: ReturnType<typeof vi.fn>
-    upsert: ReturnType<typeof vi.fn>
     create: ReturnType<typeof vi.fn>
   }
   shoppingListItem: {
     update: ReturnType<typeof vi.fn>
     create: ReturnType<typeof vi.fn>
+    createMany: ReturnType<typeof vi.fn>
     aggregate: ReturnType<typeof vi.fn>
     findFirst: ReturnType<typeof vi.fn>
     deleteMany: ReturnType<typeof vi.fn>
@@ -196,9 +197,76 @@ describe('Shopping List Server Actions', () => {
     })
   })
 
-  describe('generateShoppingList', () => {
-    it('should generate a shopping list from meal plans and staples', async () => {
+  describe('ensureShoppingListExists', () => {
+    it('should return existing list if found', async () => {
+      const mockList = {
+        id: 'list-1',
+        weekStart: new Date('2026-02-03'),
+        items: [{ id: 'item-1', name: 'Milk', source: 'staple' }],
+      }
+
+      mockPrisma.shoppingList.findUnique.mockResolvedValue(mockList)
+
+      const result = await ensureShoppingListExists(new Date('2026-02-03'))
+
+      expect(result).toEqual(mockList)
+      expect(mockPrisma.shoppingList.create).not.toHaveBeenCalled()
+    })
+
+    it('should create list with staples when none exists', async () => {
+      const mockStaples = [
+        { id: 's1', name: 'Milk', type: 'staple', order: 0 },
+        { id: 's2', name: 'Bread', type: 'staple', order: 1 },
+      ]
+      const mockCreatedList = {
+        id: 'new-list',
+        weekStart: new Date('2026-02-03'),
+        items: [
+          { id: 'item-1', name: 'Milk', source: 'staple', order: 0 },
+          { id: 'item-2', name: 'Bread', source: 'staple', order: 1 },
+        ],
+      }
+
+      mockPrisma.shoppingList.findUnique.mockResolvedValue(null)
+      mockPrisma.masterListItem.findMany.mockResolvedValue(mockStaples)
+      mockPrisma.shoppingList.create.mockResolvedValue(mockCreatedList)
+
+      const result = await ensureShoppingListExists(new Date('2026-02-03'))
+
+      expect(mockPrisma.masterListItem.findMany).toHaveBeenCalledWith({
+        where: { type: 'staple' },
+        orderBy: { order: 'asc' },
+      })
+      expect(mockPrisma.shoppingList.create).toHaveBeenCalledWith({
+        data: {
+          weekStart: expect.any(Date),
+          items: {
+            create: [
+              { name: 'Milk', checked: false, source: 'staple', order: 0 },
+              { name: 'Bread', checked: false, source: 'staple', order: 1 },
+            ],
+          },
+        },
+        include: { items: { orderBy: { order: 'asc' } } },
+      })
+      expect(result).toEqual(mockCreatedList)
+    })
+
+    it('should normalize weekStart to midnight', async () => {
+      mockPrisma.shoppingList.findUnique.mockResolvedValue({ id: 'list-1', items: [] })
+
+      await ensureShoppingListExists(new Date('2026-02-03T15:30:00Z'))
+
+      const calledDate = mockPrisma.shoppingList.findUnique.mock.calls[0][0].where.weekStart
+      expect(calledDate.getHours()).toBe(0)
+      expect(calledDate.getMinutes()).toBe(0)
+    })
+  })
+
+  describe('syncMealIngredients', () => {
+    it('should sync meal ingredients from meal plans', async () => {
       const weekStart = new Date('2026-02-03')
+      const mockList = { id: 'list-1', weekStart, items: [] }
       const mockMealPlans = [
         {
           lunchRecipe: null,
@@ -217,63 +285,53 @@ describe('Shopping List Server Actions', () => {
         },
       ]
 
-      const mockStaples = [
-        { id: 'staple-1', name: 'Milk', type: 'staple', order: 0 },
-        { id: 'staple-2', name: 'Bread', type: 'staple', order: 1 },
-      ]
-
-      const mockList = {
-        id: 'list-1',
-        weekStart: new Date('2026-02-03'),
-        items: [
-          { id: 'item-1', name: 'chicken breast', source: 'meal' },
-          { id: 'item-2', name: 'rice', source: 'meal' },
-          { id: 'item-3', name: 'soy sauce', source: 'meal' },
-          { id: 'item-4', name: 'Milk', source: 'staple' },
-          { id: 'item-5', name: 'Bread', source: 'staple' },
-        ],
-      }
-
+      mockPrisma.shoppingList.findUnique.mockResolvedValue(mockList)
       mockPrisma.mealPlan.findMany.mockResolvedValue(mockMealPlans)
+      mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
+      mockPrisma.shoppingListItem.createMany.mockResolvedValue({ count: 3 })
+
+      await syncMealIngredients(weekStart)
+
+      // Should delete old meal items
+      expect(mockPrisma.shoppingListItem.deleteMany).toHaveBeenCalledWith({
+        where: { shoppingListId: 'list-1', source: 'meal' },
+      })
+      // Should create new meal items
+      expect(mockPrisma.shoppingListItem.createMany).toHaveBeenCalledWith({
+        data: expect.arrayContaining([
+          expect.objectContaining({ name: 'chicken breast', source: 'meal', shoppingListId: 'list-1' }),
+          expect.objectContaining({ name: 'rice', source: 'meal', shoppingListId: 'list-1' }),
+          expect.objectContaining({ name: 'soy sauce', source: 'meal', shoppingListId: 'list-1' }),
+        ]),
+      })
+    })
+
+    it('should not call createMany when there are no meal ingredients', async () => {
+      const mockList = { id: 'list-1', items: [] }
+
+      mockPrisma.shoppingList.findUnique.mockResolvedValue(mockList)
+      mockPrisma.mealPlan.findMany.mockResolvedValue([])
+      mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
+
+      await syncMealIngredients(new Date('2026-02-03'))
+
+      expect(mockPrisma.shoppingListItem.deleteMany).toHaveBeenCalled()
+      expect(mockPrisma.shoppingListItem.createMany).not.toHaveBeenCalled()
+    })
+
+    it('should create list with staples if none exists', async () => {
+      const mockStaples = [{ id: 's1', name: 'Milk', type: 'staple', order: 0 }]
+      const mockCreatedList = { id: 'new-list', items: [] }
+
+      mockPrisma.shoppingList.findUnique.mockResolvedValue(null)
       mockPrisma.masterListItem.findMany.mockResolvedValue(mockStaples)
-      mockPrisma.shoppingList.upsert.mockResolvedValue(mockList)
-
-      const result = await generateShoppingList(weekStart)
-
-      expect(mockPrisma.mealPlan.findMany).toHaveBeenCalled()
-      expect(mockPrisma.masterListItem.findMany).toHaveBeenCalledWith({
-        where: { type: 'staple' },
-        orderBy: { order: 'asc' },
-      })
-      expect(mockPrisma.shoppingList.upsert).toHaveBeenCalled()
-      expect(result).toEqual(mockList)
-    })
-
-    it('should delete meal and staple items when regenerating (preserve manual and restock)', async () => {
+      mockPrisma.shoppingList.create.mockResolvedValue(mockCreatedList)
       mockPrisma.mealPlan.findMany.mockResolvedValue([])
-      mockPrisma.masterListItem.findMany.mockResolvedValue([])
-      mockPrisma.shoppingList.upsert.mockResolvedValue({ id: 'list-1', items: [] })
+      mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
 
-      await generateShoppingList(new Date('2026-02-03'))
+      await syncMealIngredients(new Date('2026-02-03'))
 
-      const upsertCall = mockPrisma.shoppingList.upsert.mock.calls[0][0]
-      expect(upsertCall.update.items.deleteMany).toEqual({
-        source: { in: ['meal', 'staple'] },
-      })
-    })
-
-    it('should normalize weekStart to midnight', async () => {
-      const weekStart = new Date('2026-02-03T15:30:00Z')
-      mockPrisma.mealPlan.findMany.mockResolvedValue([])
-      mockPrisma.masterListItem.findMany.mockResolvedValue([])
-      mockPrisma.shoppingList.upsert.mockResolvedValue({ id: 'list-1', items: [] })
-
-      await generateShoppingList(weekStart)
-
-      const upsertCall = mockPrisma.shoppingList.upsert.mock.calls[0][0]
-      const calledWeekStart = upsertCall.where.weekStart
-      expect(calledWeekStart.getHours()).toBe(0)
-      expect(calledWeekStart.getMinutes()).toBe(0)
+      expect(mockPrisma.shoppingList.create).toHaveBeenCalled()
     })
   })
 
@@ -374,7 +432,7 @@ describe('Shopping List Server Actions', () => {
   describe('excludeMasterListItem', () => {
     it('should remove a staple item from the shopping list', async () => {
       const weekStart = new Date('2026-02-03')
-      const mockList = { id: 'list-1', weekStart }
+      const mockList = { id: 'list-1', weekStart, items: [] }
 
       mockPrisma.shoppingList.findUnique.mockResolvedValue(mockList)
       mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 1 })
@@ -393,7 +451,7 @@ describe('Shopping List Server Actions', () => {
 
     it('should remove a restock item from the shopping list', async () => {
       const weekStart = new Date('2026-02-03')
-      const mockList = { id: 'list-1', weekStart }
+      const mockList = { id: 'list-1', weekStart, items: [] }
 
       mockPrisma.shoppingList.findUnique.mockResolvedValue(mockList)
       mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 1 })
@@ -410,20 +468,32 @@ describe('Shopping List Server Actions', () => {
       expect(result).toBe(true)
     })
 
-    it('should return null if shopping list does not exist', async () => {
+    it('should create list with staples if none exists, then exclude', async () => {
       const weekStart = new Date('2026-02-03')
+      const mockStaples = [{ id: 's1', name: 'Milk', type: 'staple', order: 0 }]
+      const mockCreatedList = { id: 'new-list', weekStart, items: [] }
 
       mockPrisma.shoppingList.findUnique.mockResolvedValue(null)
+      mockPrisma.masterListItem.findMany.mockResolvedValue(mockStaples)
+      mockPrisma.shoppingList.create.mockResolvedValue(mockCreatedList)
+      mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 1 })
 
       const result = await excludeMasterListItem(weekStart, 'Milk', 'staple')
 
-      expect(mockPrisma.shoppingListItem.deleteMany).not.toHaveBeenCalled()
-      expect(result).toBeNull()
+      expect(mockPrisma.shoppingList.create).toHaveBeenCalled()
+      expect(mockPrisma.shoppingListItem.deleteMany).toHaveBeenCalledWith({
+        where: {
+          shoppingListId: 'new-list',
+          name: 'Milk',
+          source: 'staple',
+        },
+      })
+      expect(result).toBe(true)
     })
 
     it('should normalize weekStart to midnight', async () => {
       const weekStart = new Date('2026-02-03T15:30:00Z')
-      const mockList = { id: 'list-1' }
+      const mockList = { id: 'list-1', items: [] }
 
       mockPrisma.shoppingList.findUnique.mockResolvedValue(mockList)
       mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })

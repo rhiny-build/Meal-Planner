@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react'
 import type { RecipeWithIngredients, WeekPlan } from '@/types'
 import { fetchMealPlan as fetchMealPlanService, fetchAllRecipes, saveMealPlan } from '@/lib/apiService'
+import { syncMealIngredients } from '@/app/(modules)/shopping-list/actions'
 import { useDayNotes } from './useDayNotes'
 import { filterRecipesByType, calculateSelectedCount } from '@/lib/mealPlanHelpers'
 
@@ -78,6 +79,8 @@ export function useMealPlan(startDate: Date) {
       if (savedPlan.length > 0) {
         setWeekPlan(savedPlan)
       }
+      // Sync meal ingredients into the shopping list
+      await syncMealIngredients(startDate)
     } catch (error) {
       console.error('Error saving:', error)
     } finally {
