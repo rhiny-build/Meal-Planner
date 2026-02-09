@@ -61,7 +61,7 @@ Living document for tracking features, bugs, and improvements.
 ### Priority 1.8: P1 Bugs (2026-02-09)
 
 - [x] **Shopping list: master list / weekly instantiation logic broken** — Fixed: shopping list is now a live view. Auto-created with staples on page visit, meal ingredients sync on meal plan save, Generate button removed. (2026-02-09)
-- [ ] **Shopping list: checkbox toggle causes full-list re-render** — Ticking/unticking a single item causes the entire list to visibly flash/re-render on Vercel. Caused by `revalidatePath` triggering a full page re-fetch with new object references. Needs optimistic updates or memoisation.
+- [x] **Shopping list: checkbox toggle causes full-list re-render** — Fixed: added React 19 `useOptimistic` hook for instant client-side updates. Server action still syncs in the background; no more visible flash. (2026-02-09)
 
 ---
 
