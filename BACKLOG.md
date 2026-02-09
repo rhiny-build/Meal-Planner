@@ -60,7 +60,7 @@ Living document for tracking features, bugs, and improvements.
 
 ### Priority 1.8: P1 Bugs (2026-02-09)
 
-- [ ] **Shopping list: master list / weekly instantiation logic broken** — Staple/restock toggles silently fail before a shopping list is generated. Broader issue: the shopping list should be a live view (no Generate button), with meal ingredients synced on meal plan save and staples/restock always available for customisation. See [plan](/.claude/plans/fluttering-finding-bachman.md) for full design.
+- [x] **Shopping list: master list / weekly instantiation logic broken** — Fixed: shopping list is now a live view. Auto-created with staples on page visit, meal ingredients sync on meal plan save, Generate button removed. (2026-02-09)
 - [ ] **Shopping list: checkbox toggle causes full-list re-render** — Ticking/unticking a single item causes the entire list to visibly flash/re-render on Vercel. Caused by `revalidatePath` triggering a full page re-fetch with new object references. Needs optimistic updates or memoisation.
 
 ---
