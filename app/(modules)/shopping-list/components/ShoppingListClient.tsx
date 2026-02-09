@@ -7,7 +7,7 @@
  * Receives initial data from server component, uses server actions for mutations.
  */
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useOptimistic } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { getMonday } from '@/lib/dateUtils'
@@ -44,6 +44,28 @@ export default function ShoppingListClient({
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
   const [showAddForm, setShowAddForm] = useState(false)
+
+  // OPTIMISTIC UPDATES: Instead of reading items directly from server props
+  // (initialList.items), we maintain a local "optimistic" copy via useOptimistic.
+  // When the user toggles a checkbox, we update this copy instantly — no waiting
+  // for the server. Here's the lifecycle:
+  //
+  //   1. User clicks checkbox → setOptimisticItem() → UI updates immediately
+  //   2. Server action runs in the background (toggleItem + revalidatePath)
+  //   3. Server responds with fresh data → initialList.items updates →
+  //      useOptimistic automatically switches from optimistic → real state
+  //   4. Since both match (the toggle succeeded), the user sees no flash
+  //   5. If the server action FAILS, React reverts to the real state (pre-toggle)
+  //
+  // The second argument is a reducer: given the current items and an update,
+  // it returns a new array with just that one item's `checked` field flipped.
+  const [optimisticItems, setOptimisticItem] = useOptimistic(
+    initialList.items,
+    (currentItems: ShoppingListItem[], update: { id: string; checked: boolean }) =>
+      currentItems.map(item =>
+        item.id === update.id ? { ...item, checked: update.checked } : item
+      )
+  )
 
   // Current tab is derived from URL or initial props
   const tabParam = searchParams.get('tab') as Tab | null
@@ -83,6 +105,9 @@ export default function ShoppingListClient({
 
   const handleToggle = (itemId: string, checked: boolean) => {
     startTransition(async () => {
+      // Update UI immediately — the user sees the checkbox flip right away.
+      // This must be inside startTransition so React knows it's optimistic.
+      setOptimisticItem({ id: itemId, checked })
       try {
         await toggleItem(itemId, checked)
       } catch (error) {
@@ -108,12 +133,12 @@ export default function ShoppingListClient({
   }
 
   const handleExport = () => {
-    if (!initialList || initialList.items.length === 0) {
+    if (!initialList || optimisticItems.length === 0) {
       toast.warning('No items to export')
       return
     }
 
-    const text = formatShoppingListAsText(initialList.items)
+    const text = formatShoppingListAsText(optimisticItems)
 
     navigator.clipboard.writeText(text).then(() => {
       toast.success('Shopping list copied to clipboard!')
@@ -146,14 +171,14 @@ export default function ShoppingListClient({
 
   // Get sets of item names that are in the current shopping list by source
   const includedStapleNames = new Set(
-    initialList?.items
+    optimisticItems
       .filter(item => item.source === 'staple')
-      .map(item => item.name) ?? []
+      .map(item => item.name)
   )
   const includedRestockNames = new Set(
-    initialList?.items
+    optimisticItems
       .filter(item => item.source === 'restock')
-      .map(item => item.name) ?? []
+      .map(item => item.name)
   )
 
   return (
@@ -214,7 +239,7 @@ export default function ShoppingListClient({
           />
 
           {(() => {
-            const mealItems = initialList?.items.filter(item => item.source === 'meal') ?? []
+            const mealItems = optimisticItems.filter(item => item.source === 'meal')
             if (mealItems.length === 0) {
               return (
                 <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -243,10 +268,10 @@ export default function ShoppingListClient({
             onPreviousWeek={goToPreviousWeek}
             onNextWeek={goToNextWeek}
             onExport={handleExport}
-            hasItems={initialList?.items && initialList.items.length > 0}
+            hasItems={optimisticItems.length > 0}
           />
 
-          {initialList.items.length === 0 ? (
+          {optimisticItems.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <p className="text-gray-600 dark:text-gray-400">
                 No items yet. Save a meal plan or customise your staples and restock items.
@@ -255,7 +280,7 @@ export default function ShoppingListClient({
           ) : (
             <>
               <ShoppingListItems
-                items={initialList.items}
+                items={optimisticItems}
                 recipes={recipes}
                 onToggle={handleToggle}
               />
