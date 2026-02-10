@@ -125,10 +125,11 @@ model Category {
 // MasterListItem model stores staples and restock items (unified table)
 model MasterListItem {
   id         String   @id @default(cuid())
-  name       String   // Product name (e.g., "Sainsbury's British Free Range Eggs Large x12")
-  type       String   // 'staple' | 'restock'
-  categoryId String
-  order      Int      // Display order within category
+  name           String   // Product name (e.g., "Sainsbury's British Free Range Eggs Large x12")
+  type           String   // 'staple' | 'restock'
+  categoryId     String
+  order          Int      // Display order within category
+  baseIngredient String?  // Normalised base concept for shopping list matching
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
