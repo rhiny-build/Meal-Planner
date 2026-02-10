@@ -18,3 +18,5 @@
 export { extractIngredientsFromURL } from './extractIngredientsFromURL'
 export { modifyMealPlan } from './modifyMealPlan'
 export { generateWeeklyMealPlan } from './generateWeeklyMealPlan'
+export { normaliseIngredients } from './normaliseIngredients'
+export type { NormalisationInput, NormalisationResult } from './normaliseIngredients'
