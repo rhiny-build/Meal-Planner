@@ -2,59 +2,6 @@
 
 Living document for tracking features, bugs, and improvements.
 
-## This Week (2026-02-02)
-
-### Priority 0: Housekeeping (Code Review Cleanup)
-
-**Quick Wins:** ✅ All complete
-- [x] Hide debug UI in production (removed entirely) - [Code Review #1]
-- [x] Fix CLAUDE.md database documentation (SQLite → PostgreSQL) - [Code Review #4]
-- [x] Extract duplicate `formatIngredient` function to shared utility - [Code Review #5]
-- [x] Fix localStorage hydration issue in meal-plan/page.tsx - [Code Review #6]
-- [x] Remove orphaned `validations.ts` comment in schema - [Code Review #12]
-
-**Refactoring:** ✅ All complete
-- [x] Create toast notification system and replace all `alert()` calls - [Code Review #3, #7]
-- [x] Move `confirm()` from useRecipes hook to component level - [Code Review #11]
-
-**Deferred (if time permits):** ✅ Complete
-- [x] File size refactoring (RecipeForm, MealPlanGrid, useMealPlan) - [Code Review #2]
-- [x] Add useCallback optimizations in useRecipes - [Code Review #8]
-- [~] Add response validation with Zod - [Code Review #10] - Rejected (previously removed Zod for simplicity)
-
----
-
-### Priority 1: Non-AI Functionality
-
-**Meal Plan UI:**
-- [x] Add collapsible drawer for ingredient details (click day name to expand)
-
-**Shopping List:** Assembly flow complete, master list management pending
-- [x] Add delete button for shopping list items - [Code Review #9] - ignored as per user instruction
-- [x] Add tabs UI (This Week | Staples | Restock)
-- [x] Schema: Category and MasterListItem tables
-- [x] Seed data: 11 categories, 52 master list items (34 staples, 18 restock)
-- [x] Staples: Auto-included when generating list, uncheck to exclude
-- [x] Restock: Check to include in this week's list
-- [x] Generate list now includes meal ingredients + all staples
-
-**UI Fixes:** ✅ All complete
-- [x] Checkbox default bug in Staples tab: all staples should be checked by default (currently unchecked)
-- [x] Shopping list tab separation: Split into 4 tabs (This Week's Meals | Staples | Restock | Shopping List)
-- [x] Group Staples and Restock items by category with collapsible accordion (collapsed by default)
-
-**Remaining Shopping List Work:** ✅ All complete
-- [x] Master list management UI (add/edit/delete staples and restock items permanently) - Settings page at `/settings`
-- [x] Polish: Remove mockup pages (`/mockups/tabs`, `/mockups/accordion`, `/mockups/modal`)
-- [x] Remove auto-seed from build script
-
----
-
-### Priority 1.5: Testing Infrastructure ✅ COMPLETE
-
-- [x] Testing infrastructure with Vitest (150 tests: 132 unit + 18 integration)
-- [x] Separate test database for integration tests
-- [x] Coverage: Shopping list, recipes, meal plan, hooks, components, AI functions
 
 ---
 
@@ -67,6 +14,11 @@ Living document for tracking features, bugs, and improvements.
 
 ### Priority 2: AI Utilisation
 
+Read Shopping-List-Normalisation.md in Docs
+
+- [x] **Ingredient normalisation MVP** — Added `baseIngredient` field to MasterListItem, AI normalisation module (`lib/ai/normaliseIngredients.ts`), backfill script with --dry-run support. All 52 master list items backfilled. (2026-02-10)
+- [ ] **Normalisation matching** — Use `baseIngredient` to filter staples/restock from shopping list generation (next step)
+- [ ] **Add/edit hooks** — Wire normalisation into add/edit MasterListItem flow (after matching is proven)
 - [ ] URL extraction returning wrong recipe (investigate HTML parsing/prompt) - e.g., honey garlic chicken URL returned "Classic Tomato Basil Pasta"
 - [ ] Meal plan completion overwrites user selections (prompt not constraining properly)
 - [ ] Experiment with OpenAI for better aggregation of shopping list ingredients
