@@ -89,7 +89,7 @@ User instruction: "${request.instruction}"
 
 
 Return JSON with:
-- "modifiedPlan": array of {date: ISO date string, lunchRecipeId: string, lunchRecipeName: string, proteinRecipeId: string, proteinRecipeName: string, carbRecipeId: string, carbRecipeName: string, vegetableRecipeId: string, vegetableRecipeName: string} for ALL days in the plan
+- "modifiedPlan": array of {date: ISO date string, lunchRecipeId: string, proteinRecipeId: string, carbRecipeId: string, vegetableRecipeId: string} for ALL days in the plan
 -  "explanation": "Explain briefly how you ensured all slots were filled and locked meals preserved."
 }
 
@@ -97,8 +97,6 @@ CRITICAL:
 - Return ALL 7 days.
 - Every slot must contain a valid recipe ID.
 - Do not leave any slot empty.`
-
-console.log('Modification prompt:', prompt)
 
     const completion = await openai.chat.completions.create({
       model: MODEL,
@@ -121,11 +119,9 @@ console.log('Modification prompt:', prompt)
     }
 
     const parsed = JSON.parse(result) as {
-      modifiedPlan: { date: string; lunchRecipeId: string; lunchRecipeName: string; proteinRecipeId: string; proteinRecipeName: string; carbRecipeId: string; carbRecipeName: string; vegetableRecipeId: string; vegetableRecipeName: string }[]
+      modifiedPlan: { date: string; lunchRecipeId: string; proteinRecipeId: string; carbRecipeId: string; vegetableRecipeId: string }[]
       explanation: string
     }
-
-    console.log('AI modified plan response:', JSON.stringify(parsed.modifiedPlan, null, 2))
 
     // Convert date strings back to Date objects
     return {
