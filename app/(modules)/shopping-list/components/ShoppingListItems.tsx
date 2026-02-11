@@ -14,10 +14,18 @@ interface ShoppingListItemsProps {
   onToggle: (itemId: string, checked: boolean) => void
 }
 
-// Parse notes "For: Recipe1, Recipe2" into recipe names
+// Parse notes "For: Recipe1, Recipe2 [base: ingredient]" into recipe names and debug info
 function parseRecipeNames(notes: string | null): string[] {
   if (!notes || !notes.startsWith('For: ')) return []
-  return notes.slice(5).split(', ').map(name => name.trim())
+  const cleaned = notes.replace(/\s*\[base:.*\]$/, '')
+  return cleaned.slice(5).split(', ').map(name => name.trim())
+}
+
+// DEBUG: extract base ingredient from notes for visibility
+function parseDebugBase(notes: string | null): string | null {
+  if (!notes) return null
+  const match = notes.match(/\[base: (.+)\]$/)
+  return match ? match[1] : null
 }
 
 export default function ShoppingListItems({
@@ -56,6 +64,7 @@ export default function ShoppingListItems({
 
   const ItemRow = ({ item }: { item: ShoppingListItem }) => {
     const recipeNames = parseRecipeNames(item.notes)
+    const debugBase = parseDebugBase(item.notes)
 
     return (
       <div
@@ -75,6 +84,11 @@ export default function ShoppingListItems({
           <span className={item.checked ? 'line-through text-gray-500' : ''}>
             {item.name}
           </span>
+          {debugBase && (
+            <span className="text-xs ml-2" style={{ color: '#ec4899' }}>
+              [{debugBase}]
+            </span>
+          )}
           {recipeNames.length > 0 && (
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               For: {recipeNames.map((name, i) => (

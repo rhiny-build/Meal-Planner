@@ -141,6 +141,19 @@ export function collectIngredientsFromMealPlans(
 }
 
 /**
+ * Filter out aggregated ingredients that match master list base ingredients.
+ * Both sides must already be normalised to base concepts.
+ */
+export function filterByMasterList(
+  items: Array<{ item: AggregatedItem; baseIngredient: string }>,
+  masterBaseIngredients: Set<string>
+): AggregatedItem[] {
+  return items
+    .filter(({ baseIngredient }) => !masterBaseIngredients.has(baseIngredient))
+    .map(({ item }) => item)
+}
+
+/**
  * Format shopping list items as text for export
  * Only includes unchecked items
  */

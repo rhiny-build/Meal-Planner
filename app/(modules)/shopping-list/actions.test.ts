@@ -12,6 +12,16 @@ vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }))
 
+// Mock AI ingredient matching
+vi.mock('@/lib/ai/matchIngredients', () => ({
+  matchIngredientsAgainstMasterList: vi.fn(),
+}))
+
+// Mock AI normalisation
+vi.mock('@/lib/ai/normaliseIngredients', () => ({
+  normaliseIngredients: vi.fn(),
+}))
+
 // Mock Prisma - use factory function to avoid hoisting issues
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -32,6 +42,10 @@ vi.mock('@/lib/prisma', () => ({
     },
     masterListItem: {
       findMany: vi.fn(),
+      aggregate: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
     },
   },
 }))
@@ -45,8 +59,16 @@ import {
   syncMealIngredients,
   includeMasterListItem,
   excludeMasterListItem,
+  addMasterListItem,
+  updateMasterListItem,
+  deleteMasterListItem,
 } from './actions'
 import { prisma } from '@/lib/prisma'
+import { matchIngredientsAgainstMasterList } from '@/lib/ai/matchIngredients'
+import { normaliseIngredients } from '@/lib/ai/normaliseIngredients'
+
+const mockMatchIngredients = matchIngredientsAgainstMasterList as ReturnType<typeof vi.fn>
+const mockNormaliseIngredients = normaliseIngredients as ReturnType<typeof vi.fn>
 
 // Type assertion for mocked prisma
 const mockPrisma = prisma as unknown as {
@@ -67,12 +89,18 @@ const mockPrisma = prisma as unknown as {
   }
   masterListItem: {
     findMany: ReturnType<typeof vi.fn>
+    aggregate: ReturnType<typeof vi.fn>
+    create: ReturnType<typeof vi.fn>
+    update: ReturnType<typeof vi.fn>
+    delete: ReturnType<typeof vi.fn>
   }
 }
 
 describe('Shopping List Server Actions', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Default: empty master list means no AI call and no filtering
+    mockPrisma.masterListItem.findMany.mockResolvedValue([])
   })
 
   describe('getShoppingList', () => {
@@ -333,6 +361,125 @@ describe('Shopping List Server Actions', () => {
 
       expect(mockPrisma.shoppingList.create).toHaveBeenCalled()
     })
+
+    it('should filter out ingredients matching master list via AI matching', async () => {
+      const weekStart = new Date('2026-02-03')
+      const mockList = { id: 'list-1', weekStart, items: [] }
+      const mockMealPlans = [
+        {
+          lunchRecipe: null,
+          proteinRecipe: {
+            name: 'Chicken Stir Fry',
+            structuredIngredients: [
+              { name: 'chicken breast' },
+              { name: 'soy sauce' },
+              { name: 'salt' },
+            ],
+          },
+          carbRecipe: null,
+          vegetableRecipe: null,
+        },
+      ]
+
+      mockPrisma.shoppingList.findUnique.mockResolvedValue(mockList)
+      mockPrisma.mealPlan.findMany.mockResolvedValue(mockMealPlans)
+      mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
+      mockPrisma.shoppingListItem.createMany.mockResolvedValue({ count: 1 })
+
+      // Master list has salt and soy sauce
+      mockPrisma.masterListItem.findMany
+        .mockResolvedValueOnce([
+          { baseIngredient: 'salt' },
+          { baseIngredient: 'soy sauce' },
+        ])
+        .mockResolvedValue([])
+
+      // AI matches soy sauce and salt, not chicken
+      mockMatchIngredients.mockResolvedValue([
+        { index: 0, name: 'chicken breast', baseIngredient: 'chicken', matchedMasterItem: null },
+        { index: 1, name: 'soy sauce', baseIngredient: 'soy sauce', matchedMasterItem: 'soy sauce' },
+        { index: 2, name: 'salt', baseIngredient: 'salt', matchedMasterItem: 'salt' },
+      ])
+
+      await syncMealIngredients(weekStart)
+
+      // Only chicken breast should remain
+      expect(mockPrisma.shoppingListItem.createMany).toHaveBeenCalledWith({
+        data: [
+          expect.objectContaining({ name: 'chicken breast', source: 'meal' }),
+        ],
+      })
+    })
+
+    it('should include all items when AI matching fails', async () => {
+      const weekStart = new Date('2026-02-03')
+      const mockList = { id: 'list-1', weekStart, items: [] }
+      const mockMealPlans = [
+        {
+          lunchRecipe: null,
+          proteinRecipe: {
+            name: 'Simple Recipe',
+            structuredIngredients: [
+              { name: 'chicken' },
+              { name: 'salt' },
+            ],
+          },
+          carbRecipe: null,
+          vegetableRecipe: null,
+        },
+      ]
+
+      mockPrisma.shoppingList.findUnique.mockResolvedValue(mockList)
+      mockPrisma.mealPlan.findMany.mockResolvedValue(mockMealPlans)
+      mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
+      mockPrisma.shoppingListItem.createMany.mockResolvedValue({ count: 2 })
+
+      mockPrisma.masterListItem.findMany
+        .mockResolvedValueOnce([{ baseIngredient: 'salt' }])
+        .mockResolvedValue([])
+
+      // AI call fails
+      mockMatchIngredients.mockRejectedValue(new Error('AI service unavailable'))
+
+      await syncMealIngredients(weekStart)
+
+      // All items should be written (no filtering on failure)
+      expect(mockPrisma.shoppingListItem.createMany).toHaveBeenCalledWith({
+        data: expect.arrayContaining([
+          expect.objectContaining({ name: 'chicken' }),
+          expect.objectContaining({ name: 'salt' }),
+        ]),
+      })
+    })
+
+    it('should skip AI call when master list has no base ingredients', async () => {
+      const weekStart = new Date('2026-02-03')
+      const mockList = { id: 'list-1', weekStart, items: [] }
+      const mockMealPlans = [
+        {
+          lunchRecipe: null,
+          proteinRecipe: {
+            name: 'Recipe',
+            structuredIngredients: [{ name: 'chicken' }],
+          },
+          carbRecipe: null,
+          vegetableRecipe: null,
+        },
+      ]
+
+      mockPrisma.shoppingList.findUnique.mockResolvedValue(mockList)
+      mockPrisma.mealPlan.findMany.mockResolvedValue(mockMealPlans)
+      mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
+      mockPrisma.shoppingListItem.createMany.mockResolvedValue({ count: 1 })
+
+      // Master list returns empty (no baseIngredient values)
+      mockPrisma.masterListItem.findMany.mockResolvedValue([])
+
+      await syncMealIngredients(weekStart)
+
+      expect(mockMatchIngredients).not.toHaveBeenCalled()
+      expect(mockPrisma.shoppingListItem.createMany).toHaveBeenCalled()
+    })
   })
 
   describe('includeMasterListItem', () => {
@@ -503,6 +650,95 @@ describe('Shopping List Server Actions', () => {
       const calledDate = mockPrisma.shoppingList.findUnique.mock.calls[0][0].where.weekStart
       expect(calledDate.getHours()).toBe(0)
       expect(calledDate.getMinutes()).toBe(0)
+    })
+  })
+
+  describe('addMasterListItem', () => {
+    it('should create item and normalise baseIngredient', async () => {
+      const mockItem = { id: 'item-1', name: 'Sainsbury\'s Whole Milk 2L', type: 'staple', order: 0 }
+
+      mockPrisma.masterListItem.aggregate.mockResolvedValue({ _max: { order: null } })
+      mockPrisma.masterListItem.create.mockResolvedValue(mockItem)
+      mockPrisma.masterListItem.update.mockResolvedValue({ ...mockItem, baseIngredient: 'whole milk' })
+      mockNormaliseIngredients.mockResolvedValue([{ id: 'item-1', baseIngredient: 'whole milk' }])
+
+      const result = await addMasterListItem('cat-1', 'Sainsbury\'s Whole Milk 2L', 'staple')
+
+      expect(mockPrisma.masterListItem.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ name: 'Sainsbury\'s Whole Milk 2L', type: 'staple' }),
+      })
+      expect(mockNormaliseIngredients).toHaveBeenCalledWith([{ id: 'item-1', name: 'Sainsbury\'s Whole Milk 2L' }])
+      expect(mockPrisma.masterListItem.update).toHaveBeenCalledWith({
+        where: { id: 'item-1' },
+        data: { baseIngredient: 'whole milk' },
+      })
+      expect(result).toEqual(mockItem)
+    })
+
+    it('should still create item when normalisation fails', async () => {
+      const mockItem = { id: 'item-1', name: 'Milk', type: 'staple', order: 0 }
+
+      mockPrisma.masterListItem.aggregate.mockResolvedValue({ _max: { order: null } })
+      mockPrisma.masterListItem.create.mockResolvedValue(mockItem)
+      mockNormaliseIngredients.mockRejectedValue(new Error('AI service unavailable'))
+
+      const result = await addMasterListItem('cat-1', 'Milk', 'staple')
+
+      expect(mockPrisma.masterListItem.create).toHaveBeenCalled()
+      expect(mockPrisma.masterListItem.update).not.toHaveBeenCalled()
+      expect(result).toEqual(mockItem)
+    })
+  })
+
+  describe('updateMasterListItem', () => {
+    it('should update name and re-normalise baseIngredient', async () => {
+      const mockItem = { id: 'item-1', name: 'Warburtons Wholemeal Bread 800g' }
+
+      mockPrisma.masterListItem.update
+        .mockResolvedValueOnce(mockItem) // name update
+        .mockResolvedValueOnce({ ...mockItem, baseIngredient: 'wholemeal bread' }) // baseIngredient update
+      mockNormaliseIngredients.mockResolvedValue([{ id: 'item-1', baseIngredient: 'wholemeal bread' }])
+
+      const result = await updateMasterListItem('item-1', 'Warburtons Wholemeal Bread 800g')
+
+      expect(mockPrisma.masterListItem.update).toHaveBeenCalledWith({
+        where: { id: 'item-1' },
+        data: { name: 'Warburtons Wholemeal Bread 800g' },
+      })
+      expect(mockNormaliseIngredients).toHaveBeenCalledWith([{ id: 'item-1', name: 'Warburtons Wholemeal Bread 800g' }])
+      expect(mockPrisma.masterListItem.update).toHaveBeenCalledWith({
+        where: { id: 'item-1' },
+        data: { baseIngredient: 'wholemeal bread' },
+      })
+      expect(result).toEqual(mockItem)
+    })
+
+    it('should still update name when normalisation fails', async () => {
+      const mockItem = { id: 'item-1', name: 'New Name' }
+
+      mockPrisma.masterListItem.update.mockResolvedValue(mockItem)
+      mockNormaliseIngredients.mockRejectedValue(new Error('AI service unavailable'))
+
+      const result = await updateMasterListItem('item-1', 'New Name')
+
+      expect(mockPrisma.masterListItem.update).toHaveBeenCalledWith({
+        where: { id: 'item-1' },
+        data: { name: 'New Name' },
+      })
+      expect(result).toEqual(mockItem)
+    })
+  })
+
+  describe('deleteMasterListItem', () => {
+    it('should delete the item', async () => {
+      mockPrisma.masterListItem.delete.mockResolvedValue({ id: 'item-1' })
+
+      const result = await deleteMasterListItem('item-1')
+
+      expect(mockPrisma.masterListItem.delete).toHaveBeenCalledWith({
+        where: { id: 'item-1' },
+      })
+      expect(result).toBe(true)
     })
   })
 })

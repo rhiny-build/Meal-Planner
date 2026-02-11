@@ -10,6 +10,8 @@
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { aggregateIngredients, collectIngredientsFromMealPlans } from '@/lib/shoppingListHelpers'
+import { matchIngredientsAgainstMasterList, type MatchResultItem } from '@/lib/ai/matchIngredients'
+import { normaliseIngredients } from '@/lib/ai/normaliseIngredients'
 
 /**
  * Ensure a shopping list exists for the week, creating one with default staples if needed.
@@ -73,13 +75,53 @@ export async function syncMealIngredients(weekStart: Date) {
   const allIngredients = collectIngredientsFromMealPlans(mealPlans)
   const aggregatedItems = aggregateIngredients(allIngredients)
 
-  const mealItems = aggregatedItems.map((item, index) => ({
-    name: item.name,
-    notes: `For: ${item.sources.join(', ')}`,
-    checked: false,
-    source: 'meal' as const,
-    order: index,
-  }))
+  // Match ingredients against master list to filter out staples/restock
+  let matchResults: MatchResultItem[] | null = null
+
+  try {
+    const masterListItems = await prisma.masterListItem.findMany({
+      where: { baseIngredient: { not: null } },
+      select: { baseIngredient: true },
+    })
+    const masterBaseIngredients = masterListItems.map(
+      (item) => item.baseIngredient as string
+    )
+
+    if (aggregatedItems.length > 0 && masterBaseIngredients.length > 0) {
+      matchResults = await matchIngredientsAgainstMasterList({
+        recipeIngredients: aggregatedItems.map((item) => item.name),
+        masterListBaseIngredients: masterBaseIngredients,
+      })
+    }
+  } catch (error) {
+    console.error('Ingredient matching failed, including all items:', error)
+  }
+
+  // Build meal items — filter out matched ingredients, include debug info in notes
+  const mealItems: Array<{ name: string; notes: string; checked: boolean; source: 'meal'; order: number }> = []
+  let order = 0
+
+  for (let i = 0; i < aggregatedItems.length; i++) {
+    const item = aggregatedItems[i]
+    const match = matchResults?.find((r) => r.index === i)
+    const baseIngredient = match?.baseIngredient ?? item.name.toLowerCase()
+    const matchedWith = match?.matchedMasterItem ?? null
+
+    // Skip items that matched a master list item
+    if (matchedWith) continue
+
+    const sourcesNote = `For: ${item.sources.join(', ')}`
+    // DEBUG: append base ingredient for visibility
+    const debugNote = ` [base: ${baseIngredient}]`
+
+    mealItems.push({
+      name: item.name,
+      notes: sourcesNote + debugNote,
+      checked: false,
+      source: 'meal' as const,
+      order: order++,
+    })
+  }
 
   // Ensure list exists (with staples if new)
   const shoppingList = await ensureShoppingListExists(weekStart)
@@ -267,6 +309,19 @@ export async function addMasterListItem(
     },
   })
 
+  // Normalise in the background — don't block the user or break the add
+  try {
+    const [result] = await normaliseIngredients([{ id: item.id, name: item.name }])
+    if (result?.baseIngredient) {
+      await prisma.masterListItem.update({
+        where: { id: item.id },
+        data: { baseIngredient: result.baseIngredient },
+      })
+    }
+  } catch (error) {
+    console.error('Failed to normalise new master list item:', error)
+  }
+
   revalidatePath('/shopping-list')
   revalidatePath('/settings')
   return item
@@ -280,6 +335,19 @@ export async function updateMasterListItem(itemId: string, name: string) {
     where: { id: itemId },
     data: { name: name.trim() },
   })
+
+  // Re-normalise after rename — don't block the user or break the update
+  try {
+    const [result] = await normaliseIngredients([{ id: item.id, name: item.name }])
+    if (result?.baseIngredient) {
+      await prisma.masterListItem.update({
+        where: { id: item.id },
+        data: { baseIngredient: result.baseIngredient },
+      })
+    }
+  } catch (error) {
+    console.error('Failed to re-normalise master list item:', error)
+  }
 
   revalidatePath('/shopping-list')
   revalidatePath('/settings')
