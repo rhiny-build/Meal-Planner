@@ -11,9 +11,12 @@ import { useMealPlan } from './useMealPlan'
 import { getMonday } from '@/lib/dateUtils'
 import type { Recipe, WeekPlan } from '@/types'
 
-// Mock AI module to prevent OpenAI client initialization in jsdom
+// Mock AI modules to prevent OpenAI client initialization in jsdom
 vi.mock('@/lib/ai/matchIngredients', () => ({
   matchIngredientsAgainstMasterList: vi.fn(),
+}))
+vi.mock('@/lib/ai/normaliseIngredients', () => ({
+  normaliseIngredients: vi.fn(),
 }))
 
 // Mock window.confirm for clear confirmation

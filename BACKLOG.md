@@ -17,7 +17,7 @@ Living document for tracking features, bugs, and improvements.
 Read Shopping-List-Normalisation.md in Docs
 
 - [x] **Ingredient normalisation MVP** — Added `baseIngredient` field to MasterListItem, AI normalisation module (`lib/ai/normaliseIngredients.ts`), backfill script with --dry-run support. All 52 master list items backfilled. (2026-02-10)
-- [ ] **Normalisation matching** — Use `baseIngredient` to filter staples/restock from shopping list generation (next step)
+- [x] **Normalisation matching** — Use `baseIngredient` to filter staples/restock from shopping list generation (next step)
 - [ ] **Add/edit hooks** — Wire normalisation into add/edit MasterListItem flow (after matching is proven)
 - [ ] URL extraction returning wrong recipe (investigate HTML parsing/prompt) - e.g., honey garlic chicken URL returned "Classic Tomato Basil Pasta"
 - [ ] Meal plan completion overwrites user selections (prompt not constraining properly)
