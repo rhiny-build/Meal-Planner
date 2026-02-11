@@ -20,7 +20,7 @@ Read Shopping-List-Normalisation.md in Docs
 - [x] **Normalisation matching** — Use `baseIngredient` to filter staples/restock from shopping list generation (next step)
 - [x] **Add/edit hooks** — Wire normalisation into add/edit MasterListItem flow. `addMasterListItem` and `updateMasterListItem` now auto-normalise with graceful fallback. (2026-02-11)
 - [ ] URL extraction returning wrong recipe (investigate HTML parsing/prompt) - e.g., honey garlic chicken URL returned "Classic Tomato Basil Pasta"
-- [ ] Meal plan completion overwrites user selections (prompt not constraining properly)
+- [x] **Meal plan completion overwrites user selections** — Fixed: grouped available recipes by slot type in the prompt so the AI can only pick valid recipes per column (lunch/protein/carb/vegetable). (2026-02-11)
 - [ ] Experiment with OpenAI for better aggregation of shopping list ingredients
 
 ---
