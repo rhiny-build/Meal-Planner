@@ -6,6 +6,8 @@
 
 import type { RecipeWithIngredients, WeekPlan } from '@/types'
 
+export const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
 export type MealSlotColumn = 'lunch' | 'protein' | 'carb' | 'vegetable'
 export type RecipeIdKey = 'lunchRecipeId' | 'proteinRecipeId' | 'carbRecipeId' | 'vegetableRecipeId'
 
@@ -88,4 +90,61 @@ export function calculateSelectedCount(weekPlan: WeekPlan[]): number {
     if (day.vegetableRecipeId) count++
     return count
   }, 0)
+}
+
+/**
+ * Swap recipes between two days within the same column.
+ * Used by drag-and-drop in MealPlanGrid.
+ */
+export function swapRecipesInPlan(
+  weekPlan: WeekPlan[],
+  column: MealSlotColumn,
+  fromDayIndex: number,
+  toDayIndex: number
+): WeekPlan[] {
+  const newPlan = [...weekPlan]
+  const recipeKey = getRecipeKeyFromColumn(column)
+
+  const temp = newPlan[fromDayIndex][recipeKey]
+  newPlan[fromDayIndex] = { ...newPlan[fromDayIndex], [recipeKey]: newPlan[toDayIndex][recipeKey] }
+  newPlan[toDayIndex] = { ...newPlan[toDayIndex], [recipeKey]: temp }
+
+  return newPlan
+}
+
+/**
+ * Merge an AI-generated plan into the current week plan.
+ * Only days present in modifiedPlan are updated; others are left unchanged.
+ */
+export function applyGeneratedPlanToWeek(
+  weekPlan: WeekPlan[],
+  modifiedPlan: { date: Date | string; lunchRecipeId?: string; proteinRecipeId: string; carbRecipeId: string; vegetableRecipeId: string }[]
+): WeekPlan[] {
+  return weekPlan.map(day => {
+    const modification = modifiedPlan.find(m => {
+      const modDate = new Date(m.date)
+      return modDate.toDateString() === day.date.toDateString()
+    })
+    if (modification) {
+      return {
+        ...day,
+        lunchRecipeId: modification.lunchRecipeId || '',
+        proteinRecipeId: modification.proteinRecipeId || '',
+        carbRecipeId: modification.carbRecipeId || '',
+        vegetableRecipeId: modification.vegetableRecipeId || '',
+      }
+    }
+    return day
+  })
+}
+
+/**
+ * Create a blank week plan (7 days, all recipe IDs empty).
+ */
+export function createEmptyWeekPlan(startDate: Date): WeekPlan[] {
+  return DAYS.map((day, index) => {
+    const date = new Date(startDate)
+    date.setDate(date.getDate() + index)
+    return { day, date, lunchRecipeId: '', proteinRecipeId: '', carbRecipeId: '', vegetableRecipeId: '' }
+  })
 }

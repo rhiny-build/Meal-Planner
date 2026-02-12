@@ -1,18 +1,26 @@
 /**
  * useMealPlan Hook
  *
- * Manages state and operations for the weekly meal plan
+ * Manages state and operations for the weekly meal plan.
+ * Pure logic lives in mealPlanHelpers; refresh logic in useAutoRefresh.
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { RecipeWithIngredients, WeekPlan } from '@/types'
 import { fetchMealPlan as fetchMealPlanService, fetchAllRecipes, saveMealPlan } from '@/lib/apiService'
 import { syncMealIngredients } from '@/app/(modules)/shopping-list/actions'
 import { useDayNotes } from './useDayNotes'
-import { filterRecipesByType, calculateSelectedCount, getRecipeKeyFromColumn } from '@/lib/mealPlanHelpers'
+import { useAutoRefresh } from './useAutoRefresh'
+import {
+  DAYS,
+  filterRecipesByType,
+  calculateSelectedCount,
+  getRecipeKeyFromColumn,
+  swapRecipesInPlan,
+  applyGeneratedPlanToWeek,
+  createEmptyWeekPlan,
+} from '@/lib/mealPlanHelpers'
 import type { MealSlotColumn } from '@/lib/mealPlanHelpers'
-
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 
 export function useMealPlan(startDate: Date) {
@@ -21,29 +29,9 @@ export function useMealPlan(startDate: Date) {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
 
-  // Day notes with localStorage persistence
   const { dayNotes, handleNoteChange } = useDayNotes(startDate)
 
-  // Fetch data on mount and when date changes
-  useEffect(() => {
-    fetchData()
-  }, [startDate])
-
-  useEffect(() => {
-    const handlevisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        fetchData()
-      }
-    }
-    
-    document.addEventListener('visibilitychange', handlevisibilityChange)
-    
-    return () => {
-        document.removeEventListener('visibilitychange', handlevisibilityChange)
-    }
-  }, [])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true)
     try {
       const [recipes, plan] = await Promise.all([
@@ -57,7 +45,10 @@ export function useMealPlan(startDate: Date) {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [startDate])
+
+  useEffect(() => { fetchData() }, [fetchData])
+  useAutoRefresh(fetchData)
 
   const handleRecipeChange = (dayIndex: number, column: MealSlotColumn, recipeId: string) => {
     setWeekPlan(prev => {
@@ -74,7 +65,6 @@ export function useMealPlan(startDate: Date) {
       if (savedPlan.length > 0) {
         setWeekPlan(savedPlan)
       }
-      // Sync meal ingredients into the shopping list
       await syncMealIngredients(startDate)
     } catch (error) {
       console.error('Error saving:', error)
@@ -84,72 +74,19 @@ export function useMealPlan(startDate: Date) {
   }
 
   const handleClear = () => {
-    if (!confirm('Clear all selections for this week?')) {
-      return
-    }
-
-    const newPlan = DAYS.map((day, index) => {
-      const date = new Date(startDate)
-      date.setDate(date.getDate() + index)
-      return { day, date, lunchRecipeId: '', proteinRecipeId: '', carbRecipeId: '', vegetableRecipeId: '' }
-    })
-    setWeekPlan(newPlan)
+    if (!confirm('Clear all selections for this week?')) return
+    setWeekPlan(createEmptyWeekPlan(startDate))
   }
 
-  /**
-   * Swap recipes between two days within the same column
-   *
-   * This is called by the drag-and-drop functionality in MealPlanGrid.
-   * When a user drags a cell (e.g., Monday's protein) and drops it on
-   * another cell in the same column (e.g., Thursday's protein), this
-   * function swaps the recipe IDs between those two days.
-   *
-   * @param column - Which column to swap: 'lunch', 'protein', 'carb', or 'vegetable'
-   * @param fromDayIndex - Index of the source day (0 = Monday, 6 = Sunday)
-   * @param toDayIndex - Index of the target day
-   */
-  const handleSwapRecipes = (
-    column: MealSlotColumn,
-    fromDayIndex: number,
-    toDayIndex: number
-  ) => {
-    const newPlan = [...weekPlan]
-    const recipeKey = getRecipeKeyFromColumn(column)
-
-    // Swap the values
-    const temp = newPlan[fromDayIndex][recipeKey]
-    newPlan[fromDayIndex] = { ...newPlan[fromDayIndex], [recipeKey]: newPlan[toDayIndex][recipeKey] }
-    newPlan[toDayIndex] = { ...newPlan[toDayIndex], [recipeKey]: temp }
-
-    setWeekPlan(newPlan)
+  const handleSwapRecipes = (column: MealSlotColumn, fromDayIndex: number, toDayIndex: number) => {
+    setWeekPlan(swapRecipesInPlan(weekPlan, column, fromDayIndex, toDayIndex))
   }
 
-  // Get recipes filtered by type
+  const applyGeneratedPlan = (modifiedPlan: Parameters<typeof applyGeneratedPlanToWeek>[1]) => {
+    setWeekPlan(applyGeneratedPlanToWeek(weekPlan, modifiedPlan))
+  }
+
   const { lunchRecipes, proteinRecipes, carbRecipes, vegetableRecipes } = filterRecipesByType(allRecipes)
-
-  // Calculate selected count
-  const selectedCount = calculateSelectedCount(weekPlan)
-
-  // Apply AI-generated plan to current state
-  const applyGeneratedPlan = (modifiedPlan: { date: Date | string; lunchRecipeId?: string; proteinRecipeId: string; carbRecipeId: string; vegetableRecipeId: string }[]) => {
-    const newPlan = weekPlan.map(day => {
-      const modification = modifiedPlan.find(m => {
-        const modDate = new Date(m.date)
-        return modDate.toDateString() === day.date.toDateString()
-      })
-      if (modification) {
-        return {
-          ...day,
-          lunchRecipeId: modification.lunchRecipeId || '',
-          proteinRecipeId: modification.proteinRecipeId || '',
-          carbRecipeId: modification.carbRecipeId || '',
-          vegetableRecipeId: modification.vegetableRecipeId || '',
-        }
-      }
-      return day
-    })
-    setWeekPlan(newPlan)
-  }
 
   return {
     weekPlan,
@@ -158,7 +95,7 @@ export function useMealPlan(startDate: Date) {
     proteinRecipes,
     carbRecipes,
     vegetableRecipes,
-    selectedCount,
+    selectedCount: calculateSelectedCount(weekPlan),
     isLoading,
     isSaving,
     handleRecipeChange,
