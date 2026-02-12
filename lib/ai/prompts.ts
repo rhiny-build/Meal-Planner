@@ -17,8 +17,6 @@ export const SYSTEM_PROMPTS = {
     'You are a helpful meal planning assistant. Return your response as JSON.',
   normaliseIngredients:
     'You are a helpful assistant that normalises grocery product names to their base ingredient concept. Always return valid JSON.',
-  matchIngredients:
-    'You are a helpful assistant that matches recipe ingredients against household inventory. Always return valid JSON.',
   extractIngredients:
     'You are a helpful assistant that extracts recipe information from HTML. Return your response as JSON with "name", "ingredients", and "structuredIngredients" fields.',
 } as const
@@ -126,33 +124,6 @@ Rules:
 Return lowercase base ingredient names.
 
 Return JSON: { "items": [{ "id": "...", "baseIngredient": "..." }] }`
-}
-
-/**
- * Build the prompt for matching recipe ingredients against master list items.
- *
- * Expected JSON response shape:
- * { items: { index: number, baseIngredient: string, matchedMasterItem: string | null }[] }
- */
-export function buildMatchIngredientsPrompt(
-  recipeList: string,
-  masterList: string,
-): string {
-  return `You are helping filter a shopping list. The user has these items at home (staples/restock). Recipe ingredients that are covered by an item at home should be excluded from the shopping list.
-
-RECIPE INGREDIENTS (from this week's meals):
-${recipeList}
-
-ITEMS ALREADY AT HOME (base ingredient names):
-${masterList}
-
-For each recipe ingredient, determine:
-1. Its base ingredient concept (lowercase, stripped of quantities/prep words)
-2. Whether it matches any item at home. Use SEMANTIC matching — "mozzarella" matches "mozzarella cheese", "rice" matches "basmati rice", "pepper" matches "red pepper", etc. But keep meaningful distinctions: "garlic" does NOT match "garlic granules" (different products).
-
-Return JSON: { "items": [{ "index": 0, "baseIngredient": "...", "matchedMasterItem": "..." or null }] }
-
-Set matchedMasterItem to the matched home item string if covered, or null if the user needs to buy it.`
 }
 
 /**

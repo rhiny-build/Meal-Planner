@@ -11,7 +11,6 @@ export const AI_CONFIG = {
     max_completion_tokens: 4000,
   },
   normaliseIngredients: {},
-  matchIngredients: {},
   embeddings: {
     model: 'text-embedding-3-small' as const,
     similarityThreshold: 0.82,
