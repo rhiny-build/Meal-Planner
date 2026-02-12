@@ -12,12 +12,12 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import type { Category, MasterListItem } from '@prisma/client'
 import {
-  addMasterListItem,
   updateMasterListItem,
   deleteMasterListItem,
 } from '@/app/(modules)/shopping-list/actions'
-import Button from '@/components/Button'
 import EditableListItem from './EditableListItem'
+import CategoryAccordion from './CategoryAccordion'
+import AddMasterListItemForm from './AddMasterListItemForm'
 import { useInlineEdit } from '../hooks/useInlineEdit'
 
 type CategoryWithItems = Category & { items: MasterListItem[] }
@@ -41,10 +41,8 @@ export default function MasterListsTab({
   const typeParam = searchParams.get('type') as ListType | null
   const activeType = typeParam || initialType
 
-  // UI state
+  // Accordion state
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
-  const [newItemName, setNewItemName] = useState('')
-  const [newItemCategory, setNewItemCategory] = useState('')
 
   const setActiveType = (type: ListType) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -112,29 +110,8 @@ export default function MasterListsTab({
     })
   }
 
-  const handleAddItem = () => {
-    if (!newItemName.trim()) {
-      toast.error('Please enter an item name')
-      return
-    }
-    if (!newItemCategory) {
-      toast.error('Please select a category')
-      return
-    }
-
-    startTransition(async () => {
-      try {
-        await addMasterListItem(newItemCategory, newItemName, activeType)
-        setNewItemName('')
-        setNewItemCategory('')
-        // Expand the category where the item was added
-        setExpandedCategories(prev => new Set(prev).add(newItemCategory))
-        toast.success('Item added')
-      } catch (error) {
-        console.error('Error adding item:', error)
-        toast.error('Failed to add item')
-      }
-    })
+  const handleItemAdded = (categoryId: string) => {
+    setExpandedCategories(prev => new Set(prev).add(categoryId))
   }
 
   return (
@@ -184,107 +161,42 @@ export default function MasterListsTab({
         </div>
       ) : (
         <div className="space-y-2">
-          {filteredCategories.map(category => {
-            const isExpanded = expandedCategories.has(category.id)
-
-            return (
-              <div
-                key={category.id}
-                className="bg-white dark:bg-gray-900 rounded-lg shadow overflow-hidden"
-              >
-                {/* Category Header */}
-                <button
-                  type="button"
-                  onClick={() => toggleCategory(category.id)}
-                  className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 flex justify-between items-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          {filteredCategories.map(category => (
+            <CategoryAccordion
+              key={category.id}
+              name={category.name}
+              itemCount={category.items.length}
+              isExpanded={expandedCategories.has(category.id)}
+              onToggle={() => toggleCategory(category.id)}
+            >
+              {category.items.map(item => (
+                <EditableListItem
+                  key={item.id}
+                  id={item.id}
+                  isEditing={editingId === item.id}
+                  editValue={editValue}
+                  isPending={isPending}
+                  onEditValueChange={setEditValue}
+                  onStartEdit={() => startEdit(item.id, item.name)}
+                  onSaveEdit={() => handleSaveEdit(item.id)}
+                  onCancelEdit={cancelEdit}
+                  onDelete={() => handleDelete(item)}
                 >
-                  <div className="text-left">
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100">
-                      {category.name}
-                    </h3>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {category.items.length} {category.items.length === 1 ? 'item' : 'items'}
-                    </span>
-                  </div>
-                  <svg
-                    className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${
-                      isExpanded ? 'rotate-180' : ''
-                    }`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-
-                {/* Items List */}
-                {isExpanded && (
-                  <ul className="divide-y divide-gray-100 dark:divide-gray-800 border-t dark:border-gray-700">
-                    {category.items.map(item => (
-                      <EditableListItem
-                        key={item.id}
-                        id={item.id}
-                        isEditing={editingId === item.id}
-                        editValue={editValue}
-                        isPending={isPending}
-                        onEditValueChange={setEditValue}
-                        onStartEdit={() => startEdit(item.id, item.name)}
-                        onSaveEdit={() => handleSaveEdit(item.id)}
-                        onCancelEdit={cancelEdit}
-                        onDelete={() => handleDelete(item)}
-                      >
-                        <span className="flex-1 text-gray-900 dark:text-gray-100">
-                          {item.name}
-                        </span>
-                      </EditableListItem>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )
-          })}
+                  <span className="flex-1 text-gray-900 dark:text-gray-100">
+                    {item.name}
+                  </span>
+                </EditableListItem>
+              ))}
+            </CategoryAccordion>
+          ))}
         </div>
       )}
 
-      {/* Add Item Form */}
-      <div className="p-4 bg-white dark:bg-gray-900 rounded-lg shadow">
-        <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">
-          Add New {activeType === 'staple' ? 'Staple' : 'Restock Item'}
-        </h3>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="text"
-            value={newItemName}
-            onChange={e => setNewItemName(e.target.value)}
-            placeholder="Item name"
-            className="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
-            onKeyDown={e => {
-              if (e.key === 'Enter' && newItemName.trim() && newItemCategory) {
-                handleAddItem()
-              }
-            }}
-          />
-          <select
-            value={newItemCategory}
-            onChange={e => setNewItemCategory(e.target.value)}
-            className="px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
-          >
-            <option value="">Select category</option>
-            {categories.map(cat => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
-          <Button
-            onClick={handleAddItem}
-            disabled={isPending || !newItemName.trim() || !newItemCategory}
-          >
-            Add
-          </Button>
-        </div>
-      </div>
+      <AddMasterListItemForm
+        categories={categories}
+        activeType={activeType}
+        onItemAdded={handleItemAdded}
+      />
     </div>
   )
 }
