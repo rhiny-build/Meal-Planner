@@ -1,19 +1,21 @@
 /**
- * Match recipe ingredients against master list items using AI.
+ * Match recipe ingredients against master list items using embeddings.
  *
- * Single AI call that receives both sides and determines which recipe
- * ingredients are already covered by staples/restock. More reliable than
- * independent normalisation + exact string matching because the AI can
- * reason about semantic equivalence (e.g. "mozzarella" ≈ "mozzarella cheese").
+ * Batch-embeds recipe ingredients, then computes cosine similarity against
+ * pre-computed master list embeddings. Replaces the previous LLM chat
+ * completion approach (~51s → ~1-2s).
  */
 
-import { openai, MODEL } from './client'
-import { AI_CONFIG } from './config'
-import { SYSTEM_PROMPTS, buildMatchIngredientsPrompt } from './prompts'
+import { computeEmbeddings, findBestMatches } from './embeddings'
+
+export type MasterItemWithEmbedding = {
+  baseIngredient: string
+  embedding: number[]
+}
 
 export type MatchInput = {
   recipeIngredients: string[]
-  masterListBaseIngredients: string[]
+  masterItems: MasterItemWithEmbedding[]
 }
 
 export type MatchResultItem = {
@@ -27,7 +29,7 @@ export async function matchIngredientsAgainstMasterList(
   input: MatchInput
 ): Promise<MatchResultItem[]> {
   if (input.recipeIngredients.length === 0) return []
-  if (input.masterListBaseIngredients.length === 0) {
+  if (input.masterItems.length === 0) {
     return input.recipeIngredients.map((name, index) => ({
       index,
       name,
@@ -36,43 +38,22 @@ export async function matchIngredientsAgainstMasterList(
     }))
   }
 
-  const recipeList = input.recipeIngredients
-    .map((name, i) => `  ${i}: "${name}"`)
-    .join('\n')
+  // Batch-embed all recipe ingredients in one API call
+  const ingredientEmbeddings = await computeEmbeddings(input.recipeIngredients)
 
-  const masterList = input.masterListBaseIngredients
-    .map((name) => `  - "${name}"`)
-    .join('\n')
+  // Find best match for each ingredient using cosine similarity
+  const matches = findBestMatches(
+    ingredientEmbeddings,
+    input.masterItems.map((item) => ({
+      name: item.baseIngredient,
+      embedding: item.embedding,
+    })),
+  )
 
-  const prompt = buildMatchIngredientsPrompt(recipeList, masterList)
-
-  const completion = await openai.chat.completions.create({
-    model: MODEL,
-    messages: [
-      { role: 'system', content: SYSTEM_PROMPTS.matchIngredients },
-      { role: 'user', content: prompt },
-    ],
-    response_format: { type: 'json_object' },
-    ...AI_CONFIG.matchIngredients,
-  })
-
-  const result = completion.choices[0]?.message?.content
-  if (!result) {
-    throw new Error('No response from AI for ingredient matching')
-  }
-
-  const parsed = JSON.parse(result) as {
-    items: Array<{ index: number; baseIngredient: string; matchedMasterItem: string | null }>
-  }
-
-  if (!parsed.items || !Array.isArray(parsed.items)) {
-    throw new Error('Unexpected AI response format: missing items array')
-  }
-
-  return parsed.items.map((item) => ({
-    index: item.index,
-    name: input.recipeIngredients[item.index] ?? '',
-    baseIngredient: item.baseIngredient,
-    matchedMasterItem: item.matchedMasterItem,
+  return input.recipeIngredients.map((name, index) => ({
+    index,
+    name,
+    baseIngredient: name.toLowerCase(),
+    matchedMasterItem: matches[index],
   }))
 }

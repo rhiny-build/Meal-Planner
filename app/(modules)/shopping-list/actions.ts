@@ -86,25 +86,29 @@ export async function syncMealIngredients(weekStart: Date) {
   try {
     console.time('[sync] fetch master list')
     const masterListItems = await prisma.masterListItem.findMany({
-      where: { baseIngredient: { not: null } },
-      select: { baseIngredient: true },
+      where: {
+        baseIngredient: { not: null },
+        embedding: { isEmpty: false },
+      },
+      select: { baseIngredient: true, embedding: true },
     })
-    const masterBaseIngredients = masterListItems.map(
-      (item) => item.baseIngredient as string
-    )
+    const masterItems = masterListItems.map((item) => ({
+      baseIngredient: item.baseIngredient as string,
+      embedding: item.embedding,
+    }))
     console.timeEnd('[sync] fetch master list')
-    console.log(`[sync] ${masterBaseIngredients.length} master list items`)
+    console.log(`[sync] ${masterItems.length} master list items with embeddings`)
 
-    if (aggregatedItems.length > 0 && masterBaseIngredients.length > 0) {
-      console.time('[sync] AI match ingredients')
+    if (aggregatedItems.length > 0 && masterItems.length > 0) {
+      console.time('[sync] embedding match ingredients')
       matchResults = await matchIngredientsAgainstMasterList({
         recipeIngredients: aggregatedItems.map((item) => item.name),
-        masterListBaseIngredients: masterBaseIngredients,
+        masterItems,
       })
-      console.timeEnd('[sync] AI match ingredients')
+      console.timeEnd('[sync] embedding match ingredients')
     }
   } catch (error) {
-    console.timeEnd('[sync] AI match ingredients')
+    console.timeEnd('[sync] embedding match ingredients')
     console.error('Ingredient matching failed, including all items:', error)
   }
 

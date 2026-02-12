@@ -371,7 +371,7 @@ describe('Shopping List Server Actions', () => {
       expect(mockPrisma.shoppingList.create).toHaveBeenCalled()
     })
 
-    it('should filter out ingredients matching master list via AI matching', async () => {
+    it('should filter out ingredients matching master list via embedding matching', async () => {
       const weekStart = new Date('2026-02-03')
       const mockList = { id: 'list-1', weekStart, items: [] }
       const mockMealPlans = [
@@ -395,15 +395,15 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
       mockPrisma.shoppingListItem.createMany.mockResolvedValue({ count: 1 })
 
-      // Master list has salt and soy sauce
+      // Master list has salt and soy sauce with embeddings
       mockPrisma.masterListItem.findMany
         .mockResolvedValueOnce([
-          { baseIngredient: 'salt' },
-          { baseIngredient: 'soy sauce' },
+          { baseIngredient: 'salt', embedding: [0.1, 0.2] },
+          { baseIngredient: 'soy sauce', embedding: [0.3, 0.4] },
         ])
         .mockResolvedValue([])
 
-      // AI matches soy sauce and salt, not chicken
+      // Embedding matching: soy sauce and salt matched, not chicken
       mockMatchIngredients.mockResolvedValue([
         { index: 0, name: 'chicken breast', baseIngredient: 'chicken', matchedMasterItem: null },
         { index: 1, name: 'soy sauce', baseIngredient: 'soy sauce', matchedMasterItem: 'soy sauce' },
@@ -420,7 +420,7 @@ describe('Shopping List Server Actions', () => {
       })
     })
 
-    it('should include all items when AI matching fails', async () => {
+    it('should include all items when embedding matching fails', async () => {
       const weekStart = new Date('2026-02-03')
       const mockList = { id: 'list-1', weekStart, items: [] }
       const mockMealPlans = [
@@ -444,11 +444,11 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.shoppingListItem.createMany.mockResolvedValue({ count: 2 })
 
       mockPrisma.masterListItem.findMany
-        .mockResolvedValueOnce([{ baseIngredient: 'salt' }])
+        .mockResolvedValueOnce([{ baseIngredient: 'salt', embedding: [0.1, 0.2] }])
         .mockResolvedValue([])
 
-      // AI call fails
-      mockMatchIngredients.mockRejectedValue(new Error('AI service unavailable'))
+      // Embedding call fails
+      mockMatchIngredients.mockRejectedValue(new Error('Embedding service unavailable'))
 
       await syncMealIngredients(weekStart)
 
@@ -461,7 +461,7 @@ describe('Shopping List Server Actions', () => {
       })
     })
 
-    it('should skip AI call when master list has no base ingredients', async () => {
+    it('should skip matching when no master list items have embeddings', async () => {
       const weekStart = new Date('2026-02-03')
       const mockList = { id: 'list-1', weekStart, items: [] }
       const mockMealPlans = [
@@ -481,7 +481,7 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
       mockPrisma.shoppingListItem.createMany.mockResolvedValue({ count: 1 })
 
-      // Master list returns empty (no baseIngredient values)
+      // Master list returns empty (no items with embeddings)
       mockPrisma.masterListItem.findMany.mockResolvedValue([])
 
       await syncMealIngredients(weekStart)

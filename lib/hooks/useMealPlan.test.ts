@@ -18,6 +18,9 @@ vi.mock('@/lib/ai/matchIngredients', () => ({
 vi.mock('@/lib/ai/normaliseIngredients', () => ({
   normaliseIngredients: vi.fn(),
 }))
+vi.mock('@/lib/ai/embeddings', () => ({
+  computeEmbeddings: vi.fn(),
+}))
 
 // Mock window.confirm for clear confirmation
 vi.stubGlobal('confirm', vi.fn(() => true))
