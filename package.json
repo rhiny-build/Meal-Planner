@@ -4,7 +4,7 @@
   "description": "A household meal planning app for families",
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma migrate deploy && tsx prisma/migrateIngredients.ts && tsx scripts/backfill-base-ingredients.ts && next build",
+    "build": "prisma generate && prisma migrate deploy && tsx prisma/migrateIngredients.ts && next build",
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write .",
