@@ -130,6 +130,7 @@ model MasterListItem {
   categoryId     String
   order          Int      // Display order within category
   baseIngredient String?  // Normalised base concept for shopping list matching
+  embedding      Float[]  // Pre-computed embedding vector for fast ingredient matching
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
