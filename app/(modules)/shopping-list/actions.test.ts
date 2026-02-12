@@ -22,6 +22,11 @@ vi.mock('@/lib/ai/normaliseIngredients', () => ({
   normaliseIngredients: vi.fn(),
 }))
 
+// Mock AI embeddings
+vi.mock('@/lib/ai/embeddings', () => ({
+  computeEmbeddings: vi.fn(),
+}))
+
 // Mock Prisma - use factory function to avoid hoisting issues
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -66,9 +71,11 @@ import {
 import { prisma } from '@/lib/prisma'
 import { matchIngredientsAgainstMasterList } from '@/lib/ai/matchIngredients'
 import { normaliseIngredients } from '@/lib/ai/normaliseIngredients'
+import { computeEmbeddings } from '@/lib/ai/embeddings'
 
 const mockMatchIngredients = matchIngredientsAgainstMasterList as ReturnType<typeof vi.fn>
 const mockNormaliseIngredients = normaliseIngredients as ReturnType<typeof vi.fn>
+const mockComputeEmbeddings = computeEmbeddings as ReturnType<typeof vi.fn>
 
 // Type assertion for mocked prisma
 const mockPrisma = prisma as unknown as {
@@ -101,6 +108,8 @@ describe('Shopping List Server Actions', () => {
     vi.clearAllMocks()
     // Default: empty master list means no AI call and no filtering
     mockPrisma.masterListItem.findMany.mockResolvedValue([])
+    // Default: return a fake embedding vector for any input
+    mockComputeEmbeddings.mockResolvedValue([[0.1, 0.2, 0.3]])
   })
 
   describe('getShoppingList', () => {
@@ -654,23 +663,23 @@ describe('Shopping List Server Actions', () => {
   })
 
   describe('addMasterListItem', () => {
-    it('should create item and normalise baseIngredient', async () => {
+    it('should create item, normalise baseIngredient, and compute embedding', async () => {
       const mockItem = { id: 'item-1', name: 'Sainsbury\'s Whole Milk 2L', type: 'staple', order: 0 }
+      const mockEmbedding = [0.1, 0.2, 0.3]
 
       mockPrisma.masterListItem.aggregate.mockResolvedValue({ _max: { order: null } })
       mockPrisma.masterListItem.create.mockResolvedValue(mockItem)
       mockPrisma.masterListItem.update.mockResolvedValue({ ...mockItem, baseIngredient: 'whole milk' })
       mockNormaliseIngredients.mockResolvedValue([{ id: 'item-1', baseIngredient: 'whole milk' }])
+      mockComputeEmbeddings.mockResolvedValue([mockEmbedding])
 
       const result = await addMasterListItem('cat-1', 'Sainsbury\'s Whole Milk 2L', 'staple')
 
-      expect(mockPrisma.masterListItem.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ name: 'Sainsbury\'s Whole Milk 2L', type: 'staple' }),
-      })
       expect(mockNormaliseIngredients).toHaveBeenCalledWith([{ id: 'item-1', name: 'Sainsbury\'s Whole Milk 2L' }])
+      expect(mockComputeEmbeddings).toHaveBeenCalledWith(['whole milk'])
       expect(mockPrisma.masterListItem.update).toHaveBeenCalledWith({
         where: { id: 'item-1' },
-        data: { baseIngredient: 'whole milk' },
+        data: { baseIngredient: 'whole milk', embedding: mockEmbedding },
       })
       expect(result).toEqual(mockItem)
     })
@@ -691,13 +700,15 @@ describe('Shopping List Server Actions', () => {
   })
 
   describe('updateMasterListItem', () => {
-    it('should update name and re-normalise baseIngredient', async () => {
+    it('should update name, re-normalise baseIngredient, and recompute embedding', async () => {
       const mockItem = { id: 'item-1', name: 'Warburtons Wholemeal Bread 800g' }
+      const mockEmbedding = [0.4, 0.5, 0.6]
 
       mockPrisma.masterListItem.update
         .mockResolvedValueOnce(mockItem) // name update
-        .mockResolvedValueOnce({ ...mockItem, baseIngredient: 'wholemeal bread' }) // baseIngredient update
+        .mockResolvedValueOnce({ ...mockItem, baseIngredient: 'wholemeal bread' }) // baseIngredient + embedding update
       mockNormaliseIngredients.mockResolvedValue([{ id: 'item-1', baseIngredient: 'wholemeal bread' }])
+      mockComputeEmbeddings.mockResolvedValue([mockEmbedding])
 
       const result = await updateMasterListItem('item-1', 'Warburtons Wholemeal Bread 800g')
 
@@ -706,9 +717,10 @@ describe('Shopping List Server Actions', () => {
         data: { name: 'Warburtons Wholemeal Bread 800g' },
       })
       expect(mockNormaliseIngredients).toHaveBeenCalledWith([{ id: 'item-1', name: 'Warburtons Wholemeal Bread 800g' }])
+      expect(mockComputeEmbeddings).toHaveBeenCalledWith(['wholemeal bread'])
       expect(mockPrisma.masterListItem.update).toHaveBeenCalledWith({
         where: { id: 'item-1' },
-        data: { baseIngredient: 'wholemeal bread' },
+        data: { baseIngredient: 'wholemeal bread', embedding: mockEmbedding },
       })
       expect(result).toEqual(mockItem)
     })

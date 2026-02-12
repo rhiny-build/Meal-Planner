@@ -12,6 +12,7 @@ import { prisma } from '@/lib/prisma'
 import { aggregateIngredients, collectIngredientsFromMealPlans } from '@/lib/shoppingListHelpers'
 import { matchIngredientsAgainstMasterList, type MatchResultItem } from '@/lib/ai/matchIngredients'
 import { normaliseIngredients } from '@/lib/ai/normaliseIngredients'
+import { computeEmbeddings } from '@/lib/ai/embeddings'
 
 /**
  * Ensure a shopping list exists for the week, creating one with default staples if needed.
@@ -54,6 +55,7 @@ export async function ensureShoppingListExists(weekStart: Date) {
  * Replaces only source='meal' items, preserving staples/restock/manual.
  */
 export async function syncMealIngredients(weekStart: Date) {
+  console.time('[sync] total')
   const normalizedWeekStart = new Date(weekStart)
   normalizedWeekStart.setHours(0, 0, 0, 0)
 
@@ -61,6 +63,7 @@ export async function syncMealIngredients(weekStart: Date) {
   weekEnd.setDate(weekEnd.getDate() + 7)
 
   // Fetch meal plans for the week
+  console.time('[sync] fetch meal plans')
   const mealPlans = await prisma.mealPlan.findMany({
     where: { date: { gte: normalizedWeekStart, lt: weekEnd } },
     include: {
@@ -70,15 +73,18 @@ export async function syncMealIngredients(weekStart: Date) {
       vegetableRecipe: { include: { structuredIngredients: { orderBy: { order: 'asc' } } } },
     },
   })
+  console.timeEnd('[sync] fetch meal plans')
 
   // Aggregate meal ingredients
   const allIngredients = collectIngredientsFromMealPlans(mealPlans)
   const aggregatedItems = aggregateIngredients(allIngredients)
+  console.log(`[sync] ${aggregatedItems.length} aggregated ingredients`)
 
   // Match ingredients against master list to filter out staples/restock
   let matchResults: MatchResultItem[] | null = null
 
   try {
+    console.time('[sync] fetch master list')
     const masterListItems = await prisma.masterListItem.findMany({
       where: { baseIngredient: { not: null } },
       select: { baseIngredient: true },
@@ -86,14 +92,19 @@ export async function syncMealIngredients(weekStart: Date) {
     const masterBaseIngredients = masterListItems.map(
       (item) => item.baseIngredient as string
     )
+    console.timeEnd('[sync] fetch master list')
+    console.log(`[sync] ${masterBaseIngredients.length} master list items`)
 
     if (aggregatedItems.length > 0 && masterBaseIngredients.length > 0) {
+      console.time('[sync] AI match ingredients')
       matchResults = await matchIngredientsAgainstMasterList({
         recipeIngredients: aggregatedItems.map((item) => item.name),
         masterListBaseIngredients: masterBaseIngredients,
       })
+      console.timeEnd('[sync] AI match ingredients')
     }
   } catch (error) {
+    console.timeEnd('[sync] AI match ingredients')
     console.error('Ingredient matching failed, including all items:', error)
   }
 
@@ -124,6 +135,7 @@ export async function syncMealIngredients(weekStart: Date) {
   }
 
   // Ensure list exists (with staples if new)
+  console.time('[sync] db writes')
   const shoppingList = await ensureShoppingListExists(weekStart)
 
   // Replace only meal items
@@ -136,8 +148,10 @@ export async function syncMealIngredients(weekStart: Date) {
       data: mealItems.map(item => ({ ...item, shoppingListId: shoppingList.id })),
     })
   }
+  console.timeEnd('[sync] db writes')
 
   revalidatePath('/shopping-list')
+  console.timeEnd('[sync] total')
 }
 
 /**
@@ -309,17 +323,19 @@ export async function addMasterListItem(
     },
   })
 
-  // Normalise in the background — don't block the user or break the add
+  // Normalise + compute embedding in the background — don't block the user or break the add
   try {
     const [result] = await normaliseIngredients([{ id: item.id, name: item.name }])
     if (result?.baseIngredient) {
+      const textToEmbed = result.baseIngredient
+      const [embedding] = await computeEmbeddings([textToEmbed])
       await prisma.masterListItem.update({
         where: { id: item.id },
-        data: { baseIngredient: result.baseIngredient },
+        data: { baseIngredient: result.baseIngredient, embedding },
       })
     }
   } catch (error) {
-    console.error('Failed to normalise new master list item:', error)
+    console.error('Failed to normalise/embed new master list item:', error)
   }
 
   revalidatePath('/shopping-list')
@@ -336,17 +352,19 @@ export async function updateMasterListItem(itemId: string, name: string) {
     data: { name: name.trim() },
   })
 
-  // Re-normalise after rename — don't block the user or break the update
+  // Re-normalise + recompute embedding after rename — don't block the user or break the update
   try {
     const [result] = await normaliseIngredients([{ id: item.id, name: item.name }])
     if (result?.baseIngredient) {
+      const textToEmbed = result.baseIngredient
+      const [embedding] = await computeEmbeddings([textToEmbed])
       await prisma.masterListItem.update({
         where: { id: item.id },
-        data: { baseIngredient: result.baseIngredient },
+        data: { baseIngredient: result.baseIngredient, embedding },
       })
     }
   } catch (error) {
-    console.error('Failed to re-normalise master list item:', error)
+    console.error('Failed to re-normalise/embed master list item:', error)
   }
 
   revalidatePath('/shopping-list')
