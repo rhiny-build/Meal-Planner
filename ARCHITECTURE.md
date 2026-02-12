@@ -61,7 +61,6 @@ This document explains the technical architecture of the Family Meal Planner app
 /lib                  # Shared utilities and business logic
 ├── /ai               # AI abstraction layer
 │   ├── extractIngredientsFromURL.ts  # URL recipe extraction
-│   ├── generateWeeklyMealPlan.ts     # Meal plan generation
 │   └── modifyMealPlan.ts             # Natural language modifications
 ├── /hooks            # React hooks
 │   ├── useMealPlan.ts        # Meal plan state management
@@ -158,27 +157,6 @@ POST /api/recipes → Prisma creates recipe → Updates database
 Recipes page refetches data
   ↓
 RecipeCard components display updated list
-```
-
-### Meal Plan Generation Flow
-```
-User clicks "Generate New Meal Plan"
-  ↓
-POST /api/meal-plan with startDate
-  ↓
-API fetches all recipes from database
-  ↓
-Calls generateWeeklyMealPlan() in lib/ai.ts
-  ↓
-AI applies business rules and selects 7 recipes
-  ↓
-API deletes old meal plans for the week
-  ↓
-API creates new meal plans in database
-  ↓
-Returns meal plans with recipe details
-  ↓
-UI displays the 7-day plan
 ```
 
 ### Natural Language Modification Flow
@@ -294,12 +272,6 @@ All AI calls go through modular files in `lib/ai/`:
 export async function extractIngredientsFromURL(
   url: string
 ): Promise<ExtractedRecipeData>  // Returns name, ingredients, and structuredIngredients
-
-// lib/ai/generateWeeklyMealPlan.ts
-export async function generateWeeklyMealPlan(
-  recipes: Recipe[],
-  startDate: Date
-): Promise<string[]>
 
 // lib/ai/modifyMealPlan.ts
 export async function modifyMealPlan(

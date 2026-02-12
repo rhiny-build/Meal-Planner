@@ -79,7 +79,6 @@ This project is designed to be both a functional meal planning tool and a learni
 /lib                # Business logic and utilities
   /ai               # AI abstraction layer (modular)
     extractIngredientsFromURL.ts
-    generateWeeklyMealPlan.ts
     modifyMealPlan.ts
   ingredientParser.ts  # Parse ingredient strings
   dateUtils.ts      # Date manipulation helpers
@@ -159,7 +158,6 @@ This project is designed to be both a functional meal planning tool and a learni
 
 The AI layer is modular with separate files for each function:
 - `extractIngredientsFromURL.ts` - Extract recipe data from URLs
-- `generateWeeklyMealPlan.ts` - Generate 7-day meal plans
 - `modifyMealPlan.ts` - Natural language meal plan modifications
 
 Each file demonstrates how to:
