@@ -9,7 +9,8 @@ import type { RecipeWithIngredients, WeekPlan } from '@/types'
 import { fetchMealPlan as fetchMealPlanService, fetchAllRecipes, saveMealPlan } from '@/lib/apiService'
 import { syncMealIngredients } from '@/app/(modules)/shopping-list/actions'
 import { useDayNotes } from './useDayNotes'
-import { filterRecipesByType, calculateSelectedCount } from '@/lib/mealPlanHelpers'
+import { filterRecipesByType, calculateSelectedCount, getRecipeKeyFromColumn } from '@/lib/mealPlanHelpers'
+import type { MealSlotColumn } from '@/lib/mealPlanHelpers'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -58,18 +59,12 @@ export function useMealPlan(startDate: Date) {
     }
   }
 
-  const handleRecipeChange = (dayIndex: number, column: 'lunch' | 'protein' | 'carb' | 'vegetable', recipeId: string) => {
-    const newPlan = [...weekPlan]
-    if (column === 'lunch') {
-      newPlan[dayIndex].lunchRecipeId = recipeId
-    } else if (column === 'protein') {
-      newPlan[dayIndex].proteinRecipeId = recipeId
-    } else if (column === 'carb') {
-      newPlan[dayIndex].carbRecipeId = recipeId
-    } else {
-      newPlan[dayIndex].vegetableRecipeId = recipeId
-    }
-    setWeekPlan(newPlan)
+  const handleRecipeChange = (dayIndex: number, column: MealSlotColumn, recipeId: string) => {
+    setWeekPlan(prev => {
+      const newPlan = [...prev]
+      newPlan[dayIndex] = { ...newPlan[dayIndex], [getRecipeKeyFromColumn(column)]: recipeId }
+      return newPlan
+    })
   }
 
   const handleSave = async () => {
@@ -114,21 +109,12 @@ export function useMealPlan(startDate: Date) {
    * @param toDayIndex - Index of the target day
    */
   const handleSwapRecipes = (
-    column: 'lunch' | 'protein' | 'carb' | 'vegetable',
+    column: MealSlotColumn,
     fromDayIndex: number,
     toDayIndex: number
   ) => {
-    // Create a new plan array (immutable update)
     const newPlan = [...weekPlan]
-
-    // Determine which property to swap based on column
-    const recipeKey = column === 'lunch'
-      ? 'lunchRecipeId'
-      : column === 'protein'
-      ? 'proteinRecipeId'
-      : column === 'carb'
-      ? 'carbRecipeId'
-      : 'vegetableRecipeId'
+    const recipeKey = getRecipeKeyFromColumn(column)
 
     // Swap the values
     const temp = newPlan[fromDayIndex][recipeKey]

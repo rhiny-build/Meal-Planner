@@ -6,6 +6,23 @@
 
 import type { RecipeWithIngredients, WeekPlan } from '@/types'
 
+export type MealSlotColumn = 'lunch' | 'protein' | 'carb' | 'vegetable'
+export type RecipeIdKey = 'lunchRecipeId' | 'proteinRecipeId' | 'carbRecipeId' | 'vegetableRecipeId'
+
+const COLUMN_TO_RECIPE_KEY: Record<MealSlotColumn, RecipeIdKey> = {
+  lunch: 'lunchRecipeId',
+  protein: 'proteinRecipeId',
+  carb: 'carbRecipeId',
+  vegetable: 'vegetableRecipeId',
+}
+
+/**
+ * Map a meal slot column name to its corresponding recipe ID key
+ */
+export function getRecipeKeyFromColumn(column: MealSlotColumn): RecipeIdKey {
+  return COLUMN_TO_RECIPE_KEY[column]
+}
+
 /**
  * Calculate the start and end dates for a week (Monday-Sunday)
  */

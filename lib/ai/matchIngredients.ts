@@ -8,6 +8,8 @@
  */
 
 import { openai, MODEL } from './client'
+import { AI_CONFIG } from './config'
+import { SYSTEM_PROMPTS, buildMatchIngredientsPrompt } from './prompts'
 
 export type MatchInput = {
   recipeIngredients: string[]
@@ -42,33 +44,16 @@ export async function matchIngredientsAgainstMasterList(
     .map((name) => `  - "${name}"`)
     .join('\n')
 
-  const prompt = `You are helping filter a shopping list. The user has these items at home (staples/restock). Recipe ingredients that are covered by an item at home should be excluded from the shopping list.
-
-RECIPE INGREDIENTS (from this week's meals):
-${recipeList}
-
-ITEMS ALREADY AT HOME (base ingredient names):
-${masterList}
-
-For each recipe ingredient, determine:
-1. Its base ingredient concept (lowercase, stripped of quantities/prep words)
-2. Whether it matches any item at home. Use SEMANTIC matching — "mozzarella" matches "mozzarella cheese", "rice" matches "basmati rice", "pepper" matches "red pepper", etc. But keep meaningful distinctions: "garlic" does NOT match "garlic granules" (different products).
-
-Return JSON: { "items": [{ "index": 0, "baseIngredient": "...", "matchedMasterItem": "..." or null }] }
-
-Set matchedMasterItem to the matched home item string if covered, or null if the user needs to buy it.`
+  const prompt = buildMatchIngredientsPrompt(recipeList, masterList)
 
   const completion = await openai.chat.completions.create({
     model: MODEL,
     messages: [
-      {
-        role: 'system',
-        content:
-          'You are a helpful assistant that matches recipe ingredients against household inventory. Always return valid JSON.',
-      },
+      { role: 'system', content: SYSTEM_PROMPTS.matchIngredients },
       { role: 'user', content: prompt },
     ],
     response_format: { type: 'json_object' },
+    ...AI_CONFIG.matchIngredients,
   })
 
   const result = completion.choices[0]?.message?.content

@@ -9,6 +9,8 @@
 
 import type { ExtractedRecipeData, StructuredIngredientData } from '@/types'
 import { openai, MODEL } from './client'
+import { AI_CONFIG, EXTRACT_HTML_MAX_LENGTH } from './config'
+import { SYSTEM_PROMPTS, buildExtractIngredientsPrompt } from './prompts'
 
 export async function extractIngredientsFromURL(
   url: string
@@ -27,37 +29,16 @@ export async function extractIngredientsFromURL(
 
     const html = await response.text()
 
-    const prompt = `Extract the recipe name and ingredients from this webpage HTML.
-
-For each ingredient, parse it into structured format:
-- name: the ingredient name only (e.g., "chicken breast", "olive oil") - do NOT include quantities or units in the name
-- quantity: the amount as a string (e.g., "2", "1/2", "500") - null if not specified
-- unit: the unit of measurement in METRIC units (convert imperial to metric):
-  - Use "g" or "kg" for weight (not lb, oz)
-  - Use "ml" or "L" for liquids (not cups, fl oz)
-  - Keep tbsp/tsp for small amounts
-  - Keep countable units (cloves, bunches, etc.)
-- notes: preparation notes (e.g., "diced", "optional", "for garnish") - null if none
-
-Return JSON with:
-- "name": the recipe name
-- "ingredients": string with one ingredient per line (for backwards compatibility)
-- "structuredIngredients": array of {name, quantity, unit, notes, order} objects
-
-HTML content:
-${html.slice(0, 15000)}`
+    const prompt = buildExtractIngredientsPrompt(html.slice(0, EXTRACT_HTML_MAX_LENGTH))
 
     const completion = await openai.chat.completions.create({
       model: MODEL,
       messages: [
-        {
-          role: 'system',
-          content:
-            'You are a helpful assistant that extracts recipe information from HTML. Return your response as JSON with "name", "ingredients", and "structuredIngredients" fields.',
-        },
+        { role: 'system', content: SYSTEM_PROMPTS.extractIngredients },
         { role: 'user', content: prompt },
       ],
       response_format: { type: 'json_object' },
+      ...AI_CONFIG.extractIngredients,
     })
 
     const result = completion.choices[0]?.message?.content
