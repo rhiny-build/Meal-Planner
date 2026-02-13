@@ -20,14 +20,26 @@ async function main() {
     console.log('DRY RUN — no changes will be saved\n')
   }
 
-  const items = await prisma.masterListItem.findMany({
+  //TODO: the original query using Prisma's filter failed because of an issue with non scalar fields. I switched to raw SQL which works, but ideally we should be able to do this with Prisma's query builder. This is the error I got:
+
+  /*const items = await prisma.masterListItem.findMany({
     where: {
       baseIngredient: { not: null },
-      embedding: { isEmpty: true },
+      embedding: { equals: [] },
     },
     select: { id: true, name: true, baseIngredient: true },
     orderBy: { name: 'asc' },
-  })
+  })*/
+
+  const items = await prisma.$queryRaw<
+  { id: string; name: string; baseIngredient: string }[]
+>`
+  SELECT id, name, "baseIngredient"
+  FROM "MasterListItem"
+  WHERE "baseIngredient" IS NOT NULL
+    AND array_length(embedding, 1) IS NULL
+  ORDER BY name ASC
+`;
 
   if (items.length === 0) {
     console.log('All items with baseIngredient already have embeddings. Nothing to do.')

@@ -7,6 +7,8 @@
  * Data fetching happens in server components (page.tsx).
  */
 
+import { writeFileSync, mkdirSync } from 'fs'
+import { join } from 'path'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { aggregateIngredients, collectIngredientsFromMealPlans } from '@/lib/shoppingListHelpers'
@@ -78,6 +80,7 @@ export async function syncMealIngredients(weekStart: Date) {
   // Aggregate meal ingredients
   const allIngredients = collectIngredientsFromMealPlans(mealPlans)
   const aggregatedItems = aggregateIngredients(allIngredients)
+  console.log(`[sync] ${allIngredients.length} total ingredients from meals`)
   console.log(`[sync] ${aggregatedItems.length} aggregated ingredients`)
 
   // Match ingredients against master list to filter out staples/restock
@@ -105,7 +108,35 @@ export async function syncMealIngredients(weekStart: Date) {
         recipeIngredients: aggregatedItems.map((item) => item.name),
         masterItems,
       })
+      console.log(`[sync] Matched ${matchResults.filter((r) => r.matchedMasterItem).length} ingredients to master list`)
       console.timeEnd('[sync] embedding match ingredients')
+
+      // Write debug log with similarity scores
+      try {
+        const logDir = join(process.cwd(), 'logs')
+        mkdirSync(logDir, { recursive: true })
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+        const threshold = 0.82 // from AI_CONFIG.embeddings.similarityThreshold
+        const lines = [
+          `Embedding Match Debug — ${new Date().toISOString()}`,
+          `Threshold: ${threshold}`,
+          `Recipe ingredients: ${matchResults.length}`,
+          `Master list items: ${masterItems.length}`,
+          '',
+          'MATCHED (filtered from shopping list):',
+          ...matchResults
+            .filter((r) => r.matchedMasterItem)
+            .map((r) => `  ✓ "${r.name}" → "${r.matchedMasterItem}" (score: ${r.bestScore.toFixed(4)})`),
+          '',
+          'UNMATCHED (kept on shopping list):',
+          ...matchResults
+            .filter((r) => !r.matchedMasterItem)
+            .map((r) => `  ✗ "${r.name}" — best: "${r.bestCandidate}" (score: ${r.bestScore.toFixed(4)})`),
+        ]
+        writeFileSync(join(logDir, `embedding-match-${timestamp}.log`), lines.join('\n'))
+      } catch (logError) {
+        console.error('Failed to write embedding match debug log:', logError)
+      }
     }
   } catch (error) {
     console.timeEnd('[sync] embedding match ingredients')

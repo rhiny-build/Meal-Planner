@@ -46,27 +46,37 @@ export function cosineSimilarity(a: number[], b: number[]): number {
   return dot / denominator
 }
 
+export type MatchDetail = {
+  match: string | null
+  bestScore: number
+  bestCandidate: string | null // closest master item name regardless of threshold
+}
+
 /**
  * Find the best matching master list item for each recipe ingredient.
- * Returns the master item name if similarity >= threshold, else null.
+ * Returns match details including similarity score for debugging.
  */
 export function findBestMatches(
   ingredientEmbeddings: number[][],
   masterItems: { name: string; embedding: number[] }[],
   threshold: number = AI_CONFIG.embeddings.similarityThreshold,
-): (string | null)[] {
+): MatchDetail[] {
   return ingredientEmbeddings.map((ingredientVec) => {
     let bestScore = -1
-    let bestMatch: string | null = null
+    let bestCandidate: string | null = null
 
     for (const master of masterItems) {
       const score = cosineSimilarity(ingredientVec, master.embedding)
       if (score > bestScore) {
         bestScore = score
-        bestMatch = master.name
+        bestCandidate = master.name
       }
     }
 
-    return bestScore >= threshold ? bestMatch : null
+    return {
+      match: bestScore >= threshold ? bestCandidate : null,
+      bestScore,
+      bestCandidate,
+    }
   })
 }

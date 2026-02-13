@@ -23,6 +23,8 @@ export type MatchResultItem = {
   name: string
   baseIngredient: string
   matchedMasterItem: string | null // null = needs buying, string = already covered
+  bestScore: number        // cosine similarity of best match (for debugging)
+  bestCandidate: string | null // closest master item regardless of threshold
 }
 
 export async function matchIngredientsAgainstMasterList(
@@ -35,6 +37,8 @@ export async function matchIngredientsAgainstMasterList(
       name,
       baseIngredient: name.toLowerCase(),
       matchedMasterItem: null,
+      bestScore: 0,
+      bestCandidate: null,
     }))
   }
 
@@ -54,6 +58,8 @@ export async function matchIngredientsAgainstMasterList(
     index,
     name,
     baseIngredient: name.toLowerCase(),
-    matchedMasterItem: matches[index],
+    matchedMasterItem: matches[index].match,
+    bestScore: matches[index].bestScore,
+    bestCandidate: matches[index].bestCandidate,
   }))
 }
