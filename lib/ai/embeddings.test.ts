@@ -5,7 +5,7 @@ vi.mock('./client', () => ({
   openai: { embeddings: { create: vi.fn() } },
 }))
 
-import { cosineSimilarity, findBestMatches } from './embeddings'
+import { cosineSimilarity, findBestMatches, deduplicateByEmbedding } from './embeddings'
 
 describe('cosineSimilarity', () => {
   it('should return 1 for identical vectors', () => {
@@ -82,5 +82,115 @@ describe('findBestMatches', () => {
   it('should return empty array when no ingredients', () => {
     const result = findBestMatches([], masterItems, 0.9)
     expect(result).toEqual([])
+  })
+})
+
+describe('deduplicateByEmbedding', () => {
+  it('should merge items above threshold, keeping shortest name', () => {
+    const items = [
+      { name: 'Chicken Breast', sources: ['Recipe A'] },
+      { name: 'Chicken Breast Fillets', sources: ['Recipe B'] },
+    ]
+    // Nearly identical direction
+    const embeddings = [
+      [0.95, 0.05, 0],
+      [0.94, 0.06, 0],
+    ]
+
+    const result = deduplicateByEmbedding(items, embeddings, 0.9)
+
+    expect(result.items).toHaveLength(1)
+    expect(result.items[0].name).toBe('Chicken Breast')
+    expect(result.items[0].sources).toEqual(['Recipe A', 'Recipe B'])
+    expect(result.embeddings).toHaveLength(1)
+    expect(result.mergeLog).toHaveLength(1)
+  })
+
+  it('should keep items below threshold separate', () => {
+    const items = [
+      { name: 'chicken', sources: ['Recipe A'] },
+      { name: 'garlic', sources: ['Recipe B'] },
+    ]
+    // Orthogonal vectors — similarity ~0
+    const embeddings = [
+      [1, 0, 0],
+      [0, 1, 0],
+    ]
+
+    const result = deduplicateByEmbedding(items, embeddings, 0.9)
+
+    expect(result.items).toHaveLength(2)
+    expect(result.mergeLog).toHaveLength(0)
+  })
+
+  it('should handle transitive clusters (A~B, B~C → all merge)', () => {
+    const items = [
+      { name: 'parsley', sources: ['Recipe A'] },
+      { name: 'Fresh parsley', sources: ['Recipe B'] },
+      { name: 'Chopped parsley', sources: ['Recipe C'] },
+    ]
+    // All close to each other in embedding space
+    const embeddings = [
+      [0.95, 0.05, 0],
+      [0.93, 0.07, 0],
+      [0.92, 0.08, 0],
+    ]
+
+    const result = deduplicateByEmbedding(items, embeddings, 0.9)
+
+    expect(result.items).toHaveLength(1)
+    expect(result.items[0].name).toBe('parsley') // shortest
+    expect(result.items[0].sources).toEqual(['Recipe A', 'Recipe B', 'Recipe C'])
+  })
+
+  it('should return single item as-is', () => {
+    const items = [{ name: 'rice', sources: ['Recipe A'] }]
+    const embeddings = [[1, 0, 0]]
+
+    const result = deduplicateByEmbedding(items, embeddings, 0.9)
+
+    expect(result.items).toHaveLength(1)
+    expect(result.items[0]).toEqual(items[0])
+    expect(result.mergeLog).toHaveLength(0)
+  })
+
+  it('should return empty for empty input', () => {
+    const result = deduplicateByEmbedding([], [], 0.9)
+
+    expect(result.items).toHaveLength(0)
+    expect(result.embeddings).toHaveLength(0)
+    expect(result.mergeLog).toHaveLength(0)
+  })
+
+  it('should deduplicate sources when merging', () => {
+    const items = [
+      { name: 'Carrot', sources: ['Soup', 'Stew'] },
+      { name: 'Carrots', sources: ['Stew', 'Salad'] },
+    ]
+    const embeddings = [
+      [0.95, 0.05, 0],
+      [0.94, 0.06, 0],
+    ]
+
+    const result = deduplicateByEmbedding(items, embeddings, 0.9)
+
+    expect(result.items).toHaveLength(1)
+    expect(result.items[0].name).toBe('Carrot')
+    // 'Stew' should appear only once
+    expect(result.items[0].sources).toEqual(['Soup', 'Stew', 'Salad'])
+  })
+
+  it('should use canonical item embedding for merged cluster', () => {
+    const items = [
+      { name: 'Chicken Breast', sources: ['A'] },
+      { name: 'Chicken Breast Fillets', sources: ['B'] },
+    ]
+    const emb1 = [0.95, 0.05, 0]
+    const emb2 = [0.94, 0.06, 0]
+
+    const result = deduplicateByEmbedding(items, [emb1, emb2], 0.9)
+
+    // Should use embedding of the canonical (shortest name) item
+    expect(result.embeddings[0]).toBe(emb1)
   })
 })

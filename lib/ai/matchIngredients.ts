@@ -16,6 +16,7 @@ export type MasterItemWithEmbedding = {
 export type MatchInput = {
   recipeIngredients: string[]
   masterItems: MasterItemWithEmbedding[]
+  precomputedEmbeddings?: number[][] // skip embedding API call if provided
 }
 
 export type MatchResultItem = {
@@ -42,8 +43,9 @@ export async function matchIngredientsAgainstMasterList(
     }))
   }
 
-  // Batch-embed all recipe ingredients in one API call
-  const ingredientEmbeddings = await computeEmbeddings(input.recipeIngredients)
+  // Use precomputed embeddings if available, otherwise batch-embed
+  const ingredientEmbeddings = input.precomputedEmbeddings
+    ?? await computeEmbeddings(input.recipeIngredients)
 
   // Find best match for each ingredient using cosine similarity
   const matches = findBestMatches(

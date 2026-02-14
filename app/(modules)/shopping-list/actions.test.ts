@@ -25,6 +25,8 @@ vi.mock('@/lib/ai/normaliseIngredients', () => ({
 // Mock AI embeddings
 vi.mock('@/lib/ai/embeddings', () => ({
   computeEmbeddings: vi.fn(),
+  deduplicateByEmbedding: vi.fn(),
+  cosineSimilarity: vi.fn(),
 }))
 
 // Mock Prisma - use factory function to avoid hoisting issues
@@ -71,11 +73,12 @@ import {
 import { prisma } from '@/lib/prisma'
 import { matchIngredientsAgainstMasterList } from '@/lib/ai/matchIngredients'
 import { normaliseIngredients } from '@/lib/ai/normaliseIngredients'
-import { computeEmbeddings } from '@/lib/ai/embeddings'
+import { computeEmbeddings, deduplicateByEmbedding } from '@/lib/ai/embeddings'
 
 const mockMatchIngredients = matchIngredientsAgainstMasterList as ReturnType<typeof vi.fn>
 const mockNormaliseIngredients = normaliseIngredients as ReturnType<typeof vi.fn>
 const mockComputeEmbeddings = computeEmbeddings as ReturnType<typeof vi.fn>
+const mockDeduplicateByEmbedding = deduplicateByEmbedding as ReturnType<typeof vi.fn>
 
 // Type assertion for mocked prisma
 const mockPrisma = prisma as unknown as {
@@ -108,8 +111,22 @@ describe('Shopping List Server Actions', () => {
     vi.clearAllMocks()
     // Default: empty master list means no AI call and no filtering
     mockPrisma.masterListItem.findMany.mockResolvedValue([])
-    // Default: return a fake embedding vector for any input
-    mockComputeEmbeddings.mockResolvedValue([[0.1, 0.2, 0.3]])
+    // Default: return distinct fake embedding vectors per input
+    mockComputeEmbeddings.mockImplementation(async (texts: string[]) =>
+      texts.map((_, i) => {
+        const vec = [0, 0, 0]
+        vec[i % 3] = 1
+        return vec
+      })
+    )
+    // Default: dedup passes items through unchanged
+    mockDeduplicateByEmbedding.mockImplementation(
+      (items: Array<{ name: string; sources: string[] }>, embeddings: number[][]) => ({
+        items: [...items],
+        embeddings: [...embeddings],
+        mergeLog: [],
+      })
+    )
   })
 
   describe('getShoppingList', () => {

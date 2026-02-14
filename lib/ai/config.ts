@@ -14,6 +14,7 @@ export const AI_CONFIG = {
   embeddings: {
     model: 'text-embedding-3-small' as const,
     similarityThreshold: 0.82,
+    deduplicationThreshold: 0.75,
   },
   extractIngredients: {},
 } as const

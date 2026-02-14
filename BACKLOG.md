@@ -38,6 +38,7 @@ Read Shopping-List-Normalisation.md in Docs
 
 ### Observability
 - [ ] Add logging for AI prompts/responses (viewable in Vercel function logs)
+- [ ] Audit blocking AI calls in the codebase — ensure no user-facing action awaits a slow AI call without timeout or background processing
 
 ---
 
