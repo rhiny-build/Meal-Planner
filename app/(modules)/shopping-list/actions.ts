@@ -14,7 +14,8 @@ import { prisma } from '@/lib/prisma'
 import { aggregateIngredients, collectIngredientsFromMealPlans } from '@/lib/shoppingListHelpers'
 import { matchIngredientsAgainstMasterList, type MatchResultItem } from '@/lib/ai/matchIngredients'
 import { normaliseIngredients } from '@/lib/ai/normaliseIngredients'
-import { computeEmbeddings } from '@/lib/ai/embeddings'
+import { computeEmbeddings, deduplicateByEmbedding } from '@/lib/ai/embeddings'
+import { AI_CONFIG } from '@/lib/ai/config'
 
 /**
  * Ensure a shopping list exists for the week, creating one with default staples if needed.
@@ -57,7 +58,7 @@ export async function ensureShoppingListExists(weekStart: Date) {
  * Replaces only source='meal' items, preserving staples/restock/manual.
  */
 export async function syncMealIngredients(weekStart: Date) {
-  console.time('[sync] total')
+  // console.time('[sync] total')
   const normalizedWeekStart = new Date(weekStart)
   normalizedWeekStart.setHours(0, 0, 0, 0)
 
@@ -65,7 +66,7 @@ export async function syncMealIngredients(weekStart: Date) {
   weekEnd.setDate(weekEnd.getDate() + 7)
 
   // Fetch meal plans for the week
-  console.time('[sync] fetch meal plans')
+  // console.time('[sync] fetch meal plans')
   const mealPlans = await prisma.mealPlan.findMany({
     where: { date: { gte: normalizedWeekStart, lt: weekEnd } },
     include: {
@@ -75,19 +76,19 @@ export async function syncMealIngredients(weekStart: Date) {
       vegetableRecipe: { include: { structuredIngredients: { orderBy: { order: 'asc' } } } },
     },
   })
-  console.timeEnd('[sync] fetch meal plans')
+  // console.timeEnd('[sync] fetch meal plans')
 
   // Aggregate meal ingredients
   const allIngredients = collectIngredientsFromMealPlans(mealPlans)
-  const aggregatedItems = aggregateIngredients(allIngredients)
-  console.log(`[sync] ${allIngredients.length} total ingredients from meals`)
-  console.log(`[sync] ${aggregatedItems.length} aggregated ingredients`)
+  let aggregatedItems = aggregateIngredients(allIngredients)
+  // console.log(`[sync] ${allIngredients.length} total ingredients from meals`)
+  // console.log(`[sync] ${aggregatedItems.length} aggregated ingredients`)
 
   // Match ingredients against master list to filter out staples/restock
   let matchResults: MatchResultItem[] | null = null
 
   try {
-    console.time('[sync] fetch master list')
+    // console.time('[sync] fetch master list')
     const masterListItems = await prisma.masterListItem.findMany({
       where: {
         baseIngredient: { not: null },
@@ -99,39 +100,76 @@ export async function syncMealIngredients(weekStart: Date) {
       baseIngredient: item.baseIngredient as string,
       embedding: item.embedding,
     }))
-    console.timeEnd('[sync] fetch master list')
-    console.log(`[sync] ${masterItems.length} master list items with embeddings`)
+    // console.timeEnd('[sync] fetch master list')
+    // console.log(`[sync] ${masterItems.length} master list items with embeddings`)
 
-    if (aggregatedItems.length > 0 && masterItems.length > 0) {
-      console.time('[sync] embedding match ingredients')
-      matchResults = await matchIngredientsAgainstMasterList({
-        recipeIngredients: aggregatedItems.map((item) => item.name),
-        masterItems,
-      })
-      console.log(`[sync] Matched ${matchResults.filter((r) => r.matchedMasterItem).length} ingredients to master list`)
-      console.timeEnd('[sync] embedding match ingredients')
+    if (aggregatedItems.length > 0) {
+      // 1. Compute embeddings for all aggregated ingredients (one API call)
+      // console.time('[sync] compute embeddings')
+      const ingredientEmbeddings = await computeEmbeddings(
+        aggregatedItems.map((item) => item.name)
+      )
+      // console.timeEnd('[sync] compute embeddings')
 
-      // Write debug log with similarity scores
+      // 2. Deduplicate within the list using embedding similarity
+      // console.time('[sync] deduplicate ingredients')
+      const dedupThreshold = AI_CONFIG.embeddings.deduplicationThreshold
+      const { items: dedupedItems, embeddings: dedupedEmbeddings, mergeLog, nearMissLog } =
+        deduplicateByEmbedding(aggregatedItems, ingredientEmbeddings, dedupThreshold)
+      // console.log(`[sync] Deduped ${aggregatedItems.length} → ${dedupedItems.length} ingredients (${aggregatedItems.length - dedupedItems.length} merged)`)
+      // console.timeEnd('[sync] deduplicate ingredients')
+
+      // 3. Match deduped ingredients against master list (reuse precomputed embeddings)
+      if (masterItems.length > 0) {
+        // console.time('[sync] embedding match ingredients')
+        matchResults = await matchIngredientsAgainstMasterList({
+          recipeIngredients: dedupedItems.map((item) => item.name),
+          masterItems,
+          precomputedEmbeddings: dedupedEmbeddings,
+        })
+        // console.log(`[sync] Matched ${matchResults.filter((r) => r.matchedMasterItem).length} ingredients to master list`)
+        // console.timeEnd('[sync] embedding match ingredients')
+      }
+
+      // Use deduped items for building shopping list
+      aggregatedItems = dedupedItems
+
+      // Write debug log with dedup clusters + similarity scores
       try {
         const logDir = join(process.cwd(), 'logs')
         mkdirSync(logDir, { recursive: true })
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-        const threshold = 0.82 // from AI_CONFIG.embeddings.similarityThreshold
+        const masterThreshold = AI_CONFIG.embeddings.similarityThreshold
         const lines = [
           `Embedding Match Debug — ${new Date().toISOString()}`,
-          `Threshold: ${threshold}`,
-          `Recipe ingredients: ${matchResults.length}`,
+          `Dedup threshold: ${dedupThreshold}`,
+          `Master list threshold: ${masterThreshold}`,
+          `Recipe ingredients: ${ingredientEmbeddings.length} → ${dedupedItems.length} after dedup`,
           `Master list items: ${masterItems.length}`,
           '',
-          'MATCHED (filtered from shopping list):',
-          ...matchResults
-            .filter((r) => r.matchedMasterItem)
-            .map((r) => `  ✓ "${r.name}" → "${r.matchedMasterItem}" (score: ${r.bestScore.toFixed(4)})`),
+          'DEDUP MERGES:',
+          ...(mergeLog.length > 0
+            ? mergeLog
+            : ['  (none)']),
           '',
-          'UNMATCHED (kept on shopping list):',
-          ...matchResults
-            .filter((r) => !r.matchedMasterItem)
-            .map((r) => `  ✗ "${r.name}" — best: "${r.bestCandidate}" (score: ${r.bestScore.toFixed(4)})`),
+          'DEDUP NEAR MISSES (score ≥ 0.75 but below threshold):',
+          ...(nearMissLog.length > 0
+            ? nearMissLog
+            : ['  (none)']),
+          '',
+          ...(matchResults
+            ? [
+                'MATCHED (filtered from shopping list):',
+                ...matchResults
+                  .filter((r) => r.matchedMasterItem)
+                  .map((r) => `  ✓ "${r.name}" → "${r.matchedMasterItem}" (score: ${r.bestScore.toFixed(4)})`),
+                '',
+                'UNMATCHED (kept on shopping list):',
+                ...matchResults
+                  .filter((r) => !r.matchedMasterItem)
+                  .map((r) => `  ✗ "${r.name}" — best: "${r.bestCandidate}" (score: ${r.bestScore.toFixed(4)})`),
+              ]
+            : ['(no master list items — all ingredients kept)']),
         ]
         writeFileSync(join(logDir, `embedding-match-${timestamp}.log`), lines.join('\n'))
       } catch (logError) {
@@ -139,7 +177,7 @@ export async function syncMealIngredients(weekStart: Date) {
       }
     }
   } catch (error) {
-    console.timeEnd('[sync] embedding match ingredients')
+    // console.timeEnd('[sync] embedding match ingredients')
     console.error('Ingredient matching failed, including all items:', error)
   }
 
@@ -170,7 +208,7 @@ export async function syncMealIngredients(weekStart: Date) {
   }
 
   // Ensure list exists (with staples if new)
-  console.time('[sync] db writes')
+  // console.time('[sync] db writes')
   const shoppingList = await ensureShoppingListExists(weekStart)
 
   // Replace only meal items
@@ -183,10 +221,10 @@ export async function syncMealIngredients(weekStart: Date) {
       data: mealItems.map(item => ({ ...item, shoppingListId: shoppingList.id })),
     })
   }
-  console.timeEnd('[sync] db writes')
+  // console.timeEnd('[sync] db writes')
 
   revalidatePath('/shopping-list')
-  console.timeEnd('[sync] total')
+  // console.timeEnd('[sync] total')
 }
 
 /**
