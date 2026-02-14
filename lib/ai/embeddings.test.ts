@@ -51,7 +51,9 @@ describe('findBestMatches', () => {
     ]
 
     const result = findBestMatches(ingredientEmbeddings, masterItems, 0.9)
-    expect(result).toEqual(['salt'])
+    expect(result).toHaveLength(1)
+    expect(result[0].match).toBe('salt')
+    expect(result[0].bestScore).toBeGreaterThan(0.9)
   })
 
   it('should return null when no master item meets threshold', () => {
@@ -60,7 +62,9 @@ describe('findBestMatches', () => {
     ]
 
     const result = findBestMatches(ingredientEmbeddings, masterItems, 0.9)
-    expect(result).toEqual([null])
+    expect(result).toHaveLength(1)
+    expect(result[0].match).toBeNull()
+    expect(result[0].bestCandidate).toBeDefined()
   })
 
   it('should handle multiple ingredients', () => {
@@ -71,12 +75,16 @@ describe('findBestMatches', () => {
     ]
 
     const result = findBestMatches(ingredientEmbeddings, masterItems, 0.9)
-    expect(result).toEqual(['salt', null, 'sugar'])
+    expect(result).toHaveLength(3)
+    expect(result[0].match).toBe('salt')
+    expect(result[1].match).toBeNull()
+    expect(result[2].match).toBe('sugar')
   })
 
   it('should return all nulls when master list is empty', () => {
     const result = findBestMatches([[1, 0, 0]], [], 0.9)
-    expect(result).toEqual([null])
+    expect(result).toHaveLength(1)
+    expect(result[0].match).toBeNull()
   })
 
   it('should return empty array when no ingredients', () => {

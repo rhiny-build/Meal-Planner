@@ -125,6 +125,7 @@ describe('Shopping List Server Actions', () => {
         items: [...items],
         embeddings: [...embeddings],
         mergeLog: [],
+        nearMissLog: [],
       })
     )
   })
