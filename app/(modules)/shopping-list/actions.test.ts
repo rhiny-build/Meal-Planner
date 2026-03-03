@@ -697,7 +697,7 @@ describe('Shopping List Server Actions', () => {
       expect(mockComputeEmbeddings).toHaveBeenCalledWith(['whole milk'])
       expect(mockPrisma.masterListItem.update).toHaveBeenCalledWith({
         where: { id: 'item-1' },
-        data: { baseIngredient: 'whole milk', embedding: mockEmbedding },
+        data: { baseIngredient: 'whole milk', canonicalName: 'whole milk', embedding: mockEmbedding },
       })
       expect(result).toEqual(mockItem)
     })
@@ -738,7 +738,7 @@ describe('Shopping List Server Actions', () => {
       expect(mockComputeEmbeddings).toHaveBeenCalledWith(['wholemeal bread'])
       expect(mockPrisma.masterListItem.update).toHaveBeenCalledWith({
         where: { id: 'item-1' },
-        data: { baseIngredient: 'wholemeal bread', embedding: mockEmbedding },
+        data: { baseIngredient: 'wholemeal bread', canonicalName: 'wholemeal bread', embedding: mockEmbedding },
       })
       expect(result).toEqual(mockItem)
     })

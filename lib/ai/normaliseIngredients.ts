@@ -10,7 +10,7 @@ import { AI_CONFIG } from './config'
 import { SYSTEM_PROMPTS, buildNormaliseIngredientsPrompt } from './prompts'
 
 export type NormalisationInput = { id: string; name: string }
-export type NormalisationResult = { id: string; baseIngredient: string }
+export type NormalisationResult = { id: string; baseIngredient: string; canonicalName?: string }
 
 export async function normaliseIngredients(
   items: NormalisationInput[]

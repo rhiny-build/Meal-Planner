@@ -107,7 +107,7 @@ CRITICAL:
  * Build the prompt for normalising grocery product names.
  *
  * Expected JSON response shape:
- * { items: { id: string, baseIngredient: string }[] }
+ * { items: { id: string, baseIngredient: string, canonicalName: string }[] }
  */
 export function buildNormaliseIngredientsPrompt(itemsList: string): string {
   return `Normalise these grocery product names to their base ingredient concept.
@@ -123,7 +123,12 @@ Rules:
 
 Return lowercase base ingredient names.
 
-Return JSON: { "items": [{ "id": "...", "baseIngredient": "..." }] }`
+Also provide a canonicalName for each item: the base ingredient with its form in parentheses if relevant.
+Forms: fresh, dried, ground, tinned, frozen, smoked, pickled, paste, flaked.
+Examples: "tomatoes (tinned)", "garlic (fresh)", "cumin (ground)", "salmon (smoked)", "eggs", "spring onions".
+If no specific form applies, canonicalName equals baseIngredient.
+
+Return JSON: { "items": [{ "id": "...", "baseIngredient": "...", "canonicalName": "..." }] }`
 }
 
 /**

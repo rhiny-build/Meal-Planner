@@ -400,11 +400,11 @@ export async function addMasterListItem(
   try {
     const [result] = await normaliseIngredients([{ id: item.id, name: item.name }])
     if (result?.baseIngredient) {
-      const textToEmbed = result.baseIngredient
-      const [embedding] = await computeEmbeddings([textToEmbed])
+      const canonicalName = result.canonicalName ?? result.baseIngredient
+      const [embedding] = await computeEmbeddings([canonicalName])
       await prisma.masterListItem.update({
         where: { id: item.id },
-        data: { baseIngredient: result.baseIngredient, embedding },
+        data: { baseIngredient: result.baseIngredient, canonicalName, embedding },
       })
     }
   } catch (error) {
@@ -429,11 +429,11 @@ export async function updateMasterListItem(itemId: string, name: string) {
   try {
     const [result] = await normaliseIngredients([{ id: item.id, name: item.name }])
     if (result?.baseIngredient) {
-      const textToEmbed = result.baseIngredient
-      const [embedding] = await computeEmbeddings([textToEmbed])
+      const canonicalName = result.canonicalName ?? result.baseIngredient
+      const [embedding] = await computeEmbeddings([canonicalName])
       await prisma.masterListItem.update({
         where: { id: item.id },
-        data: { baseIngredient: result.baseIngredient, embedding },
+        data: { baseIngredient: result.baseIngredient, canonicalName, embedding },
       })
     }
   } catch (error) {
