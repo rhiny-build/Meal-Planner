@@ -168,6 +168,7 @@ export function deduplicateByEmbedding(
 
 export type MatchDetail = {
   match: string | null
+  matchId: string | null   // ID of the matched master item
   bestScore: number
   bestCandidate: string | null // closest master item name regardless of threshold
 }
@@ -178,23 +179,26 @@ export type MatchDetail = {
  */
 export function findBestMatches(
   ingredientEmbeddings: number[][],
-  masterItems: { name: string; embedding: number[] }[],
+  masterItems: { id: string; name: string; embedding: number[] }[],
   threshold: number = AI_CONFIG.embeddings.similarityThreshold,
 ): MatchDetail[] {
   return ingredientEmbeddings.map((ingredientVec) => {
     let bestScore = -1
     let bestCandidate: string | null = null
+    let bestId: string | null = null
 
     for (const master of masterItems) {
       const score = cosineSimilarity(ingredientVec, master.embedding)
       if (score > bestScore) {
         bestScore = score
         bestCandidate = master.name
+        bestId = master.id
       }
     }
 
     return {
       match: bestScore >= threshold ? bestCandidate : null,
+      matchId: bestScore >= threshold ? bestId : null,
       bestScore,
       bestCandidate,
     }

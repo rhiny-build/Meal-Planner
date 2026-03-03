@@ -54,6 +54,10 @@ vi.mock('@/lib/prisma', () => ({
       update: vi.fn(),
       delete: vi.fn(),
     },
+    ingredientMapping: {
+      findMany: vi.fn(),
+      update: vi.fn(),
+    },
   },
 }))
 
@@ -73,12 +77,11 @@ import {
 import { prisma } from '@/lib/prisma'
 import { matchIngredientsAgainstMasterList } from '@/lib/ai/matchIngredients'
 import { normaliseIngredients } from '@/lib/ai/normaliseIngredients'
-import { computeEmbeddings, deduplicateByEmbedding } from '@/lib/ai/embeddings'
+import { computeEmbeddings } from '@/lib/ai/embeddings'
 
 const mockMatchIngredients = matchIngredientsAgainstMasterList as ReturnType<typeof vi.fn>
 const mockNormaliseIngredients = normaliseIngredients as ReturnType<typeof vi.fn>
 const mockComputeEmbeddings = computeEmbeddings as ReturnType<typeof vi.fn>
-const mockDeduplicateByEmbedding = deduplicateByEmbedding as ReturnType<typeof vi.fn>
 
 // Type assertion for mocked prisma
 const mockPrisma = prisma as unknown as {
@@ -104,28 +107,25 @@ const mockPrisma = prisma as unknown as {
     update: ReturnType<typeof vi.fn>
     delete: ReturnType<typeof vi.fn>
   }
+  ingredientMapping: {
+    findMany: ReturnType<typeof vi.fn>
+    update: ReturnType<typeof vi.fn>
+  }
 }
 
 describe('Shopping List Server Actions', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    // Default: empty master list means no AI call and no filtering
+    // Default: empty master list and no mappings
     mockPrisma.masterListItem.findMany.mockResolvedValue([])
+    mockPrisma.ingredientMapping.findMany.mockResolvedValue([])
+    mockPrisma.ingredientMapping.update.mockResolvedValue({})
     // Default: return distinct fake embedding vectors per input
     mockComputeEmbeddings.mockImplementation(async (texts: string[]) =>
       texts.map((_, i) => {
         const vec = [0, 0, 0]
         vec[i % 3] = 1
         return vec
-      })
-    )
-    // Default: dedup passes items through unchanged
-    mockDeduplicateByEmbedding.mockImplementation(
-      (items: Array<{ name: string; sources: string[] }>, embeddings: number[][]) => ({
-        items: [...items],
-        embeddings: [...embeddings],
-        mergeLog: [],
-        nearMissLog: [],
       })
     )
   })
@@ -347,16 +347,16 @@ describe('Shopping List Server Actions', () => {
 
       await syncMealIngredients(weekStart)
 
-      // Should delete old meal items
+      // Should delete old recipe items
       expect(mockPrisma.shoppingListItem.deleteMany).toHaveBeenCalledWith({
         where: { shoppingListId: 'list-1', source: 'recipe' },
       })
-      // Should create new meal items
+      // Should create new recipe items with canonicalName and matchConfidence
       expect(mockPrisma.shoppingListItem.createMany).toHaveBeenCalledWith({
         data: expect.arrayContaining([
-          expect.objectContaining({ name: 'chicken breast', source: 'recipe', shoppingListId: 'list-1' }),
-          expect.objectContaining({ name: 'rice', source: 'recipe', shoppingListId: 'list-1' }),
-          expect.objectContaining({ name: 'soy sauce', source: 'recipe', shoppingListId: 'list-1' }),
+          expect.objectContaining({ name: 'chicken breast', source: 'recipe', canonicalName: 'chicken breast', matchConfidence: 'unmatched' }),
+          expect.objectContaining({ name: 'rice', source: 'recipe', canonicalName: 'rice', matchConfidence: 'unmatched' }),
+          expect.objectContaining({ name: 'soy sauce', source: 'recipe', canonicalName: 'soy sauce', matchConfidence: 'unmatched' }),
         ]),
       })
     })
@@ -413,27 +413,25 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
       mockPrisma.shoppingListItem.createMany.mockResolvedValue({ count: 1 })
 
-      // Master list has salt and soy sauce with embeddings
-      mockPrisma.masterListItem.findMany
-        .mockResolvedValueOnce([
-          { baseIngredient: 'salt', embedding: [0.1, 0.2] },
-          { baseIngredient: 'soy sauce', embedding: [0.3, 0.4] },
-        ])
-        .mockResolvedValue([])
+      // Master list has salt and soy sauce with canonicalName + embeddings
+      mockPrisma.masterListItem.findMany.mockResolvedValue([
+        { id: 'm1', canonicalName: 'salt', embedding: [0.1, 0.2], type: 'restock' },
+        { id: 'm2', canonicalName: 'soy sauce', embedding: [0.3, 0.4], type: 'restock' },
+      ])
 
       // Embedding matching: soy sauce and salt matched, not chicken
       mockMatchIngredients.mockResolvedValue([
-        { index: 0, name: 'chicken breast', baseIngredient: 'chicken', matchedMasterItem: null },
-        { index: 1, name: 'soy sauce', baseIngredient: 'soy sauce', matchedMasterItem: 'soy sauce' },
-        { index: 2, name: 'salt', baseIngredient: 'salt', matchedMasterItem: 'salt' },
+        { index: 0, name: 'chicken breast', canonicalName: 'chicken breast', matchedMasterItem: null, masterItemId: null, bestScore: 0.3, bestCandidate: 'salt' },
+        { index: 1, name: 'soy sauce', canonicalName: 'soy sauce', matchedMasterItem: 'soy sauce', masterItemId: 'm2', bestScore: 0.95, bestCandidate: 'soy sauce' },
+        { index: 2, name: 'salt', canonicalName: 'salt', matchedMasterItem: 'salt', masterItemId: 'm1', bestScore: 0.99, bestCandidate: 'salt' },
       ])
 
       await syncMealIngredients(weekStart)
 
-      // Only chicken breast should remain
+      // Only chicken breast should remain (soy sauce and salt matched)
       expect(mockPrisma.shoppingListItem.createMany).toHaveBeenCalledWith({
         data: [
-          expect.objectContaining({ name: 'chicken breast', source: 'recipe' }),
+          expect.objectContaining({ name: 'chicken breast', source: 'recipe', matchConfidence: 'unmatched' }),
         ],
       })
     })
@@ -461,9 +459,10 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
       mockPrisma.shoppingListItem.createMany.mockResolvedValue({ count: 2 })
 
-      mockPrisma.masterListItem.findMany
-        .mockResolvedValueOnce([{ baseIngredient: 'salt', embedding: [0.1, 0.2] }])
-        .mockResolvedValue([])
+      // Master list has items with canonicalName
+      mockPrisma.masterListItem.findMany.mockResolvedValue([
+        { id: 'm1', canonicalName: 'salt', embedding: [0.1, 0.2], type: 'restock' },
+      ])
 
       // Embedding call fails
       mockMatchIngredients.mockRejectedValue(new Error('Embedding service unavailable'))
@@ -499,13 +498,57 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
       mockPrisma.shoppingListItem.createMany.mockResolvedValue({ count: 1 })
 
-      // Master list returns empty (no items with embeddings)
+      // Master list returns empty (no items with canonicalName + embeddings)
       mockPrisma.masterListItem.findMany.mockResolvedValue([])
 
       await syncMealIngredients(weekStart)
 
       expect(mockMatchIngredients).not.toHaveBeenCalled()
       expect(mockPrisma.shoppingListItem.createMany).toHaveBeenCalled()
+    })
+
+    it('should use explicit mappings to resolve ingredients before embedding match', async () => {
+      const weekStart = new Date('2026-02-03')
+      const mockList = { id: 'list-1', weekStart, items: [] }
+      const mockMealPlans = [
+        {
+          lunchRecipe: null,
+          proteinRecipe: {
+            name: 'Garlic Chicken',
+            structuredIngredients: [
+              { name: 'garlic cloves' },
+              { name: 'chicken breast' },
+            ],
+          },
+          carbRecipe: null,
+          vegetableRecipe: null,
+        },
+      ]
+
+      mockPrisma.shoppingList.findUnique.mockResolvedValue(mockList)
+      mockPrisma.mealPlan.findMany.mockResolvedValue(mockMealPlans)
+      mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
+      mockPrisma.shoppingListItem.createMany.mockResolvedValue({ count: 1 })
+
+      // Explicit mapping: garlic cloves → master garlic item
+      mockPrisma.ingredientMapping.findMany.mockResolvedValue([
+        {
+          id: 'map-1',
+          recipeName: 'garlic cloves',
+          masterItemId: 'm-garlic',
+          confirmedCount: 3,
+          masterItem: { id: 'm-garlic', name: 'Garlic', type: 'restock' },
+        },
+      ])
+
+      await syncMealIngredients(weekStart)
+
+      // Only chicken breast should remain (garlic resolved via explicit mapping)
+      expect(mockPrisma.shoppingListItem.createMany).toHaveBeenCalledWith({
+        data: [
+          expect.objectContaining({ name: 'chicken breast', source: 'recipe', matchConfidence: 'unmatched' }),
+        ],
+      })
     })
   })
 

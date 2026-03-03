@@ -9,7 +9,8 @@
 import { computeEmbeddings, findBestMatches } from './embeddings'
 
 export type MasterItemWithEmbedding = {
-  baseIngredient: string
+  id: string
+  canonicalName: string
   embedding: number[]
 }
 
@@ -22,8 +23,9 @@ export type MatchInput = {
 export type MatchResultItem = {
   index: number
   name: string
-  baseIngredient: string
+  canonicalName: string
   matchedMasterItem: string | null // null = needs buying, string = already covered
+  masterItemId: string | null      // FK to MasterListItem
   bestScore: number        // cosine similarity of best match (for debugging)
   bestCandidate: string | null // closest master item regardless of threshold
 }
@@ -36,8 +38,9 @@ export async function matchIngredientsAgainstMasterList(
     return input.recipeIngredients.map((name, index) => ({
       index,
       name,
-      baseIngredient: name.toLowerCase(),
+      canonicalName: name.toLowerCase(),
       matchedMasterItem: null,
+      masterItemId: null,
       bestScore: 0,
       bestCandidate: null,
     }))
@@ -51,7 +54,8 @@ export async function matchIngredientsAgainstMasterList(
   const matches = findBestMatches(
     ingredientEmbeddings,
     input.masterItems.map((item) => ({
-      name: item.baseIngredient,
+      id: item.id,
+      name: item.canonicalName,
       embedding: item.embedding,
     })),
   )
@@ -59,8 +63,9 @@ export async function matchIngredientsAgainstMasterList(
   return input.recipeIngredients.map((name, index) => ({
     index,
     name,
-    baseIngredient: name.toLowerCase(),
+    canonicalName: name.toLowerCase(),
     matchedMasterItem: matches[index].match,
+    masterItemId: matches[index].matchId,
     bestScore: matches[index].bestScore,
     bestCandidate: matches[index].bestCandidate,
   }))

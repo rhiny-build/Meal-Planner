@@ -40,9 +40,9 @@ describe('cosineSimilarity', () => {
 describe('findBestMatches', () => {
   // Use simple 3D vectors for clarity
   const masterItems = [
-    { name: 'salt', embedding: [1, 0, 0] },
-    { name: 'pepper', embedding: [0, 1, 0] },
-    { name: 'sugar', embedding: [0, 0, 1] },
+    { id: 'm1', name: 'salt', embedding: [1, 0, 0] },
+    { id: 'm2', name: 'pepper', embedding: [0, 1, 0] },
+    { id: 'm3', name: 'sugar', embedding: [0, 0, 1] },
   ]
 
   it('should match ingredient to closest master item above threshold', () => {
@@ -53,6 +53,7 @@ describe('findBestMatches', () => {
     const result = findBestMatches(ingredientEmbeddings, masterItems, 0.9)
     expect(result).toHaveLength(1)
     expect(result[0].match).toBe('salt')
+    expect(result[0].matchId).toBe('m1')
     expect(result[0].bestScore).toBeGreaterThan(0.9)
   })
 

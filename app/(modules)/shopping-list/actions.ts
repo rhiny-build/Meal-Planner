@@ -14,8 +14,9 @@ import { prisma } from '@/lib/prisma'
 import { aggregateIngredients, collectIngredientsFromMealPlans } from '@/lib/shoppingListHelpers'
 import { matchIngredientsAgainstMasterList, type MatchResultItem } from '@/lib/ai/matchIngredients'
 import { normaliseIngredients } from '@/lib/ai/normaliseIngredients'
-import { computeEmbeddings, deduplicateByEmbedding } from '@/lib/ai/embeddings'
+import { computeEmbeddings } from '@/lib/ai/embeddings'
 import { AI_CONFIG } from '@/lib/ai/config'
+import { normaliseName } from '@/lib/normalise'
 
 /**
  * Ensure a shopping list exists for the week, creating one with default staples if needed.
@@ -55,18 +56,31 @@ export async function ensureShoppingListExists(weekStart: Date) {
 
 /**
  * Sync meal ingredients into the shopping list from the current meal plan.
+ *
+ * 5-step matching pipeline:
+ *   1. Collect + Aggregate (from meal plans)
+ *   2. Normalise (local, no API — produces canonicalName per ingredient)
+ *   3. Explicit mapping lookup (IngredientMapping table)
+ *   4. Embedding match (for items not resolved in step 3)
+ *   5. Cross-recipe dedup + Write (group unmatched by canonicalName)
+ *
  * Replaces only source='recipe' items, preserving staples/restock/manual.
  */
 export async function syncMealIngredients(weekStart: Date) {
-  // console.time('[sync] total')
   const normalizedWeekStart = new Date(weekStart)
   normalizedWeekStart.setHours(0, 0, 0, 0)
 
   const weekEnd = new Date(normalizedWeekStart)
   weekEnd.setDate(weekEnd.getDate() + 7)
 
-  // Fetch meal plans for the week
-  // console.time('[sync] fetch meal plans')
+  // Debug log lines accumulated across all steps
+  const logLines: string[] = [
+    `Shopping List Pipeline Debug — ${new Date().toISOString()}`,
+    `Embedding match threshold: ${AI_CONFIG.embeddings.similarityThreshold}`,
+    '',
+  ]
+
+  // ─── STEP 1: COLLECT + AGGREGATE ────────────────────────────────────
   const mealPlans = await prisma.mealPlan.findMany({
     where: { date: { gte: normalizedWeekStart, lt: weekEnd } },
     include: {
@@ -76,155 +90,250 @@ export async function syncMealIngredients(weekStart: Date) {
       vegetableRecipe: { include: { structuredIngredients: { orderBy: { order: 'asc' } } } },
     },
   })
-  // console.timeEnd('[sync] fetch meal plans')
 
-  // Aggregate meal ingredients
   const allIngredients = collectIngredientsFromMealPlans(mealPlans)
-  let aggregatedItems = aggregateIngredients(allIngredients)
-  // console.log(`[sync] ${allIngredients.length} total ingredients from meals`)
-  // console.log(`[sync] ${aggregatedItems.length} aggregated ingredients`)
+  const aggregatedItems = aggregateIngredients(allIngredients)
 
-  // Match ingredients against master list to filter out staples/restock
-  let matchResults: MatchResultItem[] | null = null
+  logLines.push(
+    '=== STEP 1: COLLECT + AGGREGATE ===',
+    `  Raw ingredients: ${allIngredients.length} → ${aggregatedItems.length} after aggregation`,
+    '',
+  )
 
-  try {
-    // console.time('[sync] fetch master list')
-    const masterListItems = await prisma.masterListItem.findMany({
-      where: {
-        baseIngredient: { not: null },
-        embedding: { isEmpty: false },
-      },
-      select: { baseIngredient: true, embedding: true },
+  if (aggregatedItems.length === 0) {
+    // Nothing to process — just clear old recipe items
+    const shoppingList = await ensureShoppingListExists(weekStart)
+    await prisma.shoppingListItem.deleteMany({
+      where: { shoppingListId: shoppingList.id, source: 'recipe' },
     })
-    const masterItems = masterListItems.map((item) => ({
-      baseIngredient: item.baseIngredient as string,
-      embedding: item.embedding,
-    }))
-    // console.timeEnd('[sync] fetch master list')
-    // console.log(`[sync] ${masterItems.length} master list items with embeddings`)
+    writeDebugLog(logLines)
+    revalidatePath('/shopping-list')
+    return
+  }
 
-    if (aggregatedItems.length > 0) {
-      // 1. Compute embeddings for all aggregated ingredients (one API call)
-      // console.time('[sync] compute embeddings')
-      const ingredientEmbeddings = await computeEmbeddings(
-        aggregatedItems.map((item) => item.name)
+  // ─── STEP 2: NORMALISE ──────────────────────────────────────────────
+  // Local normalisation — no API call. Produces canonicalName per ingredient.
+  type NormalisedItem = {
+    name: string         // original aggregated name
+    canonicalName: string // normalised e.g. "garlic (fresh)"
+    sources: string[]    // recipe names
+    resolved: boolean    // set to true when matched in step 3 or 4
+    matchConfidence: 'explicit' | 'embedding' | 'unmatched'
+    masterItemId: string | null
+  }
+
+  const items: NormalisedItem[] = aggregatedItems.map((item) => {
+    const { canonical } = normaliseName(item.name)
+    return {
+      name: item.name,
+      canonicalName: canonical || item.name.toLowerCase(),
+      sources: item.sources,
+      resolved: false,
+      matchConfidence: 'unmatched' as const,
+      masterItemId: null,
+    }
+  })
+
+  logLines.push(
+    '=== STEP 2: NORMALISE ===',
+    ...items.map((item) => `  "${item.name}" → "${item.canonicalName}"`),
+    '',
+  )
+
+  // ─── STEP 3: EXPLICIT MAPPING LOOKUP ────────────────────────────────
+  // Check IngredientMapping table for known ingredient→master mappings.
+  try {
+    const recipeNames = items.filter((i) => !i.resolved).map((i) => i.name.toLowerCase())
+    if (recipeNames.length > 0) {
+      const mappings = await prisma.ingredientMapping.findMany({
+        where: { recipeName: { in: recipeNames } },
+        include: { masterItem: { select: { id: true, name: true, type: true } } },
+      })
+
+      const mappingsByName = new Map(mappings.map((m) => [m.recipeName, m]))
+
+      logLines.push('=== STEP 3: EXPLICIT MAPPING LOOKUP ===')
+      let explicitCount = 0
+
+      for (const item of items) {
+        if (item.resolved) continue
+        const mapping = mappingsByName.get(item.name.toLowerCase())
+        if (mapping) {
+          item.resolved = true
+          item.matchConfidence = 'explicit'
+          item.masterItemId = mapping.masterItemId
+          explicitCount++
+          logLines.push(
+            `  ✓ "${item.name}" → master:"${mapping.masterItem.name}" (explicit, confirmedCount: ${mapping.confirmedCount})`
+          )
+
+          // Increment confirmedCount (fire-and-forget, don't block pipeline)
+          prisma.ingredientMapping.update({
+            where: { id: mapping.id },
+            data: { confirmedCount: { increment: 1 } },
+          }).catch(() => {})
+        }
+      }
+
+      const remaining = items.filter((i) => !i.resolved).length
+      logLines.push(
+        `  Resolved: ${explicitCount}/${items.length}, remaining: ${remaining}`,
+        '',
       )
-      // console.timeEnd('[sync] compute embeddings')
-
-      // 2. Deduplicate within the list using embedding similarity
-      // console.time('[sync] deduplicate ingredients')
-      const dedupThreshold = AI_CONFIG.embeddings.deduplicationThreshold
-      const { items: dedupedItems, embeddings: dedupedEmbeddings, mergeLog, nearMissLog } =
-        deduplicateByEmbedding(aggregatedItems, ingredientEmbeddings, dedupThreshold)
-      // console.log(`[sync] Deduped ${aggregatedItems.length} → ${dedupedItems.length} ingredients (${aggregatedItems.length - dedupedItems.length} merged)`)
-      // console.timeEnd('[sync] deduplicate ingredients')
-
-      // 3. Match deduped ingredients against master list (reuse precomputed embeddings)
-      if (masterItems.length > 0) {
-        // console.time('[sync] embedding match ingredients')
-        matchResults = await matchIngredientsAgainstMasterList({
-          recipeIngredients: dedupedItems.map((item) => item.name),
-          masterItems,
-          precomputedEmbeddings: dedupedEmbeddings,
-        })
-        // console.log(`[sync] Matched ${matchResults.filter((r) => r.matchedMasterItem).length} ingredients to master list`)
-        // console.timeEnd('[sync] embedding match ingredients')
-      }
-
-      // Use deduped items for building shopping list
-      aggregatedItems = dedupedItems
-
-      // Write debug log with dedup clusters + similarity scores
-      try {
-        const logDir = join(process.cwd(), 'logs')
-        mkdirSync(logDir, { recursive: true })
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-        const masterThreshold = AI_CONFIG.embeddings.similarityThreshold
-        const lines = [
-          `Embedding Match Debug — ${new Date().toISOString()}`,
-          `Dedup threshold: ${dedupThreshold}`,
-          `Master list threshold: ${masterThreshold}`,
-          `Recipe ingredients: ${ingredientEmbeddings.length} → ${dedupedItems.length} after dedup`,
-          `Master list items: ${masterItems.length}`,
-          '',
-          'DEDUP MERGES:',
-          ...(mergeLog.length > 0
-            ? mergeLog
-            : ['  (none)']),
-          '',
-          'DEDUP NEAR MISSES (score ≥ 0.75 but below threshold):',
-          ...(nearMissLog.length > 0
-            ? nearMissLog
-            : ['  (none)']),
-          '',
-          ...(matchResults
-            ? [
-                'MATCHED (filtered from shopping list):',
-                ...matchResults
-                  .filter((r) => r.matchedMasterItem)
-                  .map((r) => `  ✓ "${r.name}" → "${r.matchedMasterItem}" (score: ${r.bestScore.toFixed(4)})`),
-                '',
-                'UNMATCHED (kept on shopping list):',
-                ...matchResults
-                  .filter((r) => !r.matchedMasterItem)
-                  .map((r) => `  ✗ "${r.name}" — best: "${r.bestCandidate}" (score: ${r.bestScore.toFixed(4)})`),
-              ]
-            : ['(no master list items — all ingredients kept)']),
-        ]
-        writeFileSync(join(logDir, `embedding-match-${timestamp}.log`), lines.join('\n'))
-      } catch (logError) {
-        console.error('Failed to write embedding match debug log:', logError)
-      }
+    } else {
+      logLines.push('=== STEP 3: EXPLICIT MAPPING LOOKUP ===', '  (no items to check)', '')
     }
   } catch (error) {
-    // console.timeEnd('[sync] embedding match ingredients')
-    console.error('Ingredient matching failed, including all items:', error)
+    logLines.push('=== STEP 3: EXPLICIT MAPPING LOOKUP ===', `  (error: ${error})`, '')
   }
 
-  // Build meal items — filter out matched ingredients, include debug info in notes
-  const mealItems: Array<{ name: string; notes: string; checked: boolean; source: 'recipe'; order: number }> = []
-  let order = 0
+  // ─── STEP 4: EMBEDDING MATCH ────────────────────────────────────────
+  // For items not resolved in step 3, embed their canonicalName and compare
+  // against MasterListItem embeddings.
+  try {
+    const unresolvedItems = items.filter((i) => !i.resolved)
 
-  for (let i = 0; i < aggregatedItems.length; i++) {
-    const item = aggregatedItems[i]
-    const match = matchResults?.find((r) => r.index === i)
-    const baseIngredient = match?.baseIngredient ?? item.name.toLowerCase()
-    const matchedWith = match?.matchedMasterItem ?? null
+    if (unresolvedItems.length > 0) {
+      // Fetch master list items with canonicalName and embeddings
+      const masterListItems = await prisma.masterListItem.findMany({
+        where: {
+          canonicalName: { not: null },
+          embedding: { isEmpty: false },
+        },
+        select: { id: true, canonicalName: true, embedding: true, type: true },
+      })
+      const masterItems = masterListItems.map((item) => ({
+        id: item.id,
+        canonicalName: item.canonicalName as string,
+        embedding: item.embedding,
+      }))
 
-    // Skip items that matched a master list item
-    if (matchedWith) continue
+      logLines.push('=== STEP 4: EMBEDDING MATCH ===')
 
-    const sourcesNote = `For: ${item.sources.join(', ')}`
-    // DEBUG: append base ingredient for visibility
-    const debugNote = ` [base: ${baseIngredient}]`
+      if (masterItems.length > 0) {
+        // Embed unresolved canonicalNames
+        const textsToEmbed = unresolvedItems.map((i) => i.canonicalName)
+        const ingredientEmbeddings = await computeEmbeddings(textsToEmbed)
 
-    mealItems.push({
-      name: item.name,
-      notes: sourcesNote + debugNote,
-      checked: false,
-      source: 'recipe' as const,
-      order: order++,
-    })
+        // Match against master list
+        const matchResults = await matchIngredientsAgainstMasterList({
+          recipeIngredients: textsToEmbed,
+          masterItems,
+          precomputedEmbeddings: ingredientEmbeddings,
+        })
+
+        let embeddingMatchCount = 0
+        for (let j = 0; j < unresolvedItems.length; j++) {
+          const match = matchResults[j]
+          const item = unresolvedItems[j]
+
+          if (match.matchedMasterItem) {
+            item.resolved = true
+            item.matchConfidence = 'embedding'
+            item.masterItemId = match.masterItemId
+            embeddingMatchCount++
+            logLines.push(
+              `  ✓ "${item.name}" [${item.canonicalName}] → "${match.matchedMasterItem}" (score: ${match.bestScore.toFixed(4)})`
+            )
+          } else {
+            logLines.push(
+              `  ✗ "${item.name}" [${item.canonicalName}] — best: "${match.bestCandidate}" (score: ${match.bestScore.toFixed(4)})`
+            )
+          }
+        }
+
+        const stillUnresolved = items.filter((i) => !i.resolved).length
+        logLines.push(
+          `  Resolved: ${embeddingMatchCount}/${unresolvedItems.length}, remaining: ${stillUnresolved}`,
+          '',
+        )
+      } else {
+        logLines.push('  (no master list items with canonicalName + embeddings)', '')
+      }
+    } else {
+      logLines.push('=== STEP 4: EMBEDDING MATCH ===', '  (all items already resolved)', '')
+    }
+  } catch (error) {
+    console.error('Embedding matching failed, keeping unmatched items:', error)
+    logLines.push('=== STEP 4: EMBEDDING MATCH ===', `  (error: ${error})`, '')
   }
 
-  // Ensure list exists (with staples if new)
-  // console.time('[sync] db writes')
+  // ─── STEP 5: CROSS-RECIPE DEDUP + WRITE ─────────────────────────────
+  // Group remaining unmatched items by canonicalName (string equality).
+  // Merge duplicates and combine sources.
+  const unresolvedItems = items.filter((i) => !i.resolved)
+  const dedupMap = new Map<string, NormalisedItem>()
+
+  for (const item of unresolvedItems) {
+    const existing = dedupMap.get(item.canonicalName)
+    if (existing) {
+      // Merge sources
+      for (const src of item.sources) {
+        if (!existing.sources.includes(src)) {
+          existing.sources.push(src)
+        }
+      }
+    } else {
+      dedupMap.set(item.canonicalName, { ...item })
+    }
+  }
+
+  const dedupedItems = Array.from(dedupMap.values())
+
+  logLines.push(
+    '=== STEP 5: CROSS-RECIPE DEDUP ===',
+    `  Unmatched items: ${unresolvedItems.length} → ${dedupedItems.length} after dedup`,
+  )
+  if (unresolvedItems.length > dedupedItems.length) {
+    for (const item of dedupedItems) {
+      if (item.sources.length > 1) {
+        logLines.push(`  Merged: "${item.canonicalName}" (from: ${item.sources.join(', ')})`)
+      }
+    }
+  }
+  logLines.push(`  Final shopping list items: ${dedupedItems.length}`, '')
+
+  // Build shopping list items from deduped unmatched ingredients
+  const shoppingListData = dedupedItems.map((item, idx) => ({
+    name: item.name,
+    canonicalName: item.canonicalName,
+    matchConfidence: item.matchConfidence,
+    masterItemId: item.masterItemId,
+    notes: `For: ${item.sources.join(', ')}`,
+    checked: false,
+    source: 'recipe' as const,
+    order: idx,
+  }))
+
+  // Ensure list exists, then replace recipe items
   const shoppingList = await ensureShoppingListExists(weekStart)
 
-  // Replace only meal items
   await prisma.shoppingListItem.deleteMany({
     where: { shoppingListId: shoppingList.id, source: 'recipe' },
   })
 
-  if (mealItems.length > 0) {
+  if (shoppingListData.length > 0) {
     await prisma.shoppingListItem.createMany({
-      data: mealItems.map(item => ({ ...item, shoppingListId: shoppingList.id })),
+      data: shoppingListData.map((item) => ({ ...item, shoppingListId: shoppingList.id })),
     })
   }
-  // console.timeEnd('[sync] db writes')
 
+  writeDebugLog(logLines)
   revalidatePath('/shopping-list')
-  // console.timeEnd('[sync] total')
+}
+
+/**
+ * Write pipeline debug log to disk.
+ */
+function writeDebugLog(lines: string[]) {
+  try {
+    const logDir = join(process.cwd(), 'logs')
+    mkdirSync(logDir, { recursive: true })
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+    writeFileSync(join(logDir, `shopping-list-sync-${timestamp}.log`), lines.join('\n'))
+  } catch (logError) {
+    console.error('Failed to write pipeline debug log:', logError)
+  }
 }
 
 /**
