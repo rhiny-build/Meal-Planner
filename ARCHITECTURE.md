@@ -60,17 +60,28 @@ This document explains the technical architecture of the Family Meal Planner app
 
 /lib                  # Shared utilities and business logic
 ├── /ai               # AI abstraction layer
+│   ├── client.ts                     # OpenAI client singleton
+│   ├── config.ts                     # AI model and threshold config
+│   ├── embeddings.ts                 # Embedding computation, cosine similarity, matching
 │   ├── extractIngredientsFromURL.ts  # URL recipe extraction
+│   ├── matchIngredients.ts           # Ingredient-to-master-list matching
+│   ├── normaliseIngredients.ts       # LLM-based ingredient normalisation
+│   ├── prompts.ts                    # AI prompt templates
 │   └── modifyMealPlan.ts             # Natural language modifications
 ├── /hooks            # React hooks
 │   ├── useMealPlan.ts        # Meal plan state management
 │   ├── useRecipes.ts         # Recipe state + filtering
 │   └── useShoppingList.ts    # Shopping list state management
 ├── apiService.ts       # API call utilities
+├── normalise.ts        # Local ingredient normalisation (form extraction, singularisation)
 ├── shoppingListHelpers.ts # Shopping list business logic
 ├── ingredientParser.ts # Ingredient string parsing utility
 ├── dateUtils.ts      # Date manipulation helpers
 └── prisma.ts         # Prisma client singleton
+
+/scripts              # Maintenance and backfill scripts
+├── backfill-embeddings.ts      # Backfill embedding vectors for master list items
+└── backfill-canonical-names.ts # Backfill canonicalName + re-embed master list items
 
 /prisma              # Database configuration
 ├── schema.prisma    # Database schema definition
@@ -179,6 +190,9 @@ UI shows changes and AI explanation
 ```
 
 ### Shopping List Flow (Module Pattern)
+
+The shopping list uses a 5-step matching pipeline to intelligently match recipe ingredients against the household master list:
+
 ```
 User visits /shopping-list
   ↓
@@ -188,23 +202,40 @@ Data passed to client component (ShoppingListClient)
   ↓
 User clicks "Generate Shopping List"
   ↓
-Client calls generateShoppingList() server action
+Client calls syncMealIngredients() server action
   ↓
-Server action fetches meal plans for the week
-  ↓
-Aggregation logic groups ingredients by name
-  ↓
-Server action creates/updates ShoppingList records
+=== 5-Step Matching Pipeline ===
+
+Step 1: COLLECT + AGGREGATE
+  Fetch meal plans → extract ingredients → aggregate by name
+
+Step 2: NORMALISE (local, no API)
+  normaliseName() → canonical form: "garlic cloves" → "garlic (fresh)"
+
+Step 3: EXPLICIT MAPPING LOOKUP
+  Check IngredientMapping table for user-confirmed matches
+  Matched → matchConfidence: 'explicit'
+
+Step 4: EMBEDDING MATCH
+  Embed canonicalName → cosine similarity vs master list embeddings
+  Matched (≥0.82) → matchConfidence: 'embedding'
+
+Step 5: CROSS-RECIPE DEDUP + WRITE
+  Group unmatched items by canonicalName (string equality)
+  Write to ShoppingListItem with matchConfidence: 'unmatched'
+  Suppress items matched to restock, consolidate into staples
   ↓
 revalidatePath() triggers page refresh with new data
   ↓
 UI displays items with checkboxes for tracking
 ```
 
+Debug logs are written after each step to `logs/embedding-match-*.log`.
+
 **Note:** The shopping-list module is the first to use the new modular architecture:
-- `app/shopping-list/page.tsx` - Server component for data fetching
-- `app/shopping-list/actions.ts` - Server actions for mutations
-- `app/shopping-list/components/` - Client components
+- `app/(modules)/shopping-list/page.tsx` - Server component for data fetching
+- `app/(modules)/shopping-list/actions.ts` - Server actions for mutations
+- `app/(modules)/shopping-list/components/` - Client components
 
 ## Key Design Patterns
 
@@ -391,20 +422,57 @@ model ShoppingList {
 ### ShoppingListItem Table
 ```prisma
 model ShoppingListItem {
-  id             String       @id @default(cuid())
-  shoppingListId String
-  name           String       // Ingredient name
-  quantity       String?      // Amount
-  unit           String?      // Unit of measurement
-  notes          String?      // Additional notes
-  checked        Boolean      @default(false)  // Purchased status
-  source         String       @default("meal") // 'meal' | 'staple' | 'restock' | 'manual'
-  order          Int          // Display order
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  shoppingList   ShoppingList @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
+  id              String          @id @default(cuid())
+  shoppingListId  String
+  name            String          // Ingredient name
+  quantity        String?         // Amount
+  unit            String?         // Unit of measurement
+  notes           String?         // Additional notes
+  checked         Boolean         @default(false)  // Purchased status
+  source          String          @default("recipe") // 'recipe' | 'staple' | 'restock' | 'manual'
+  canonicalName   String?         // Normalised name e.g. "garlic (fresh)"
+  masterItemId    String?         // FK → MasterListItem (nullable)
+  matchConfidence String?         // 'explicit' | 'embedding' | 'unmatched'
+  order           Int             // Display order
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  shoppingList    ShoppingList    @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
+  masterItem      MasterListItem? @relation(fields: [masterItemId], references: [id], onDelete: SetNull)
 
   @@index([shoppingListId])
+}
+```
+
+### MasterListItem Table (Household items for matching)
+```prisma
+model MasterListItem {
+  id              String              @id @default(cuid())
+  name            String
+  type            String              // 'staple' | 'restock'
+  included        Boolean             @default(true)
+  baseIngredient  String?             // LLM-extracted base concept (legacy)
+  canonicalName   String?             // Normalised name e.g. "garlic (fresh)"
+  embedding       Float[]             // text-embedding-3-small vector
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  mappings        IngredientMapping[]
+  shoppingListItems ShoppingListItem[]
+}
+```
+
+### IngredientMapping Table (Learned ingredient-to-master mappings)
+```prisma
+model IngredientMapping {
+  id             String         @id @default(cuid())
+  recipeName     String         // Normalised ingredient name
+  masterItemId   String
+  confirmedCount Int            @default(1)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  masterItem     MasterListItem @relation(fields: [masterItemId], references: [id], onDelete: Cascade)
+
+  @@unique([recipeName, masterItemId])
+  @@index([recipeName])
 }
 ```
 

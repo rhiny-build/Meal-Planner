@@ -43,9 +43,14 @@ This project is designed to be both a functional meal planning tool and a learni
 
 #### Shopping List
 - ✅ Generate shopping list from weekly meal plan
-- ✅ Intelligent ingredient aggregation:
-  - Groups same ingredients (case-insensitive)
-  - Combines quantities when units match
+- ✅ 5-step matching pipeline:
+  - Collects and aggregates ingredients from meal plans
+  - Normalises ingredient names with form awareness ("garlic cloves" → "garlic (fresh)")
+  - Checks explicit learned mappings (IngredientMapping table)
+  - Embedding-based matching against household master list
+  - Cross-recipe deduplication by canonical name
+- ✅ Intelligent ingredient aggregation (groups same ingredients, combines quantities)
+- ✅ Master list management (staples and restock items)
 - ✅ Check off items as purchased
 - ✅ Add manual items
 - ✅ Export to clipboard as text
@@ -180,7 +185,9 @@ The schema defines these main models:
 - `Ingredient` - Structured ingredients for each recipe (quantity, unit, name, notes)
 - `MealPlan` - Stores which recipe is planned for which date
 - `ShoppingList` - Weekly shopping list
-- `ShoppingListItem` - Individual items in a shopping list
+- `ShoppingListItem` - Individual items with canonical name, master item link, and match confidence
+- `MasterListItem` - Household staples/restock items with canonical names and embeddings
+- `IngredientMapping` - Learned mappings from recipe ingredients to master list items
 
 Prisma provides type-safe database access. When you change the schema:
 1. Run `npx prisma migrate dev --name descriptive_name` to create a migration
