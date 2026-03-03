@@ -57,6 +57,7 @@ vi.mock('@/lib/prisma', () => ({
     ingredientMapping: {
       findMany: vi.fn(),
       update: vi.fn(),
+      upsert: vi.fn(),
     },
   },
 }))
@@ -73,6 +74,7 @@ import {
   addMasterListItem,
   updateMasterListItem,
   deleteMasterListItem,
+  createIngredientMapping,
 } from './actions'
 import { prisma } from '@/lib/prisma'
 import { matchIngredientsAgainstMasterList } from '@/lib/ai/matchIngredients'
@@ -812,6 +814,81 @@ describe('Shopping List Server Actions', () => {
         where: { id: 'item-1' },
       })
       expect(result).toBe(true)
+    })
+  })
+
+  describe('createIngredientMapping', () => {
+    it('should create a new mapping via upsert', async () => {
+      const mockMapping = {
+        id: 'map-1',
+        recipeName: 'garlic cloves',
+        masterItemId: 'master-1',
+        confirmedCount: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+      mockPrisma.ingredientMapping.upsert.mockResolvedValue(mockMapping)
+
+      const result = await createIngredientMapping('Garlic Cloves', 'master-1')
+
+      expect(mockPrisma.ingredientMapping.upsert).toHaveBeenCalledWith({
+        where: {
+          recipeName_masterItemId: { recipeName: 'garlic cloves', masterItemId: 'master-1' },
+        },
+        create: {
+          recipeName: 'garlic cloves',
+          masterItemId: 'master-1',
+          confirmedCount: 1,
+        },
+        update: {
+          confirmedCount: { increment: 1 },
+        },
+      })
+      expect(result).toEqual(mockMapping)
+    })
+
+    it('should lowercase the recipeName', async () => {
+      const mockMapping = {
+        id: 'map-2',
+        recipeName: 'fresh parsley',
+        masterItemId: 'master-2',
+        confirmedCount: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+      mockPrisma.ingredientMapping.upsert.mockResolvedValue(mockMapping)
+
+      await createIngredientMapping('FRESH PARSLEY', 'master-2')
+
+      expect(mockPrisma.ingredientMapping.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            recipeName_masterItemId: { recipeName: 'fresh parsley', masterItemId: 'master-2' },
+          },
+          create: expect.objectContaining({ recipeName: 'fresh parsley' }),
+        })
+      )
+    })
+
+    it('should increment confirmedCount on existing mapping', async () => {
+      const mockMapping = {
+        id: 'map-1',
+        recipeName: 'garlic cloves',
+        masterItemId: 'master-1',
+        confirmedCount: 3,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+      mockPrisma.ingredientMapping.upsert.mockResolvedValue(mockMapping)
+
+      const result = await createIngredientMapping('garlic cloves', 'master-1')
+
+      expect(result.confirmedCount).toBe(3)
+      expect(mockPrisma.ingredientMapping.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          update: { confirmedCount: { increment: 1 } },
+        })
+      )
     })
   })
 })
