@@ -50,6 +50,8 @@ Read Shopping-List-Normalisation.md in Docs
 - [ ] Mobile responsiveness: editing on phone (viewing complete)
 
 ### Shopping List Enhancements
+- [ ] Lazy canonicalName computation — In Step 4 of the sync pipeline, if a MasterListItem has no canonicalName, compute it on the fly and save it. Makes the system self-healing.
+- [ ] Remove backfill script from deploy — Once lazy computation is in place, remove `scripts/backfill-canonical-names.ts` from the build pipeline and delete the script.
 - [ ] Reorder items within categories (drag-and-drop)
 - [ ] Fuzzy matching for semantic duplicates (mayo/mayonnaise, salt/salt and pepper)
 
