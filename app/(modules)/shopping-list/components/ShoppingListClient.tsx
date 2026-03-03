@@ -239,7 +239,7 @@ export default function ShoppingListClient({
           />
 
           {(() => {
-            const mealItems = optimisticItems.filter(item => item.source === 'meal')
+            const mealItems = optimisticItems.filter(item => item.source === 'recipe')
             if (mealItems.length === 0) {
               return (
                 <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">

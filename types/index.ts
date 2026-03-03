@@ -151,7 +151,8 @@ export interface GenerateShoppingListRequest {
 }
 
 // Shopping list item source types
-export type ShoppingListItemSource = 'meal' | 'staple' | 'restock' | 'manual'
+export type ShoppingListItemSource = 'recipe' | 'staple' | 'restock' | 'manual'
+export type MatchConfidence = 'explicit' | 'embedding' | 'unmatched'
 
 // Shopping list item for creating/updating
 export interface ShoppingListItemData {

@@ -55,7 +55,7 @@ export async function ensureShoppingListExists(weekStart: Date) {
 
 /**
  * Sync meal ingredients into the shopping list from the current meal plan.
- * Replaces only source='meal' items, preserving staples/restock/manual.
+ * Replaces only source='recipe' items, preserving staples/restock/manual.
  */
 export async function syncMealIngredients(weekStart: Date) {
   // console.time('[sync] total')
@@ -182,7 +182,7 @@ export async function syncMealIngredients(weekStart: Date) {
   }
 
   // Build meal items — filter out matched ingredients, include debug info in notes
-  const mealItems: Array<{ name: string; notes: string; checked: boolean; source: 'meal'; order: number }> = []
+  const mealItems: Array<{ name: string; notes: string; checked: boolean; source: 'recipe'; order: number }> = []
   let order = 0
 
   for (let i = 0; i < aggregatedItems.length; i++) {
@@ -202,7 +202,7 @@ export async function syncMealIngredients(weekStart: Date) {
       name: item.name,
       notes: sourcesNote + debugNote,
       checked: false,
-      source: 'meal' as const,
+      source: 'recipe' as const,
       order: order++,
     })
   }
@@ -213,7 +213,7 @@ export async function syncMealIngredients(weekStart: Date) {
 
   // Replace only meal items
   await prisma.shoppingListItem.deleteMany({
-    where: { shoppingListId: shoppingList.id, source: 'meal' },
+    where: { shoppingListId: shoppingList.id, source: 'recipe' },
   })
 
   if (mealItems.length > 0) {

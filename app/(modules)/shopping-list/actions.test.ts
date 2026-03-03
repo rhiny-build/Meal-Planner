@@ -138,7 +138,7 @@ describe('Shopping List Server Actions', () => {
         weekStart: new Date('2026-02-03'),
         items: [
           { id: 'item-1', name: 'Milk', checked: false, source: 'staple', order: 0 },
-          { id: 'item-2', name: 'Chicken', checked: false, source: 'meal', order: 1 },
+          { id: 'item-2', name: 'Chicken', checked: false, source: 'recipe', order: 1 },
         ],
       }
 
@@ -349,14 +349,14 @@ describe('Shopping List Server Actions', () => {
 
       // Should delete old meal items
       expect(mockPrisma.shoppingListItem.deleteMany).toHaveBeenCalledWith({
-        where: { shoppingListId: 'list-1', source: 'meal' },
+        where: { shoppingListId: 'list-1', source: 'recipe' },
       })
       // Should create new meal items
       expect(mockPrisma.shoppingListItem.createMany).toHaveBeenCalledWith({
         data: expect.arrayContaining([
-          expect.objectContaining({ name: 'chicken breast', source: 'meal', shoppingListId: 'list-1' }),
-          expect.objectContaining({ name: 'rice', source: 'meal', shoppingListId: 'list-1' }),
-          expect.objectContaining({ name: 'soy sauce', source: 'meal', shoppingListId: 'list-1' }),
+          expect.objectContaining({ name: 'chicken breast', source: 'recipe', shoppingListId: 'list-1' }),
+          expect.objectContaining({ name: 'rice', source: 'recipe', shoppingListId: 'list-1' }),
+          expect.objectContaining({ name: 'soy sauce', source: 'recipe', shoppingListId: 'list-1' }),
         ]),
       })
     })
@@ -433,7 +433,7 @@ describe('Shopping List Server Actions', () => {
       // Only chicken breast should remain
       expect(mockPrisma.shoppingListItem.createMany).toHaveBeenCalledWith({
         data: [
-          expect.objectContaining({ name: 'chicken breast', source: 'meal' }),
+          expect.objectContaining({ name: 'chicken breast', source: 'recipe' }),
         ],
       })
     })

@@ -92,22 +92,27 @@ model ShoppingList {
 
 // ShoppingListItem model stores individual items on a shopping list
 model ShoppingListItem {
-  id             String   @id @default(cuid())
-  shoppingListId String
-  name           String   // The ingredient name (aggregated/normalized)
-  quantity       String?  // Combined quantity (e.g., "3" or "2 + 1/2")
-  unit           String?  // The unit (when units match during aggregation)
-  notes          String?  // Source recipes or additional notes
-  checked        Boolean  @default(false) // Whether item has been purchased
-  source         String   @default("meal") // Item source: 'meal' | 'staple' | 'restock' | 'manual'
-  order          Int      // Display order
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id              String   @id @default(cuid())
+  shoppingListId  String
+  name            String   // The ingredient name (aggregated/normalized)
+  quantity        String?  // Combined quantity (e.g., "3" or "2 + 1/2")
+  unit            String?  // The unit (when units match during aggregation)
+  notes           String?  // Source recipes or additional notes
+  checked         Boolean  @default(false) // Whether item has been purchased
+  source          String   @default("recipe") // Item source: 'recipe' | 'staple' | 'restock' | 'manual'
+  order           Int      // Display order
+  canonicalName   String?  // Normalised name with form e.g. "garlic (fresh)", "tomatoes (tinned)"
+  masterItemId    String?  // FK → MasterListItem (nullable, set null on delete)
+  matchConfidence String?  // "explicit" | "embedding" | "unmatched"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  // Relationship: Each item belongs to one shopping list
-  shoppingList ShoppingList @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
+  // Relationships
+  shoppingList ShoppingList   @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
+  masterItem   MasterListItem? @relation(fields: [masterItemId], references: [id], onDelete: SetNull)
 
   @@index([shoppingListId])
+  @@index([masterItemId])
 }
 
 // Category model for grouping master list items by store section
@@ -124,21 +129,39 @@ model Category {
 
 // MasterListItem model stores staples and restock items (unified table)
 model MasterListItem {
-  id         String   @id @default(cuid())
+  id             String   @id @default(cuid())
   name           String   // Product name (e.g., "Sainsbury's British Free Range Eggs Large x12")
   type           String   // 'staple' | 'restock'
   categoryId     String
   order          Int      // Display order within category
   baseIngredient String?  // Normalised base concept for shopping list matching
+  canonicalName  String?  // Generic ingredient name + form e.g. "garlic (fresh)", "tomatoes (tinned)"
   embedding      Float[]  // Pre-computed embedding vector for fast ingredient matching
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  // Relationship: Each item belongs to one category (Restrict = can't delete category with items)
-  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  // Relationships
+  category        Category            @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  mappings        IngredientMapping[]
+  shoppingListItems ShoppingListItem[]
 
   @@index([categoryId])
   @@index([type])
+}
+
+// IngredientMapping model stores learned mappings between recipe ingredient names and master list items
+model IngredientMapping {
+  id             String         @id @default(cuid())
+  recipeName     String         // Normalised ingredient name as seen in recipes e.g. "garlic cloves"
+  masterItemId   String
+  confirmedCount Int            @default(1)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  masterItem MasterListItem @relation(fields: [masterItemId], references: [id], onDelete: Cascade)
+
+  @@unique([recipeName, masterItemId])
+  @@index([recipeName])
 }
 
 // DishType model stores dynamic protein and carb types

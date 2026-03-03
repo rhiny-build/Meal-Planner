@@ -69,9 +69,9 @@ describe('Shopping List Integration Tests', () => {
           weekStart,
           items: {
             create: [
-              { name: 'chicken breast', source: 'meal', order: 0, checked: false },
-              { name: 'soy sauce', source: 'meal', order: 1, checked: false },
-              { name: 'ginger', source: 'meal', order: 2, checked: false },
+              { name: 'chicken breast', source: 'recipe', order: 0, checked: false },
+              { name: 'soy sauce', source: 'recipe', order: 1, checked: false },
+              { name: 'ginger', source: 'recipe', order: 2, checked: false },
             ],
           },
         },
@@ -81,7 +81,7 @@ describe('Shopping List Integration Tests', () => {
       // Assert
       expect(shoppingList).not.toBeNull()
       expect(shoppingList.items).toHaveLength(3)
-      expect(shoppingList.items.every((item) => item.source === 'meal')).toBe(true)
+      expect(shoppingList.items.every((item) => item.source === 'recipe')).toBe(true)
     })
 
     it('should include staples in shopping list', async () => {
@@ -129,7 +129,7 @@ describe('Shopping List Integration Tests', () => {
           weekStart,
           items: {
             create: [
-              { name: 'Generated Item', source: 'meal', order: 0, checked: false },
+              { name: 'Generated Item', source: 'recipe', order: 0, checked: false },
               { name: 'Manual Item', source: 'manual', order: 1, checked: false },
             ],
           },
@@ -140,7 +140,7 @@ describe('Shopping List Integration Tests', () => {
       await testPrisma.shoppingListItem.deleteMany({
         where: {
           shoppingListId: shoppingList.id,
-          source: { in: ['meal', 'staple'] },
+          source: { in: ['recipe', 'staple'] },
         },
       })
 
@@ -149,7 +149,7 @@ describe('Shopping List Integration Tests', () => {
         data: {
           shoppingListId: shoppingList.id,
           name: 'New Generated Item',
-          source: 'meal',
+          source: 'recipe',
           order: 0,
           checked: false,
         },
@@ -210,7 +210,7 @@ describe('Shopping List Integration Tests', () => {
         data: {
           weekStart,
           items: {
-            create: [{ name: 'Existing Item', source: 'meal', order: 0, checked: false }],
+            create: [{ name: 'Existing Item', source: 'recipe', order: 0, checked: false }],
           },
         },
       })
@@ -327,7 +327,7 @@ describe('Shopping List Integration Tests', () => {
         data: {
           weekStart: week1Start,
           items: {
-            create: [{ name: 'Week 1 Item', source: 'meal', order: 0, checked: false }],
+            create: [{ name: 'Week 1 Item', source: 'recipe', order: 0, checked: false }],
           },
         },
       })
@@ -336,7 +336,7 @@ describe('Shopping List Integration Tests', () => {
         data: {
           weekStart: week2Start,
           items: {
-            create: [{ name: 'Week 2 Item', source: 'meal', order: 0, checked: false }],
+            create: [{ name: 'Week 2 Item', source: 'recipe', order: 0, checked: false }],
           },
         },
       })
