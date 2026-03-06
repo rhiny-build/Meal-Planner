@@ -16,7 +16,7 @@ import { matchIngredientsAgainstMasterList, type MatchResultItem } from '@/lib/a
 import { normaliseIngredients } from '@/lib/ai/normaliseIngredients'
 import { computeEmbeddings } from '@/lib/ai/embeddings'
 import { AI_CONFIG } from '@/lib/ai/config'
-import { normaliseName } from '@/lib/normalise'
+import { normaliseIngredientCached } from '@/lib/normalisation/normaliseWithFallback'
 
 /**
  * Ensure a shopping list exists for the week, creating one with default staples if needed.
@@ -112,7 +112,7 @@ export async function syncMealIngredients(weekStart: Date) {
   }
 
   // ─── STEP 2: NORMALISE ──────────────────────────────────────────────
-  // Local normalisation — no API call. Produces canonicalName per ingredient.
+  // Deterministic rules first, then LLM fallback (if USE_LLM=true) with DB cache.
   type NormalisedItem = {
     name: string         // original aggregated name
     canonicalName: string // normalised e.g. "garlic (fresh)"
@@ -122,17 +122,19 @@ export async function syncMealIngredients(weekStart: Date) {
     masterItemId: string | null
   }
 
-  const items: NormalisedItem[] = aggregatedItems.map((item) => {
-    const { canonical } = normaliseName(item.name)
-    return {
-      name: item.name,
-      canonicalName: canonical || item.name.toLowerCase(),
-      sources: item.sources,
-      resolved: false,
-      matchConfidence: 'unmatched' as const,
-      masterItemId: null,
-    }
-  })
+  const items: NormalisedItem[] = await Promise.all(
+    aggregatedItems.map(async (item) => {
+      const { canonical } = await normaliseIngredientCached(item.name)
+      return {
+        name: item.name,
+        canonicalName: canonical || item.name.toLowerCase(),
+        sources: item.sources,
+        resolved: false,
+        matchConfidence: 'unmatched' as const,
+        masterItemId: null,
+      }
+    })
+  )
 
   logLines.push(
     '=== STEP 2: NORMALISE ===',

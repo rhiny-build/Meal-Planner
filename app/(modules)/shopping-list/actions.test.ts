@@ -22,6 +22,14 @@ vi.mock('@/lib/ai/normaliseIngredients', () => ({
   normaliseIngredients: vi.fn(),
 }))
 
+// Mock normalisation fallback — use deterministic normaliser (no DB/LLM in tests)
+vi.mock('@/lib/normalisation/normaliseWithFallback', async () => {
+  const { normaliseName } = await vi.importActual<typeof import('@/lib/normalisation/normalise')>('@/lib/normalisation/normalise')
+  return {
+    normaliseIngredientCached: vi.fn(async (raw: string) => normaliseName(raw)),
+  }
+})
+
 // Mock AI embeddings
 vi.mock('@/lib/ai/embeddings', () => ({
   computeEmbeddings: vi.fn(),
