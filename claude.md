@@ -155,11 +155,30 @@ Review up to date architecure.md for reference
 
 ### Core Files
 
-- **`prisma/schema.prisma`**: Database schema defining Recipe and MealPlan models with protein/carb/vegetable relations (single source of truth for data validation)
+- **`prisma/schema.prisma`**: Database schema defining Recipe, MealPlan, MasterListItem, IngredientMapping models (single source of truth for data validation)
 - **`lib/dateUtils.ts`**: Date manipulation helpers (getMonday, formatDate, etc.)
-- **`lib/ai.ts`**: OpenAI API integration for recipe extraction and meal planning
+- **`lib/normalise.ts`**: Local ingredient normalisation — form extraction ("garlic cloves" → "garlic (fresh)"), singularisation, quantity stripping
 - **`lib/prisma.ts`**: Prisma client singleton
-- **`types/index.ts`**: TypeScript type definitions
+- **`types/index.ts`**: TypeScript type definitions (includes `MatchConfidence`, `ShoppingListItemSource`)
+
+### AI Layer (`lib/ai/`)
+
+- **`client.ts`**: OpenAI client singleton
+- **`config.ts`**: AI model config, embedding thresholds (similarity: 0.82, dedup: 0.75)
+- **`embeddings.ts`**: `computeEmbeddings()`, `cosineSimilarity()`, `findBestMatches()`, `deduplicateByEmbedding()`
+- **`matchIngredients.ts`**: `matchIngredientsAgainstMasterList()` — orchestrates embedding match against master list
+- **`normaliseIngredients.ts`**: LLM-based normalisation returning `baseIngredient` and `canonicalName`
+- **`prompts.ts`**: AI prompt templates for normalisation and extraction
+
+### Shopping List Module (`app/(modules)/shopping-list/`)
+
+- **`actions.ts`**: Server actions including `syncMealIngredients` (5-step pipeline), `createIngredientMapping`, master list CRUD
+- **`components/ShoppingListClient.tsx`**: Main client component for shopping list UI
+
+### Scripts
+
+- **`scripts/backfill-canonical-names.ts`**: Backfill `canonicalName` on MasterListItem and re-embed (idempotent, supports `--dry-run`)
+- **`scripts/backfill-embeddings.ts`**: Backfill embedding vectors for master list items
 
 ### API Routes
 
@@ -171,10 +190,12 @@ Review up to date architecure.md for reference
 
 ### Testing
 
-Currently no test suite. Future implementation will focus on:
-- Utility function tests (dateUtils, validation helpers)
-- API route integration tests
-- Component behavior tests
+240+ tests using Vitest covering:
+- Shopping list server actions (33 tests) — pipeline, master list CRUD, ingredient mapping
+- Embeddings (18 tests) — cosine similarity, best match, deduplication
+- Normalisation (31 tests) — form extraction, singularisation, edge cases
+- Shopping list helpers (36 tests) — aggregation, filtering
+- Component tests, API route tests, utility tests
 
 ## Important Patterns and Conventions
 
@@ -216,6 +237,9 @@ The app uses a relational model with named relations for multiple references:
 
 **Recipe**: Can serve as protein, carb, or vegetable in different meal plans
 **MealPlan**: References up to 3 recipes (protein, carb, vegetable) per day
+**MasterListItem**: Household staples/restock items with `canonicalName` and embedding vectors for ingredient matching
+**IngredientMapping**: Learned mappings from recipe ingredient names to master list items (upsert with `confirmedCount`)
+**ShoppingListItem**: Items on weekly list with `source` ('recipe'|'staple'|'restock'|'manual'), `canonicalName`, `masterItemId` FK, and `matchConfidence` ('explicit'|'embedding'|'unmatched')
 
 Key feature: Optional fields allow flexible meal composition (protein-only, carb-only, or combined meals).
 

@@ -1,4 +1,4 @@
-npx # Command Cheatsheet
+ # Command Cheatsheet
 
 ## Prisma Commands
 
