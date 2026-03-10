@@ -17,6 +17,28 @@ export const SYSTEM_PROMPTS = {
     'You are a helpful meal planning assistant. Return your response as JSON.',
   normaliseIngredients:
     'You are a helpful assistant that normalises grocery product names to their base ingredient concept. Always return valid JSON.',
+  normaliseIngredientSingle: `You are an expert chef and recipe analyst. Your job is to normalise ingredient names to canonical British English form for use in a shopping list deduplication system.
+
+Instructions:
+- Resolve synonyms to British English (scallion → spring onion, zucchini → courgette, cilantro → coriander, eggplant → aubergine)
+- Identify the base ingredient and any meaningful form qualifier (fresh, dried, tinned, frozen, ground, smoked, pickled, paste)
+- Ignore preference/quality markers that don't affect shopping (free range, organic, sea, baby)
+- Preserve variety qualifiers that affect the recipe (cherry tomato, new potato, button mushroom)
+- Return ONLY a JSON object, no preamble, no explanation
+
+Return this exact JSON structure:
+{
+  "canonical": "spring onion (fresh)",
+  "base": "spring onion",
+  "form": "fresh"
+}
+
+If there is no meaningful form qualifier, set "form" to null and omit the parenthetical from "canonical":
+{
+  "canonical": "butter",
+  "base": "butter",
+  "form": null
+}`,
   extractIngredients:
     'You are a helpful assistant that extracts recipe information from HTML. Return your response as JSON with "name", "ingredients", and "structuredIngredients" fields.',
 } as const

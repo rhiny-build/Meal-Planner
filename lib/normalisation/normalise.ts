@@ -10,13 +10,19 @@
  */
 
 import pluralize from 'pluralize'
-import { stripUnitsFromName } from './shoppingListHelpers'
+import { stripUnitsFromName } from '../shoppingListHelpers'
 
 export interface NormalisedResult {
   canonical: string // "garlic (fresh)", "tomato (tinned)", "chicken breast"
   base: string      // "garlic", "tomato", "chicken breast"
   form: string | null // "fresh", "tinned", null
+  confident: boolean // true when rules fired or input is a known staple
 }
+
+// Simple ingredients that are always confidently identified as-is.
+const ALWAYS_CONFIDENT = new Set([
+  'salt', 'pepper', 'butter', 'sugar', 'flour', 'egg', 'water', 'milk', 'cream',
+])
 
 // Maps keywords found in ingredient names to a canonical form label.
 // Order matters: first match wins when scanning tokens left-to-right.
@@ -72,7 +78,7 @@ const COMPOUND_EXCEPTIONS: Set<string> = new Set([
  */
 export function normaliseName(raw: string): NormalisedResult {
   if (!raw || !raw.trim()) {
-    return { canonical: '', base: '', form: null }
+    return { canonical: '', base: '', form: null, confident: false }
   }
 
   // 1. Lowercase
@@ -84,7 +90,7 @@ export function normaliseName(raw: string): NormalisedResult {
   // 3. Check if the full cleaned name (before singularisation) is a compound exception
   const singularCleaned = singularise(cleaned)
   if (COMPOUND_EXCEPTIONS.has(cleaned) || COMPOUND_EXCEPTIONS.has(singularCleaned)) {
-    return { canonical: singularCleaned, base: singularCleaned, form: null }
+    return { canonical: singularCleaned, base: singularCleaned, form: null, confident: true }
   }
 
   // 4. Extract form by scanning tokens
@@ -122,7 +128,13 @@ export function normaliseName(raw: string): NormalisedResult {
   // 7. Construct canonical name
   const canonical = detectedForm ? `${base} (${detectedForm})` : base
 
-  return { canonical, base, form: detectedForm }
+  // 8. Determine confidence — only true when a meaningful rule fired,
+  //    not just lowercasing or singularising.
+  const formExtracted = detectedForm !== null
+  const isKnownStaple = ALWAYS_CONFIDENT.has(singularise(cleaned))
+  const confident = formExtracted || isKnownStaple
+
+  return { canonical, base, form: detectedForm, confident }
 }
 
 /**

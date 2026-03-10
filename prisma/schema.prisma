@@ -164,6 +164,16 @@ model IngredientMapping {
   @@index([recipeName])
 }
 
+// NormalisationCache stores LLM normalisation results to avoid repeat calls
+model NormalisationCache {
+  id        String   @id @default(cuid())
+  input     String   @unique // raw ingredient string (lowercased)
+  canonical String            // e.g., "spring onion (fresh)"
+  base      String            // e.g., "spring onion"
+  form      String?           // e.g., "fresh"
+  createdAt DateTime @default(now())
+}
+
 // DishType model stores dynamic protein and carb types
 model DishType {
   id        String   @id @default(cuid())

@@ -1,18 +1,16 @@
 /**
- * Eval runner for the ingredient normalisation function.
+ * Eval runner for the ingredient normalisation pipeline.
  *
- * Runs a golden set of inputs through normaliseName and reports
+ * Runs a golden set of inputs through normaliseIngredient and reports
  * PASS / FAIL / INTERESTING results grouped by zone.
  *
  * Usage:
- *   npx tsx scripts/evalNormaliser.ts
+ *   npx tsx scripts/evalNormaliser.ts              # deterministic only
+ *   USE_LLM=true npx tsx scripts/evalNormaliser.ts # with LLM fallback
  */
 
-import { normaliseName } from '../lib/normalise'
-
-// ── Config ──────────────────────────────────────────────────────────────────
-
-const USE_LLM_JUDGE = false // future: wire up LLM to review INTERESTING cases
+import 'dotenv/config'
+import { normaliseIngredient } from '../lib/normalisation/normaliseWithFallback'
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -152,9 +150,11 @@ const goldenSet: TestCase[] = [
 
 // ── Runner ──────────────────────────────────────────────────────────────────
 
-function run(): TestResult[] {
-  return goldenSet.map((tc) => {
-    const { canonical: actualCanonical } = normaliseName(tc.input)
+async function run(): Promise<TestResult[]> {
+  const results: TestResult[] = []
+
+  for (const tc of goldenSet) {
+    const { canonical: actualCanonical } = await normaliseIngredient(tc.input)
     const pass = actualCanonical === tc.expectedCanonical
 
     let verdict: Verdict = pass ? 'PASS' : 'FAIL'
@@ -166,8 +166,10 @@ function run(): TestResult[] {
       verdict = 'INTERESTING'
     }
 
-    return { ...tc, actualCanonical, verdict }
-  })
+    results.push({ ...tc, actualCanonical, verdict })
+  }
+
+  return results
 }
 
 // ── Reporting ───────────────────────────────────────────────────────────────
@@ -177,6 +179,7 @@ function report(results: TestResult[]): void {
 
   console.log('\n══════════════════════════════════════════════')
   console.log('  Ingredient Normaliser — Eval Report')
+  console.log(`  mode: ${process.env.USE_LLM ? 'deterministic + LLM' : 'deterministic only'}`)
   console.log('══════════════════════════════════════════════\n')
 
   // Summary by zone
@@ -220,13 +223,8 @@ function report(results: TestResult[]): void {
   if (fails.length === 0 && interesting.length === 0) {
     console.log('\n  All tests passed!\n')
   }
-
-  if (USE_LLM_JUDGE) {
-    console.log('  (LLM judge: enabled — not yet implemented)\n')
-  }
 }
 
 // ── Main ────────────────────────────────────────────────────────────────────
 
-const results = run()
-report(results)
+run().then(report)
