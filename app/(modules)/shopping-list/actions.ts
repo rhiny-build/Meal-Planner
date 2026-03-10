@@ -352,6 +352,17 @@ export async function toggleItem(itemId: string, checked: boolean) {
 }
 
 /**
+ * Delete a shopping list item by id
+ */
+export async function deleteShoppingListItem(itemId: string) {
+  await prisma.shoppingListItem.delete({
+    where: { id: itemId },
+  })
+
+  revalidatePath('/shopping-list')
+}
+
+/**
  * Add a manual item to the shopping list
  */
 export async function addItem(shoppingListId: string, name: string) {

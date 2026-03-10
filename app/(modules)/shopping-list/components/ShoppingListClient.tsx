@@ -12,7 +12,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { getMonday } from '@/lib/dateUtils'
 import { formatShoppingListAsText } from '@/lib/shoppingListHelpers'
-import { toggleItem, addItem } from '../actions'
+import { toggleItem, addItem, deleteShoppingListItem, createIngredientMapping, addMasterListItem } from '../actions'
 import type { Recipe } from '@/types'
 import type { ShoppingList, ShoppingListItem, Category, MasterListItem } from '@prisma/client'
 import Button from '@/components/Button'
@@ -20,6 +20,7 @@ import ShoppingListHeader from './ShoppingListHeader'
 import ShoppingListItems from './ShoppingListItems'
 import AddItemForm from './AddItemForm'
 import MasterListTab from './MasterListTab'
+import DeleteItemModal from './DeleteItemModal'
 
 type ShoppingListWithItems = ShoppingList & { items: ShoppingListItem[] }
 type CategoryWithItems = Category & { items: MasterListItem[] }
@@ -44,6 +45,7 @@ export default function ShoppingListClient({
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
   const [showAddForm, setShowAddForm] = useState(false)
+  const [itemToDelete, setItemToDelete] = useState<ShoppingListItem | null>(null)
 
   // OPTIMISTIC UPDATES: Instead of reading items directly from server props
   // (initialList.items), we maintain a local "optimistic" copy via useOptimistic.
@@ -132,6 +134,22 @@ export default function ShoppingListClient({
     })
   }
 
+  const handleAddToMasterList = (name: string, type: 'staple' | 'restock', categoryId: string) => {
+    if (!initialList) return
+
+    startTransition(async () => {
+      try {
+        await addMasterListItem(categoryId, name, type)
+        await addItem(initialList.id, name)
+        setShowAddForm(false)
+        toast.success(`Added to shopping list and saved as ${type}!`)
+      } catch (error) {
+        console.error('Error adding item to master list:', error)
+        toast.error('Failed to add item')
+      }
+    })
+  }
+
   const handleExport = () => {
     if (!initialList || optimisticItems.length === 0) {
       toast.warning('No items to export')
@@ -151,6 +169,60 @@ export default function ShoppingListClient({
       document.execCommand('copy')
       document.body.removeChild(textarea)
       toast.success('Shopping list copied to clipboard!')
+    })
+  }
+
+  const handleDeleteClick = (item: ShoppingListItem) => {
+    setItemToDelete(item)
+  }
+
+  const handleMapToExisting = (masterItemId: string) => {
+    if (!itemToDelete) return
+    const name = itemToDelete.name
+    const id = itemToDelete.id
+    startTransition(async () => {
+      try {
+        await createIngredientMapping(name, masterItemId)
+        await deleteShoppingListItem(id)
+        setItemToDelete(null)
+        toast.success('Mapped and removed!')
+      } catch (error) {
+        console.error('Error mapping item:', error)
+        toast.error('Failed to map item')
+      }
+    })
+  }
+
+  const handleCreateAndMap = (name: string, type: 'staple' | 'restock', categoryId: string) => {
+    if (!itemToDelete) return
+    const recipeName = itemToDelete.name
+    const itemId = itemToDelete.id
+    startTransition(async () => {
+      try {
+        const newItem = await addMasterListItem(categoryId, name, type)
+        await createIngredientMapping(recipeName, newItem.id)
+        await deleteShoppingListItem(itemId)
+        setItemToDelete(null)
+        toast.success('Added to master list and mapped!')
+      } catch (error) {
+        console.error('Error creating and mapping item:', error)
+        toast.error('Failed to create item')
+      }
+    })
+  }
+
+  const handleJustDelete = () => {
+    if (!itemToDelete) return
+    const id = itemToDelete.id
+    startTransition(async () => {
+      try {
+        await deleteShoppingListItem(id)
+        setItemToDelete(null)
+        toast.success('Item removed')
+      } catch (error) {
+        console.error('Error deleting item:', error)
+        toast.error('Failed to delete item')
+      }
     })
   }
 
@@ -254,6 +326,7 @@ export default function ShoppingListClient({
                 items={mealItems}
                 recipes={recipes}
                 onToggle={handleToggle}
+                onDelete={handleDeleteClick}
               />
             )
           })()}
@@ -279,16 +352,71 @@ export default function ShoppingListClient({
             </div>
           ) : (
             <>
-              <ShoppingListItems
-                items={optimisticItems}
-                recipes={recipes}
-                onToggle={handleToggle}
-              />
+              {(() => {
+                const recipeItems = optimisticItems.filter(i => i.source === 'recipe')
+                const masterItems = optimisticItems.filter(i => i.source === 'staple' || i.source === 'restock')
+                const manualItems = optimisticItems.filter(i => i.source === 'manual')
+                return (
+                  <>
+                    {recipeItems.length > 0 && (
+                      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+                        <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
+                          <span className="text-lg">🍽</span>
+                          Meal Plan Ingredients
+                          <span className="text-xs font-normal bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">
+                            {recipeItems.length}
+                          </span>
+                        </h2>
+                        <ShoppingListItems
+                          items={recipeItems}
+                          recipes={recipes}
+                          onToggle={handleToggle}
+                          onDelete={handleDeleteClick}
+                        />
+                      </div>
+                    )}
+                    {masterItems.length > 0 && (
+                      <div className="mt-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+                        <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
+                          <span className="text-lg">📋</span>
+                          Master List Items
+                          <span className="text-xs font-normal bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">
+                            {masterItems.length}
+                          </span>
+                        </h2>
+                        <ShoppingListItems
+                          items={masterItems}
+                          recipes={recipes}
+                          onToggle={handleToggle}
+                        />
+                      </div>
+                    )}
+                    {manualItems.length > 0 && (
+                      <div className="mt-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+                        <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
+                          <span className="text-lg">✏️</span>
+                          Manual Items
+                          <span className="text-xs font-normal bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full">
+                            {manualItems.length}
+                          </span>
+                        </h2>
+                        <ShoppingListItems
+                          items={manualItems}
+                          recipes={recipes}
+                          onToggle={handleToggle}
+                        />
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
 
               {showAddForm ? (
                 <AddItemForm
                   onAdd={handleAddItem}
+                  onAddToMasterList={handleAddToMasterList}
                   onCancel={() => setShowAddForm(false)}
+                  categories={categories}
                 />
               ) : (
                 <Button
@@ -324,6 +452,18 @@ export default function ShoppingListClient({
           description="Household items to restock as needed. Check items you need this week."
           weekStart={currentWeekStart}
           includedItemNames={includedRestockNames}
+        />
+      )}
+
+      {itemToDelete && (
+        <DeleteItemModal
+          item={itemToDelete}
+          categories={categories}
+          onMapToExisting={handleMapToExisting}
+          onCreateAndMap={handleCreateAndMap}
+          onJustDelete={handleJustDelete}
+          onClose={() => setItemToDelete(null)}
+          isPending={isPending}
         />
       )}
     </div>
