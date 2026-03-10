@@ -76,14 +76,12 @@ import {
   toggleItem,
   addItem,
   ensureShoppingListExists,
-  syncMealIngredients,
   includeMasterListItem,
   excludeMasterListItem,
-  addMasterListItem,
-  updateMasterListItem,
-  deleteMasterListItem,
-  createIngredientMapping,
 } from './actions'
+import { syncMealIngredients } from './syncPipeline'
+import { addMasterListItem, updateMasterListItem, deleteMasterListItem } from './masterListActions'
+import { createIngredientMapping } from './ingredientMappingActions'
 import { prisma } from '@/lib/prisma'
 import { matchIngredientsAgainstMasterList } from '@/lib/ai/matchIngredients'
 import { normaliseIngredients } from '@/lib/ai/normaliseIngredients'

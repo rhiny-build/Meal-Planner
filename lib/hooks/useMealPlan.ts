@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { RecipeWithIngredients, WeekPlan } from '@/types'
 import { fetchMealPlan as fetchMealPlanService, fetchAllRecipes, saveMealPlan } from '@/lib/apiService'
-import { syncMealIngredients } from '@/app/(modules)/shopping-list/actions'
+import { syncMealIngredients } from '@/app/(modules)/shopping-list/syncPipeline'
 import { useDayNotes } from './useDayNotes'
 import { useAutoRefresh } from './useAutoRefresh'
 import {

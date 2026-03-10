@@ -14,7 +14,7 @@ import type { Category, MasterListItem } from '@prisma/client'
 import {
   updateMasterListItem,
   deleteMasterListItem,
-} from '@/app/(modules)/shopping-list/actions'
+} from '@/app/(modules)/shopping-list/masterListActions'
 import EditableListItem from './EditableListItem'
 import CategoryAccordion from './CategoryAccordion'
 import AddMasterListItemForm from './AddMasterListItemForm'

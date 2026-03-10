@@ -8,7 +8,7 @@
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import type { Category } from '@prisma/client'
-import { addMasterListItem } from '@/app/(modules)/shopping-list/actions'
+import { addMasterListItem } from '@/app/(modules)/shopping-list/masterListActions'
 import Button from '@/components/Button'
 
 interface AddMasterListItemFormProps {
