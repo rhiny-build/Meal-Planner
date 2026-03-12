@@ -77,6 +77,12 @@ export async function POST(request: NextRequest) {
       })
     )
 
+    // Mark existing shopping list as stale (meal plan changed after list was generated)
+    await prisma.shoppingList.updateMany({
+      where: { weekStart: startDate, stale: false },
+      data: { stale: true },
+    })
+
     return NextResponse.json({ mealPlans }, { status: 201 })
   } catch (error) {
     console.error('Error saving meal plan:', error)

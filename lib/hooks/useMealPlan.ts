@@ -8,7 +8,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { RecipeWithIngredients, WeekPlan } from '@/types'
 import { fetchMealPlan as fetchMealPlanService, fetchAllRecipes, saveMealPlan } from '@/lib/apiService'
-import { syncMealIngredients } from '@/app/(modules)/shopping-list/actions'
 import { useDayNotes } from './useDayNotes'
 import { useAutoRefresh } from './useAutoRefresh'
 import {
@@ -65,7 +64,6 @@ export function useMealPlan(startDate: Date) {
       if (savedPlan.length > 0) {
         setWeekPlan(savedPlan)
       }
-      await syncMealIngredients(startDate)
     } catch (error) {
       console.error('Error saving:', error)
     } finally {
