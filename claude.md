@@ -145,7 +145,8 @@ Review up to date architecure.md for reference
 
 ### File Size Guidelines
 
-- **Component files**: Max 150 lines (ideally 100-120)
+- **Orchestrator components**: Max 200 lines — components that compose child components and wire state/handlers (e.g., page-level clients, tab containers)
+- **Leaf components**: Max 150 lines (ideally 100-120) — components that render UI directly
 - **API routes**: Max 50 lines per handler
 - **Business logic**: Max 200 lines (with clear sections)
 - **Hooks**: 50-80 lines
