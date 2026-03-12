@@ -43,6 +43,7 @@ vi.mock('@/lib/prisma', () => ({
     shoppingList: {
       findUnique: vi.fn(),
       create: vi.fn(),
+      update: vi.fn(),
     },
     shoppingListItem: {
       update: vi.fn(),
@@ -66,6 +67,9 @@ vi.mock('@/lib/prisma', () => ({
       findMany: vi.fn(),
       update: vi.fn(),
       upsert: vi.fn(),
+    },
+    rejectedSuggestion: {
+      findMany: vi.fn(),
     },
   },
 }))
@@ -98,6 +102,7 @@ const mockPrisma = prisma as unknown as {
   shoppingList: {
     findUnique: ReturnType<typeof vi.fn>
     create: ReturnType<typeof vi.fn>
+    update: ReturnType<typeof vi.fn>
   }
   shoppingListItem: {
     update: ReturnType<typeof vi.fn>
@@ -120,6 +125,10 @@ const mockPrisma = prisma as unknown as {
   ingredientMapping: {
     findMany: ReturnType<typeof vi.fn>
     update: ReturnType<typeof vi.fn>
+    upsert: ReturnType<typeof vi.fn>
+  }
+  rejectedSuggestion: {
+    findMany: ReturnType<typeof vi.fn>
   }
 }
 
@@ -130,6 +139,11 @@ describe('Shopping List Server Actions', () => {
     mockPrisma.masterListItem.findMany.mockResolvedValue([])
     mockPrisma.ingredientMapping.findMany.mockResolvedValue([])
     mockPrisma.ingredientMapping.update.mockResolvedValue({})
+    mockPrisma.ingredientMapping.upsert.mockResolvedValue({})
+    // Default: no rejected suggestions
+    mockPrisma.rejectedSuggestion.findMany.mockResolvedValue([])
+    // Default: stale reset succeeds
+    mockPrisma.shoppingList.update.mockResolvedValue({})
     // Default: return distinct fake embedding vectors per input
     mockComputeEmbeddings.mockImplementation(async (texts: string[]) =>
       texts.map((_, i) => {
@@ -355,7 +369,7 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
       mockPrisma.shoppingListItem.createMany.mockResolvedValue({ count: 3 })
 
-      await syncMealIngredients(weekStart)
+      const result = await syncMealIngredients(weekStart)
 
       // Should delete old recipe items
       expect(mockPrisma.shoppingListItem.deleteMany).toHaveBeenCalledWith({
@@ -369,6 +383,13 @@ describe('Shopping List Server Actions', () => {
           expect.objectContaining({ name: 'soy sauce', source: 'recipe', canonicalName: 'soy sauce', matchConfidence: 'unmatched' }),
         ]),
       })
+      // Should return listId and empty suggestions
+      expect(result).toEqual({ listId: 'list-1', suggestions: [] })
+      // Should reset stale flag
+      expect(mockPrisma.shoppingList.update).toHaveBeenCalledWith({
+        where: { id: 'list-1' },
+        data: { stale: false },
+      })
     })
 
     it('should not call createMany when there are no meal ingredients', async () => {
@@ -378,10 +399,11 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.mealPlan.findMany.mockResolvedValue([])
       mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
 
-      await syncMealIngredients(new Date('2026-02-03'))
+      const result = await syncMealIngredients(new Date('2026-02-03'))
 
       expect(mockPrisma.shoppingListItem.deleteMany).toHaveBeenCalled()
       expect(mockPrisma.shoppingListItem.createMany).not.toHaveBeenCalled()
+      expect(result).toBeUndefined()
     })
 
     it('should create list with staples if none exists', async () => {
@@ -399,7 +421,7 @@ describe('Shopping List Server Actions', () => {
       expect(mockPrisma.shoppingList.create).toHaveBeenCalled()
     })
 
-    it('should filter out ingredients matching master list via embedding matching', async () => {
+    it('should auto-match high-confidence embeddings and write mappings', async () => {
       const weekStart = new Date('2026-02-03')
       const mockList = { id: 'list-1', weekStart, items: [] }
       const mockMealPlans = [
@@ -425,25 +447,132 @@ describe('Shopping List Server Actions', () => {
 
       // Master list has salt and soy sauce with canonicalName + embeddings
       mockPrisma.masterListItem.findMany.mockResolvedValue([
-        { id: 'm1', canonicalName: 'salt', embedding: [0.1, 0.2], type: 'restock' },
-        { id: 'm2', canonicalName: 'soy sauce', embedding: [0.3, 0.4], type: 'restock' },
+        { id: 'm1', name: 'Salt', canonicalName: 'salt', embedding: [0.1, 0.2], type: 'restock' },
+        { id: 'm2', name: 'Soy Sauce', canonicalName: 'soy sauce', embedding: [0.3, 0.4], type: 'restock' },
       ])
 
-      // Embedding matching: soy sauce and salt matched, not chicken
+      // Score ≥ 0.90: auto-match. Score < 0.50: unmatched. Score 0.50–0.89: suggestion.
       mockMatchIngredients.mockResolvedValue([
         { index: 0, name: 'chicken breast', canonicalName: 'chicken breast', matchedMasterItem: null, masterItemId: null, bestScore: 0.3, bestCandidate: 'salt' },
         { index: 1, name: 'soy sauce', canonicalName: 'soy sauce', matchedMasterItem: 'soy sauce', masterItemId: 'm2', bestScore: 0.95, bestCandidate: 'soy sauce' },
         { index: 2, name: 'salt', canonicalName: 'salt', matchedMasterItem: 'salt', masterItemId: 'm1', bestScore: 0.99, bestCandidate: 'salt' },
       ])
 
-      await syncMealIngredients(weekStart)
+      const result = await syncMealIngredients(weekStart)
 
-      // Only chicken breast should remain (soy sauce and salt matched)
+      // Only chicken breast should remain (soy sauce and salt auto-matched at ≥0.90)
       expect(mockPrisma.shoppingListItem.createMany).toHaveBeenCalledWith({
         data: [
           expect.objectContaining({ name: 'chicken breast', source: 'recipe', matchConfidence: 'unmatched' }),
         ],
       })
+
+      // Auto-matched items should write mappings
+      expect(mockPrisma.ingredientMapping.upsert).toHaveBeenCalledTimes(2)
+
+      // Should return empty suggestions (all were above auto threshold)
+      expect(result.suggestions).toEqual([])
+    })
+
+    it('should surface medium-confidence matches as pending suggestions', async () => {
+      const weekStart = new Date('2026-02-03')
+      const mockList = { id: 'list-1', weekStart, items: [] }
+      const mockMealPlans = [
+        {
+          lunchRecipe: null,
+          proteinRecipe: {
+            name: 'Simple Recipe',
+            structuredIngredients: [
+              { name: 'garlic' },
+              { name: 'olive oil' },
+            ],
+          },
+          carbRecipe: null,
+          vegetableRecipe: null,
+        },
+      ]
+
+      mockPrisma.shoppingList.findUnique.mockResolvedValue(mockList)
+      mockPrisma.mealPlan.findMany.mockResolvedValue(mockMealPlans)
+      mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
+      mockPrisma.shoppingListItem.createMany.mockResolvedValue({ count: 2 })
+
+      mockPrisma.masterListItem.findMany.mockResolvedValue([
+        { id: 'm1', name: 'Garlic Granules', canonicalName: 'garlic (granules)', embedding: [0.1, 0.2], type: 'restock' },
+        { id: 'm2', name: 'Olive Oil', canonicalName: 'olive oil', embedding: [0.3, 0.4], type: 'restock' },
+      ])
+
+      // garlic: 0.74 (suggestion band), olive oil: 0.92 (auto-match)
+      mockMatchIngredients.mockResolvedValue([
+        { index: 0, name: 'garlic', canonicalName: 'garlic', matchedMasterItem: 'garlic (granules)', masterItemId: 'm1', bestScore: 0.74, bestCandidate: 'garlic (granules)' },
+        { index: 1, name: 'olive oil', canonicalName: 'olive oil', matchedMasterItem: 'olive oil', masterItemId: 'm2', bestScore: 0.92, bestCandidate: 'olive oil' },
+      ])
+
+      const result = await syncMealIngredients(weekStart)
+
+      // garlic should be written as pending with its score
+      expect(mockPrisma.shoppingListItem.createMany).toHaveBeenCalledWith({
+        data: [
+          expect.objectContaining({ name: 'garlic', matchConfidence: 'pending', masterItemId: 'm1', similarityScore: 0.74 }),
+        ],
+      })
+
+      // olive oil auto-matched — mapping written
+      expect(mockPrisma.ingredientMapping.upsert).toHaveBeenCalledTimes(1)
+
+      // Should return garlic as a suggestion
+      expect(result.suggestions).toEqual([
+        expect.objectContaining({
+          ingredientName: 'garlic',
+          suggestedMasterItemId: 'm1',
+          score: 0.74,
+        }),
+      ])
+    })
+
+    it('should filter out previously rejected suggestions', async () => {
+      const weekStart = new Date('2026-02-03')
+      const mockList = { id: 'list-1', weekStart, items: [] }
+      const mockMealPlans = [
+        {
+          lunchRecipe: null,
+          proteinRecipe: {
+            name: 'Recipe',
+            structuredIngredients: [{ name: 'garlic' }],
+          },
+          carbRecipe: null,
+          vegetableRecipe: null,
+        },
+      ]
+
+      mockPrisma.shoppingList.findUnique.mockResolvedValue(mockList)
+      mockPrisma.mealPlan.findMany.mockResolvedValue(mockMealPlans)
+      mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
+      mockPrisma.shoppingListItem.createMany.mockResolvedValue({ count: 1 })
+
+      mockPrisma.masterListItem.findMany.mockResolvedValue([
+        { id: 'm1', name: 'Garlic Granules', canonicalName: 'garlic (granules)', embedding: [0.1, 0.2], type: 'restock' },
+      ])
+
+      // garlic matches at 0.74 (suggestion band)
+      mockMatchIngredients.mockResolvedValue([
+        { index: 0, name: 'garlic', canonicalName: 'garlic', matchedMasterItem: 'garlic (granules)', masterItemId: 'm1', bestScore: 0.74, bestCandidate: 'garlic (granules)' },
+      ])
+
+      // But this pair was previously rejected
+      mockPrisma.rejectedSuggestion.findMany.mockResolvedValue([
+        { canonicalName: 'garlic', masterItemId: 'm1' },
+      ])
+
+      const result = await syncMealIngredients(weekStart)
+
+      // garlic should be written as unmatched (not pending), no suggestion returned
+      expect(mockPrisma.shoppingListItem.createMany).toHaveBeenCalledWith({
+        data: [
+          expect.objectContaining({ name: 'garlic', matchConfidence: 'unmatched' }),
+        ],
+      })
+      expect(result.suggestions).toEqual([])
     })
 
     it('should include all items when embedding matching fails', async () => {
