@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getMonday } from '@/lib/dateUtils'
 
 /**
  * PATCH /api/meal-plan/update
@@ -55,6 +56,13 @@ export async function PATCH(request: NextRequest) {
         carbRecipe: true,
         vegetableRecipe: true,
       },
+    })
+
+    // Mark existing shopping list as stale (meal plan changed after list was generated)
+    const weekStart = getMonday(existing.date)
+    await prisma.shoppingList.updateMany({
+      where: { weekStart, stale: false },
+      data: { stale: true },
     })
 
     return NextResponse.json(updated)

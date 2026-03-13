@@ -12,15 +12,19 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { getMonday } from '@/lib/dateUtils'
 import { formatShoppingListAsText } from '@/lib/shoppingListHelpers'
-import { toggleItem, addItem, deleteShoppingListItem, createIngredientMapping, addMasterListItem } from '../actions'
+import { toggleItem, addItem, deleteShoppingListItem, syncMealIngredients, createIngredientMapping, addMasterListItem } from '../actions'
+import type { EmbeddingSuggestion } from '../actions'
 import type { Recipe } from '@/types'
 import type { ShoppingList, ShoppingListItem, Category, MasterListItem } from '@prisma/client'
+import type { PendingSuggestion } from './SuggestionRow'
 import Button from '@/components/Button'
 import ShoppingListHeader from './ShoppingListHeader'
 import ShoppingListItems from './ShoppingListItems'
 import AddItemForm from './AddItemForm'
 import MasterListTab from './MasterListTab'
 import DeleteItemModal from './DeleteItemModal'
+import EmbeddingReviewModal from './EmbeddingReviewModal'
+import StaleBanner from './StaleBanner'
 
 type ShoppingListWithItems = ShoppingList & { items: ShoppingListItem[] }
 type CategoryWithItems = Category & { items: MasterListItem[] }
@@ -46,6 +50,8 @@ export default function ShoppingListClient({
   const [isPending, startTransition] = useTransition()
   const [showAddForm, setShowAddForm] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<ShoppingListItem | null>(null)
+  const [pendingSuggestions, setPendingSuggestions] = useState<PendingSuggestion[] | null>(null)
+  const [isGenerating, setIsGenerating] = useState(false)
 
   // OPTIMISTIC UPDATES: Instead of reading items directly from server props
   // (initialList.items), we maintain a local "optimistic" copy via useOptimistic.
@@ -226,6 +232,80 @@ export default function ShoppingListClient({
     })
   }
 
+  const handleGenerateList = async () => {
+    setIsGenerating(true)
+    try {
+      const result = await syncMealIngredients(currentWeekStart)
+      if (result?.suggestions && result.suggestions.length > 0) {
+        // Map EmbeddingSuggestion to PendingSuggestion (need shoppingListItemId)
+        // After sync, pending items are written to DB — find them by matching
+        // For now, we need to re-fetch the list to get the item IDs
+        router.refresh()
+        // Small delay to let the server component re-render with new data
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        // Re-fetch to get the pending item IDs
+        const suggestions = await buildPendingSuggestions(result.suggestions)
+        if (suggestions.length > 0) {
+          setPendingSuggestions(suggestions)
+        } else {
+          toast.success('Shopping list generated!')
+        }
+      } else {
+        toast.success('Shopping list generated!')
+        router.refresh()
+      }
+    } catch (error) {
+      console.error('Error generating shopping list:', error)
+      toast.error('Failed to generate shopping list')
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const handleReviewComplete = () => {
+    setPendingSuggestions(null)
+    router.refresh()
+    toast.success('Shopping list ready!')
+  }
+
+  // Build PendingSuggestion[] from pipeline output by fetching pending items from the page data
+  // We match by canonicalName since that's the stable key between pipeline output and DB items
+  async function buildPendingSuggestions(
+    suggestions: EmbeddingSuggestion[]
+  ): Promise<PendingSuggestion[]> {
+    // After sync + router.refresh(), initialList should have the new pending items.
+    // But since state may not have updated yet, we fetch directly.
+    const { getShoppingList } = await import('../actions')
+    const freshList = await getShoppingList(currentWeekStart)
+    if (!freshList) return []
+
+    const pendingItems = freshList.items.filter((i) => i.matchConfidence === 'pending')
+
+    const usedIds = new Set<string>()
+    return suggestions
+      .map((s) => {
+        const dbItem = pendingItems.find(
+          (i) =>
+            !usedIds.has(i.id) &&
+            (i.canonicalName === s.canonicalName || i.name === s.ingredientName)
+        )
+        if (!dbItem) return null
+        usedIds.add(dbItem.id)
+        return {
+          shoppingListItemId: dbItem.id,
+          ingredientName: s.ingredientName,
+          canonicalName: s.canonicalName,
+          suggestedMasterItemId: s.suggestedMasterItemId,
+          suggestedMasterItemName: s.suggestedMasterItemName,
+          score: s.score,
+        }
+      })
+      .filter((s): s is PendingSuggestion => s !== null)
+  }
+
+  // Flat list of all master items for the review modal's reassign dropdown
+  const allMasterItems = categories.flatMap((c) => c.items)
+
   // Filter categories by item type for staples/restock tabs
   const staplesCategories = categories
     .map(cat => ({
@@ -310,6 +390,10 @@ export default function ShoppingListClient({
             onNextWeek={goToNextWeek}
           />
 
+          {initialList.stale && (
+            <StaleBanner onRegenerate={handleGenerateList} isPending={isGenerating} />
+          )}
+
           {(() => {
             const mealItems = optimisticItems.filter(item => item.source === 'recipe')
             if (mealItems.length === 0) {
@@ -330,6 +414,14 @@ export default function ShoppingListClient({
               />
             )
           })()}
+
+          <Button
+            onClick={handleGenerateList}
+            disabled={isGenerating || isPending}
+            className="mt-4"
+          >
+            {isGenerating ? 'Generating...' : 'Generate Shopping List'}
+          </Button>
         </>
       )}
 
@@ -343,6 +435,10 @@ export default function ShoppingListClient({
             onExport={handleExport}
             hasItems={optimisticItems.length > 0}
           />
+
+          {initialList.stale && (
+            <StaleBanner onRegenerate={handleGenerateList} isPending={isGenerating} />
+          )}
 
           {optimisticItems.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -411,23 +507,32 @@ export default function ShoppingListClient({
                 )
               })()}
 
-              {showAddForm ? (
-                <AddItemForm
-                  onAdd={handleAddItem}
-                  onAddToMasterList={handleAddToMasterList}
-                  onCancel={() => setShowAddForm(false)}
-                  categories={categories}
-                />
-              ) : (
-                <Button
-                  variant="secondary"
-                  onClick={() => setShowAddForm(true)}
-                  className="mt-4"
-                  disabled={isPending}
-                >
-                  + Add Item
-                </Button>
-              )}
+              <div className="mt-4 flex gap-2">
+                {showAddForm ? (
+                  <AddItemForm
+                    onAdd={handleAddItem}
+                    onAddToMasterList={handleAddToMasterList}
+                    onCancel={() => setShowAddForm(false)}
+                    categories={categories}
+                  />
+                ) : (
+                  <>
+                    <Button
+                      variant="secondary"
+                      onClick={() => setShowAddForm(true)}
+                      disabled={isPending}
+                    >
+                      + Add Item
+                    </Button>
+                    <Button
+                      onClick={handleGenerateList}
+                      disabled={isGenerating || isPending}
+                    >
+                      {isGenerating ? 'Generating...' : 'Generate Shopping List'}
+                    </Button>
+                  </>
+                )}
+              </div>
             </>
           )}
         </>
@@ -464,6 +569,14 @@ export default function ShoppingListClient({
           onJustDelete={handleJustDelete}
           onClose={() => setItemToDelete(null)}
           isPending={isPending}
+        />
+      )}
+
+      {pendingSuggestions && pendingSuggestions.length > 0 && (
+        <EmbeddingReviewModal
+          suggestions={pendingSuggestions}
+          masterItems={allMasterItems}
+          onComplete={handleReviewComplete}
         />
       )}
     </div>

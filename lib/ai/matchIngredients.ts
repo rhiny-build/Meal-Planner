@@ -18,6 +18,7 @@ export type MatchInput = {
   recipeIngredients: string[]
   masterItems: MasterItemWithEmbedding[]
   precomputedEmbeddings?: number[][] // skip embedding API call if provided
+  threshold?: number // override default similarity threshold
 }
 
 export type MatchResultItem = {
@@ -58,6 +59,7 @@ export async function matchIngredientsAgainstMasterList(
       name: item.canonicalName,
       embedding: item.embedding,
     })),
+    input.threshold,
   )
 
   return input.recipeIngredients.map((name, index) => ({

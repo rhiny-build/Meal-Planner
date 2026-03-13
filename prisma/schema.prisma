@@ -79,6 +79,7 @@ model MealPlan {
 model ShoppingList {
   id        String   @id @default(cuid())
   weekStart DateTime // The Monday of the week this list is for
+  stale     Boolean  @default(false) // True when meal plan changed after list was generated
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -103,7 +104,8 @@ model ShoppingListItem {
   order           Int      // Display order
   canonicalName   String?  // Normalised name with form e.g. "garlic (fresh)", "tomatoes (tinned)"
   masterItemId    String?  // FK → MasterListItem (nullable, set null on delete)
-  matchConfidence String?  // "explicit" | "embedding" | "unmatched"
+  matchConfidence  String?  // "explicit" | "embedding" | "unmatched" | "pending"
+  similarityScore  Float?   // Cosine similarity score from embedding match (for display in review UI)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -141,9 +143,10 @@ model MasterListItem {
   updatedAt      DateTime @updatedAt
 
   // Relationships
-  category        Category            @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  mappings        IngredientMapping[]
-  shoppingListItems ShoppingListItem[]
+  category            Category              @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  mappings            IngredientMapping[]
+  shoppingListItems   ShoppingListItem[]
+  rejectedSuggestions RejectedSuggestion[]
 
   @@index([categoryId])
   @@index([type])
@@ -162,6 +165,20 @@ model IngredientMapping {
 
   @@unique([recipeName, masterItemId])
   @@index([recipeName])
+}
+
+// RejectedSuggestion stores user rejections of embedding suggestions
+// so the same suggestion is not surfaced again in future syncs
+model RejectedSuggestion {
+  id            String   @id @default(cuid())
+  canonicalName String   // Normalised ingredient name (e.g. "garlic (fresh)")
+  masterItemId  String   // The master item that was wrongly suggested
+  createdAt     DateTime @default(now())
+
+  masterItem MasterListItem @relation(fields: [masterItemId], references: [id], onDelete: Cascade)
+
+  @@unique([canonicalName, masterItemId])
+  @@index([canonicalName])
 }
 
 // NormalisationCache stores LLM normalisation results to avoid repeat calls
