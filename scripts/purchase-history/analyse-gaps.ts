@@ -1,20 +1,63 @@
 import { PrismaClient } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
-import { normaliseName } from '../../lib/normalisation/normalise';
+import pluralize from 'pluralize';
 
 const prisma = new PrismaClient();
 
 const MIN_APPEARANCES = 4;
 
-// ── Supermarket-specific pre-processing ────────────────────────────
-// Strips brand prefixes, sub-brands, weights, pack counts, and other
-// supermarket receipt noise before passing to the generic normaliser.
+// ── Supermarket-specific stripping ─────────────────────────────────
+// Reduces a supermarket product name to its base ingredient equivalent.
+// e.g. "Sainsbury's British Free Range Eggs Large x12" → "eggs"
+//
+// Does NOT use the recipe normaliser — that was built for a different
+// input language. This function handles brand/retail patterns instead.
 
-const BRAND_PREFIXES = [
+const BRANDS = [
   "sainsbury's",
   'by sainsbury',
-  'hubbard',
+  'kingsmill',
+  'warburtons',
+  'müller',
+  'muller',
+  'alpro',
+  'jordans',
+  'graze',
+  'oatly',
+  'pepsi',
+  'mccain',
+  'heinz',
+  'nutella',
+  'lurpak',
+  'colgate',
+  'carex',
+  'nurofen',
+  'soreen',
+  'sabra',
+  'sharwood\'s',
+  'sharwoods',
+  'old el paso',
+  'go ahead',
+  'fibre one',
+  'fruit bowl',
+  'mini babybel',
+  'fitzgeralds',
+  'fitzgerald\'s',
+  'fitzgeralds family bakery',
+  'green giant',
+  'rowse',
+  'amoy',
+  'mazola',
+  'najma',
+  'stamford street co.',
+  'stamford street co',
+  'bassetts',
+  "eat natural",
+  "kellogg's",
+  "kelloggs",
+  'ritz',
+  'up ',
 ];
 
 const SUB_BRANDS = [
@@ -26,79 +69,89 @@ const SUB_BRANDS = [
   'love your veg',
 ];
 
-function stripSupermarketNoise(raw: string): string {
-  let s = raw;
+// Descriptors that don't contribute to the base ingredient identity.
+// These are adjectives/qualifiers that describe provenance, quality, or format.
+const DESCRIPTOR_WORDS = new Set([
+  // Provenance / quality
+  'british', 'scottish', 'italian', 'mexican', 'german', 'fairtrade', 'fair', 'trade',
+  'asc', 'free', 'range',
+  // Fat / diet descriptors
+  'fat', 'light', 'lighter', 'low', 'no', 'zero', 'sugar', 'sugars',
+  // Size / format
+  'large', 'small', 'medium', 'mini', 'classic', 'original', 'extra',
+  'whole', 'round', 'loose',
+  // Processing descriptors (that don't change identity)
+  'sliced', 'slices', 'grated', 'spreadable', 'pre-sliced',
+  'rashers', 'fillets', 'fillet',
+  'bunch', 'bunched',
+  // Marketing fluff
+  'pure', 'super', 'tasty', 'soft', 'sizzling', 'mild',
+  'deli', 'style',
+  // Freshness (handled separately from the base)
+  'fresh', 'frozen',
+  // Pack descriptors
+  'rolls', 'roll', 'bars', 'bar', 'pots', 'pot',
+  'bottle', 'bottles', 'pack', 'packs', 'multipack',
+  // Other noise
+  '2%', '5%', '50/50',
+]);
 
-  // Strip brand prefixes
-  for (const brand of BRAND_PREFIXES) {
-    const re = new RegExp(`^${brand}\\s+`, 'i');
-    s = s.replace(re, '');
-  }
+function stripToBaseIngredient(rawName: string): string {
+  let s = rawName.toLowerCase().trim();
 
-  // Strip sub-brand labels
+  // Strip sub-brands first (before brand prefix removal, since some contain brand)
   for (const sub of SUB_BRANDS) {
-    const re = new RegExp(`,?\\s*${sub}`, 'gi');
-    s = s.replace(re, '');
+    s = s.replace(new RegExp(`,?\\s*${sub}`, 'gi'), '');
   }
 
-  // Strip weight/volume suffixes: "250g", "1.5kg", "2L", "500ml", "2.27L"
-  s = s.replace(/\b\d+(\.\d+)?\s*(g|kg|ml|l|litre|litres)\b/gi, '');
+  // Strip brand prefixes — try longest first to avoid partial matches
+  const sortedBrands = [...BRANDS].sort((a, b) => b.length - a.length);
+  for (const brand of sortedBrands) {
+    const re = new RegExp(`^${brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*`, 'i');
+    if (re.test(s)) {
+      s = s.replace(re, '');
+      break;
+    }
+  }
 
-  // Strip pack counts: "x6", "x12", "x17"
+  // Strip weight/volume: "250g", "1.5kg", "2L", "500ml", "2.27L", "1L"
+  s = s.replace(/\b\d+(\.\d+)?\s*(g|kg|ml|l|litres?)\b/gi, '');
+
+  // Strip pack counts: "x6", "x12", "x17", "4x198g", "4x35.5g", "5x16g"
+  s = s.replace(/\b\d+x\d+(\.\d+)?[a-z]*\*?\b/gi, '');
   s = s.replace(/\bx\d+\b/gi, '');
 
-  // Strip standalone numbers left behind (e.g. from "4x198g (4x165g*)")
-  s = s.replace(/\(\d+[x×]\d+[a-z]*\*?\)/gi, '');
+  // Strip parenthetical notes: "(4 pint)", "(150g*)", "(4x165g*)"
+  s = s.replace(/\([^)]*\)/g, '');
 
-  // Strip trailing parenthetical size notes like "(4 pint)"
-  s = s.replace(/\(\d+\s*pint\)/gi, '');
-
-  // Strip calorie counts like "90 Calorie"
+  // Strip calorie counts: "90 Calorie"
   s = s.replace(/\b\d+\s*calorie\b/gi, '');
 
-  // Clean up: collapse whitespace, strip trailing commas/dashes/spaces
-  s = s.replace(/\s+/g, ' ').replace(/[,\-\s]+$/, '').trim();
+  // Strip dosage patterns: "200mg", "1000mg", "25μg"
+  s = s.replace(/\b\d+\s*(mg|μg|iu)\b/gi, '');
 
-  return s;
-}
+  // Strip standalone numbers and leftover percent/slash symbols
+  s = s.replace(/\b\d+\b/g, '');
+  s = s.replace(/[%/]+/g, ' ');
 
-// ── Matching logic ─────────────────────────────────────────────────
+  // Strip descriptor words
+  const tokens = s.split(/\s+/).filter(Boolean);
+  const filtered = tokens.filter((t) => !DESCRIPTOR_WORDS.has(t.replace(/[,\-]/g, '')));
 
-interface MasterItem {
-  id: string;
-  canonicalName: string;
-}
+  // If we stripped everything, fall back to all tokens
+  const result = filtered.length > 0 ? filtered : tokens;
 
-interface MatchResult {
-  rawName: string;
-  appearances: number;
-  normalisedName: string;
-  matchedItem: MasterItem | null;
-  ambiguous: boolean;
-}
+  // Clean up: collapse whitespace, strip leading/trailing punctuation
+  let out = result.join(' ').replace(/[,\-]+$/, '').replace(/^[,\-]+/, '').trim();
 
-function findContainsMatch(
-  normalised: string,
-  masterItems: MasterItem[]
-): { item: MasterItem; ambiguous: boolean } | null {
-  const lower = normalised.toLowerCase();
+  // Singularise the last word
+  const words = out.split(/\s+/);
+  if (words.length > 0) {
+    words[words.length - 1] = pluralize.singular(words[words.length - 1]);
+    out = words.join(' ');
+  }
 
-  const matches = masterItems.filter((mi) => {
-    const canon = mi.canonicalName.toLowerCase();
-    return lower.includes(canon) || canon.includes(lower);
-  });
-
-  if (matches.length === 0) return null;
-  if (matches.length === 1) return { item: matches[0], ambiguous: false };
-
-  // Multiple matches — pick the one whose canonicalName is closest in length
-  // (i.e. most specific match)
-  const sorted = matches.sort(
-    (a, b) =>
-      Math.abs(a.canonicalName.length - lower.length) -
-      Math.abs(b.canonicalName.length - lower.length)
-  );
-  return { item: sorted[0], ambiguous: true };
+  return out;
 }
 
 // ── Main ───────────────────────────────────────────────────────────
@@ -123,40 +176,55 @@ async function analyseGaps() {
     itemDates.get(r.rawName)!.add(dateKey);
   }
 
-  // Filter to high-frequency items
   const highFreq = Array.from(itemDates.entries())
     .map(([name, dates]) => ({ name, appearances: dates.size }))
     .filter((item) => item.appearances >= MIN_APPEARANCES)
     .sort((a, b) => b.appearances - a.appearances || a.name.localeCompare(b.name));
 
-  // Step 2 & 3: Normalise and match
+  // Step 2: Load MasterListItems, index by baseIngredient
   const masterItems = await prisma.masterListItem.findMany({
-    select: { id: true, canonicalName: true },
-    where: { canonicalName: { not: null } },
+    select: { id: true, baseIngredient: true },
+    where: { baseIngredient: { not: null } },
   });
 
-  const validMasterItems: MasterItem[] = masterItems
-    .filter((mi): mi is { id: string; canonicalName: string } => mi.canonicalName !== null);
+  const baseIndex = new Map<string, string>(); // baseIngredient (lower) → baseIngredient (original)
+  for (const mi of masterItems) {
+    if (mi.baseIngredient) {
+      baseIndex.set(mi.baseIngredient.toLowerCase().trim(), mi.baseIngredient);
+    }
+  }
 
-  const results: MatchResult[] = highFreq.map((item) => {
-    const stripped = stripSupermarketNoise(item.name);
-    const normalised = normaliseName(stripped);
-    const normalisedName = normalised.canonical || stripped.toLowerCase();
+  // Step 3: Strip and exact-match
+  interface Result {
+    rawName: string;
+    appearances: number;
+    strippedTo: string;
+    matchedBase: string | null;
+  }
 
-    const match = findContainsMatch(normalisedName, validMasterItems);
+  const results: Result[] = highFreq.map((item) => {
+    const stripped = stripToBaseIngredient(item.name);
+
+    // Try exact match, then plural, then singular
+    const pluralForm = pluralize.plural(stripped);
+    const singularForm = pluralize.singular(stripped);
+    const matchedBase =
+      baseIndex.get(stripped) ??
+      baseIndex.get(pluralForm) ??
+      baseIndex.get(singularForm) ??
+      null;
 
     return {
       rawName: item.name,
       appearances: item.appearances,
-      normalisedName,
-      matchedItem: match?.item ?? null,
-      ambiguous: match?.ambiguous ?? false,
+      strippedTo: stripped,
+      matchedBase,
     };
   });
 
   // Step 4: Bucket
-  const matched = results.filter((r) => r.matchedItem);
-  const unmatched = results.filter((r) => !r.matchedItem);
+  const matched = results.filter((r) => r.matchedBase);
+  const unmatched = results.filter((r) => !r.matchedBase);
 
   // Step 5: Format report
   const lines: string[] = [];
@@ -175,15 +243,14 @@ async function analyseGaps() {
   lines.push('MATCHED ITEMS');
   lines.push('=============');
   lines.push(
-    'Appearances | Item                                                                    | Normalised                        | Matched to'
+    'Appearances | Raw name                                                                | Stripped to                   | Matched to'
   );
   lines.push(
-    '----------- | ----------------------------------------------------------------------- | --------------------------------- | ----------'
+    '----------- | ----------------------------------------------------------------------- | ----------------------------- | ----------'
   );
   for (const r of matched) {
-    const ambigFlag = r.ambiguous ? ' [ambiguous]' : '';
     lines.push(
-      `${String(r.appearances).padStart(11)} | ${r.rawName.padEnd(71)} | ${r.normalisedName.padEnd(33)} | ${r.matchedItem!.canonicalName}${ambigFlag}`
+      `${String(r.appearances).padStart(11)} | ${r.rawName.padEnd(71)} | ${r.strippedTo.padEnd(29)} | ${r.matchedBase}`
     );
   }
   lines.push('');
@@ -191,14 +258,14 @@ async function analyseGaps() {
   lines.push('UNMATCHED ITEMS (gaps)');
   lines.push('======================');
   lines.push(
-    'Appearances | Item                                                                    | Normalised'
+    'Appearances | Raw name                                                                | Stripped to'
   );
   lines.push(
     '----------- | ----------------------------------------------------------------------- | ----------'
   );
   for (const r of unmatched) {
     lines.push(
-      `${String(r.appearances).padStart(11)} | ${r.rawName.padEnd(71)} | ${r.normalisedName}`
+      `${String(r.appearances).padStart(11)} | ${r.rawName.padEnd(71)} | ${r.strippedTo}`
     );
   }
 
@@ -212,7 +279,7 @@ async function analyseGaps() {
   if (!fs.existsSync(logsDir)) {
     fs.mkdirSync(logsDir, { recursive: true });
   }
-  const outPath = path.join(logsDir, 'purchase-gap-analysis.txt');
+  const outPath = path.join(logsDir, 'purchase-gap-analysis-v2.txt');
   fs.writeFileSync(outPath, report);
   console.log(`Full report saved to: ${outPath}`);
 }
