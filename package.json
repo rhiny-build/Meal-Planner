@@ -19,7 +19,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "backfill:ingredients": "npx tsx scripts/backfill-base-ingredients.ts",
     "import:receipts": "npx tsx scripts/purchase-history/import-receipts.ts",
-    "analyse:purchases": "npx tsx scripts/purchase-history/analyse-frequency.ts"
+    "analyse:purchases": "npx tsx scripts/purchase-history/analyse-frequency.ts",
+    "analyse:gaps": "npx tsx scripts/purchase-history/analyse-gaps.ts"
   },
   "keywords": [],
   "author": "",
