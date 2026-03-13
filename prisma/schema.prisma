@@ -147,6 +147,7 @@ model MasterListItem {
   mappings            IngredientMapping[]
   shoppingListItems   ShoppingListItem[]
   rejectedSuggestions RejectedSuggestion[]
+  purchaseHistory     PurchaseHistory[]
 
   @@index([categoryId])
   @@index([type])
@@ -189,6 +190,21 @@ model NormalisationCache {
   base      String            // e.g., "spring onion"
   form      String?           // e.g., "fresh"
   createdAt DateTime @default(now())
+}
+
+// PurchaseHistory stores receipt line items for restock reminder analysis
+model PurchaseHistory {
+  id           String   @id @default(cuid())
+  rawName      String   // exact product name from receipt e.g. "Sainsbury's Whole Milk 2 Litres"
+  purchaseDate DateTime // date of the receipt
+  masterItemId String?  // nullable FK - populated later via mapping
+  source       String   @default("batch_import") // "batch_import" | "email_agent" etc.
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  masterItem MasterListItem? @relation(fields: [masterItemId], references: [id])
+
+  @@index([purchaseDate])
 }
 
 // DishType model stores dynamic protein and carb types
