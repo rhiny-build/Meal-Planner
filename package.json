@@ -18,7 +18,8 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "backfill:ingredients": "npx tsx scripts/backfill-base-ingredients.ts",
-    "import:receipts": "npx tsx scripts/import-receipts.ts"
+    "import:receipts": "npx tsx scripts/purchase-history/import-receipts.ts",
+    "analyse:purchases": "npx tsx scripts/purchase-history/analyse-frequency.ts"
   },
   "keywords": [],
   "author": "",
