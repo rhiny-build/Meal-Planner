@@ -164,7 +164,7 @@ Review up to date architecure.md for reference
 ### AI Layer (`lib/ai/`)
 
 - **`client.ts`**: OpenAI client singleton
-- **`config.ts`**: AI model config, embedding thresholds (similarity: 0.82, dedup: 0.75)
+- **`config.ts`**: AI model config, embedding thresholds (auto: 0.90, suggestion: 0.65, dedup: 0.75)
 - **`embeddings.ts`**: `computeEmbeddings()`, `cosineSimilarity()`, `findBestMatches()`, `deduplicateByEmbedding()`
 - **`matchIngredients.ts`**: `matchIngredientsAgainstMasterList()` — orchestrates embedding match against master list
 - **`normaliseIngredients.ts`**: LLM-based normalisation returning `baseIngredient` and `canonicalName`
@@ -172,8 +172,14 @@ Review up to date architecure.md for reference
 
 ### Shopping List Module (`app/(modules)/shopping-list/`)
 
-- **`actions.ts`**: Server actions including `syncMealIngredients` (5-step pipeline), `createIngredientMapping`, master list CRUD
-- **`components/ShoppingListClient.tsx`**: Main client component for shopping list UI
+- **`actions.ts`**: Server actions including `syncMealIngredients` (5-step pipeline with two-tier embedding match), `createIngredientMapping`, master list CRUD
+- **`suggestionActions.ts`**: `confirmSuggestion`, `reassignSuggestion`, `rejectSuggestion` — resolve pending embedding matches
+- **`components/ShoppingListClient.tsx`**: Main client component — tabs, generate button, stale banner, review modal orchestration
+- **`components/EmbeddingReviewModal.tsx`**: Full-screen modal for reviewing pending suggestions after list generation
+- **`components/SuggestionRow.tsx`**: Individual suggestion with confirm/reassign/reject actions
+- **`components/ReassignDropdown.tsx`**: Searchable master item picker for reassigning suggestions
+- **`components/ScoreBadge.tsx`**: Colored pill showing embedding similarity score
+- **`components/StaleBanner.tsx`**: Warning banner when meal plan changed after list was generated
 
 ### Scripts
 
@@ -190,8 +196,9 @@ Review up to date architecure.md for reference
 
 ### Testing
 
-240+ tests using Vitest covering:
-- Shopping list server actions (33 tests) — pipeline, master list CRUD, ingredient mapping
+247+ tests using Vitest covering:
+- Shopping list server actions (35 tests) — pipeline, master list CRUD, ingredient mapping
+- Suggestion actions (5 tests) — confirm, reassign, reject with idempotency
 - Embeddings (18 tests) — cosine similarity, best match, deduplication
 - Normalisation (31 tests) — form extraction, singularisation, edge cases
 - Shopping list helpers (36 tests) — aggregation, filtering
@@ -239,7 +246,9 @@ The app uses a relational model with named relations for multiple references:
 **MealPlan**: References up to 3 recipes (protein, carb, vegetable) per day
 **MasterListItem**: Household staples/restock items with `canonicalName` and embedding vectors for ingredient matching
 **IngredientMapping**: Learned mappings from recipe ingredient names to master list items (upsert with `confirmedCount`)
-**ShoppingListItem**: Items on weekly list with `source` ('recipe'|'staple'|'restock'|'manual'), `canonicalName`, `masterItemId` FK, and `matchConfidence` ('explicit'|'embedding'|'unmatched')
+**ShoppingListItem**: Items on weekly list with `source` ('recipe'|'staple'|'restock'|'manual'), `canonicalName`, `masterItemId` FK, `matchConfidence` ('explicit'|'embedding'|'unmatched'|'pending'), and `similarityScore` (float, for review UI)
+**RejectedSuggestion**: Records rejected embedding suggestions so they don't resurface (unique on `canonicalName` + `masterItemId`)
+**ShoppingList.stale**: Boolean flag set when meal plan changes after list was generated; reset when pipeline runs
 
 Key feature: Optional fields allow flexible meal composition (protein-only, carb-only, or combined meals).
 
