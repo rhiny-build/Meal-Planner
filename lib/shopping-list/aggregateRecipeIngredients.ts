@@ -87,17 +87,17 @@ export function aggregateIngredients(ingredients: RawIngredient[]): AggregatedIt
   const grouped = new Map<string, AggregatedItem>()
 
   for (const ing of ingredients) {
-    const cleanName = stripUnitsFromName(ing.name)
-    const normalizedName = cleanName.toLowerCase().trim().replace(/\s+/g, ' ')
+    // Group by lowercased name — unit stripping is handled downstream by normaliseName
+    const groupKey = ing.name.toLowerCase().trim().replace(/\s+/g, ' ')
 
-    if (!grouped.has(normalizedName)) {
-      grouped.set(normalizedName, {
-        name: cleanName,
+    if (!grouped.has(groupKey)) {
+      grouped.set(groupKey, {
+        name: ing.name.trim(),
         sources: [],
       })
     }
 
-    const aggregated = grouped.get(normalizedName)!
+    const aggregated = grouped.get(groupKey)!
     if (!aggregated.sources.includes(ing.recipeName)) {
       aggregated.sources.push(ing.recipeName)
     }
@@ -112,7 +112,7 @@ export function aggregateIngredients(ingredients: RawIngredient[]): AggregatedIt
 /**
  * Collect ingredients from meal plan recipes
  */
-export function collectIngredientsFromMealPlans(
+export function collectRecipeIngredients(
   mealPlans: Array<{
     lunchRecipe?: { name: string; structuredIngredients?: Array<{ name: string }> } | null
     proteinRecipe?: { name: string; structuredIngredients?: Array<{ name: string }> } | null
@@ -138,19 +138,6 @@ export function collectIngredientsFromMealPlans(
   }
 
   return allIngredients
-}
-
-/**
- * Filter out aggregated ingredients that match master list base ingredients.
- * Both sides must already be normalised to base concepts.
- */
-export function filterByMasterList(
-  items: Array<{ item: AggregatedItem; baseIngredient: string }>,
-  masterBaseIngredients: Set<string>
-): AggregatedItem[] {
-  return items
-    .filter(({ baseIngredient }) => !masterBaseIngredients.has(baseIngredient))
-    .map(({ item }) => item)
 }
 
 /**

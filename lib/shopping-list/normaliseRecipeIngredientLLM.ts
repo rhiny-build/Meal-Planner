@@ -7,7 +7,7 @@
 
 import { openai, MODEL } from '../ai/client'
 import { SYSTEM_PROMPTS } from '../ai/prompts'
-import type { NormalisedResult } from './normalise'
+import type { NormalisedResult } from './normaliseRecipeIngredient'
 
 export async function llmNormalise(raw: string): Promise<NormalisedResult> {
   const response = await openai.chat.completions.create({

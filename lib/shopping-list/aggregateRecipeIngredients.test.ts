@@ -4,7 +4,7 @@
  * Tests for shopping list business logic:
  * - stripUnitsFromName: Removes quantities and units from ingredient names
  * - aggregateIngredients: Groups ingredients by name across recipes
- * - collectIngredientsFromMealPlans: Extracts ingredients from meal plan data
+ * - collectRecipeIngredients: Extracts ingredients from meal plan data
  * - formatShoppingListAsText: Formats items for export
  */
 
@@ -12,11 +12,10 @@ import { describe, it, expect } from 'vitest'
 import {
   stripUnitsFromName,
   aggregateIngredients,
-  collectIngredientsFromMealPlans,
-  filterByMasterList,
+  collectRecipeIngredients,
   formatShoppingListAsText,
   type RawIngredient,
-} from './shoppingListHelpers'
+} from './aggregateRecipeIngredients'
 import type { ShoppingListItem } from '@/types'
 
 describe('shoppingListHelpers', () => {
@@ -124,7 +123,9 @@ describe('shoppingListHelpers', () => {
       expect(result[0].sources).toHaveLength(3)
     })
 
-    it('should strip units before grouping', () => {
+    it('should keep raw names with different quantities as separate items', () => {
+      // Unit stripping is handled downstream by normaliseName, not during aggregation.
+      // Items with different quantities are separate here; Step 5 deduplicates by normalisedName.
       const ingredients: RawIngredient[] = [
         { name: '2 lbs chicken', recipeName: 'Recipe A' },
         { name: '500g chicken', recipeName: 'Recipe B' },
@@ -132,9 +133,9 @@ describe('shoppingListHelpers', () => {
 
       const result = aggregateIngredients(ingredients)
 
-      expect(result).toHaveLength(1)
-      expect(result[0].name).toBe('chicken')
-      expect(result[0].sources).toEqual(['Recipe A', 'Recipe B'])
+      expect(result).toHaveLength(2)
+      expect(result[0].name).toBe('2 lbs chicken')
+      expect(result[1].name).toBe('500g chicken')
     })
 
     it('should sort results alphabetically', () => {
@@ -179,7 +180,7 @@ describe('shoppingListHelpers', () => {
     })
   })
 
-  describe('collectIngredientsFromMealPlans', () => {
+  describe('collectRecipeIngredients', () => {
     it('should collect ingredients from all recipe types', () => {
       const mealPlans = [
         {
@@ -198,7 +199,7 @@ describe('shoppingListHelpers', () => {
         },
       ]
 
-      const result = collectIngredientsFromMealPlans(mealPlans)
+      const result = collectRecipeIngredients(mealPlans)
 
       expect(result).toHaveLength(3)
       expect(result).toContainEqual({ name: 'chicken breast', recipeName: 'Grilled Chicken' })
@@ -218,7 +219,7 @@ describe('shoppingListHelpers', () => {
         },
       ]
 
-      const result = collectIngredientsFromMealPlans(mealPlans)
+      const result = collectRecipeIngredients(mealPlans)
 
       expect(result).toHaveLength(1)
       expect(result[0].name).toBe('chicken')
@@ -234,7 +235,7 @@ describe('shoppingListHelpers', () => {
         },
       ]
 
-      const result = collectIngredientsFromMealPlans(mealPlans)
+      const result = collectRecipeIngredients(mealPlans)
 
       expect(result).toHaveLength(0)
     })
@@ -255,13 +256,13 @@ describe('shoppingListHelpers', () => {
         },
       ]
 
-      const result = collectIngredientsFromMealPlans(mealPlans)
+      const result = collectRecipeIngredients(mealPlans)
 
       expect(result).toHaveLength(2)
     })
 
     it('should handle empty meal plans array', () => {
-      const result = collectIngredientsFromMealPlans([])
+      const result = collectRecipeIngredients([])
       expect(result).toEqual([])
     })
 
@@ -279,65 +280,10 @@ describe('shoppingListHelpers', () => {
         },
       ]
 
-      const result = collectIngredientsFromMealPlans(mealPlans)
+      const result = collectRecipeIngredients(mealPlans)
 
       expect(result).toHaveLength(3)
       expect(result.every(r => r.recipeName === 'Stir Fry')).toBe(true)
-    })
-  })
-
-  describe('filterByMasterList', () => {
-    it('should remove items matching master list base ingredients', () => {
-      const items = [
-        { item: { name: 'olive oil', sources: ['Pasta'] }, baseIngredient: 'olive oil' },
-        { item: { name: 'chicken breast', sources: ['Stir Fry'] }, baseIngredient: 'chicken' },
-        { item: { name: 'sea salt', sources: ['Pasta', 'Stir Fry'] }, baseIngredient: 'salt' },
-      ]
-      const masterSet = new Set(['olive oil', 'salt', 'black pepper'])
-
-      const result = filterByMasterList(items, masterSet)
-
-      expect(result).toHaveLength(1)
-      expect(result[0].name).toBe('chicken breast')
-    })
-
-    it('should return all items when master list is empty', () => {
-      const items = [
-        { item: { name: 'chicken', sources: ['Recipe A'] }, baseIngredient: 'chicken' },
-      ]
-
-      const result = filterByMasterList(items, new Set())
-
-      expect(result).toHaveLength(1)
-    })
-
-    it('should return empty array when all items match', () => {
-      const items = [
-        { item: { name: 'salt', sources: ['Recipe A'] }, baseIngredient: 'salt' },
-        { item: { name: 'pepper', sources: ['Recipe B'] }, baseIngredient: 'black pepper' },
-      ]
-      const masterSet = new Set(['salt', 'black pepper'])
-
-      const result = filterByMasterList(items, masterSet)
-
-      expect(result).toEqual([])
-    })
-
-    it('should handle empty items array', () => {
-      const result = filterByMasterList([], new Set(['salt']))
-      expect(result).toEqual([])
-    })
-
-    it('should use exact matching (garlic granules does not match garlic)', () => {
-      const items = [
-        { item: { name: 'garlic granules', sources: ['Recipe A'] }, baseIngredient: 'garlic granules' },
-      ]
-      const masterSet = new Set(['garlic'])
-
-      const result = filterByMasterList(items, masterSet)
-
-      expect(result).toHaveLength(1)
-      expect(result[0].name).toBe('garlic granules')
     })
   })
 

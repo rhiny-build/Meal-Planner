@@ -12,28 +12,27 @@ vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }))
 
-// Mock AI ingredient matching
-vi.mock('@/lib/ai/matchIngredients', () => ({
-  matchIngredientsAgainstMasterList: vi.fn(),
+// Mock AI embedding suggestions
+vi.mock('@/lib/shopping-list/matchRecipeToMaster', () => ({
+  findEmbeddingSuggestions: vi.fn(),
 }))
 
-// Mock AI normalisation
-vi.mock('@/lib/ai/normaliseIngredients', () => ({
-  normaliseIngredients: vi.fn(),
+// Mock AI master item normalisation
+vi.mock('@/lib/shopping-list/normaliseMasterItem', () => ({
+  normaliseMasterItems: vi.fn(),
 }))
 
-// Mock normalisation fallback — use deterministic normaliser (no DB/LLM in tests)
-vi.mock('@/lib/normalisation/normaliseWithFallback', async () => {
-  const { normaliseName } = await vi.importActual<typeof import('@/lib/normalisation/normalise')>('@/lib/normalisation/normalise')
+// Mock recipe ingredient normalisation — use deterministic normaliser (no DB/LLM in tests)
+vi.mock('@/lib/shopping-list/normaliseRecipeIngredient', async () => {
+  const { normaliseName } = await vi.importActual<typeof import('@/lib/shopping-list/normaliseRecipeIngredient')>('@/lib/shopping-list/normaliseRecipeIngredient')
   return {
-    normaliseIngredientCached: vi.fn(async (raw: string) => normaliseName(raw)),
+    normaliseRecipeIngredient: vi.fn(async (raw: string) => normaliseName(raw)),
   }
 })
 
 // Mock AI embeddings
-vi.mock('@/lib/ai/embeddings', () => ({
+vi.mock('@/lib/shopping-list/ingredientEmbeddings', () => ({
   computeEmbeddings: vi.fn(),
-  deduplicateByEmbedding: vi.fn(),
   cosineSimilarity: vi.fn(),
 }))
 
@@ -89,12 +88,12 @@ import {
   createIngredientMapping,
 } from './actions'
 import { prisma } from '@/lib/prisma'
-import { matchIngredientsAgainstMasterList } from '@/lib/ai/matchIngredients'
-import { normaliseIngredients } from '@/lib/ai/normaliseIngredients'
-import { computeEmbeddings } from '@/lib/ai/embeddings'
+import { findEmbeddingSuggestions } from '@/lib/shopping-list/matchRecipeToMaster'
+import { normaliseMasterItems } from '@/lib/shopping-list/normaliseMasterItem'
+import { computeEmbeddings } from '@/lib/shopping-list/ingredientEmbeddings'
 
-const mockMatchIngredients = matchIngredientsAgainstMasterList as ReturnType<typeof vi.fn>
-const mockNormaliseIngredients = normaliseIngredients as ReturnType<typeof vi.fn>
+const mockFindEmbeddingSuggestions = findEmbeddingSuggestions as ReturnType<typeof vi.fn>
+const mockNormaliseMasterItems = normaliseMasterItems as ReturnType<typeof vi.fn>
 const mockComputeEmbeddings = computeEmbeddings as ReturnType<typeof vi.fn>
 
 // Type assertion for mocked prisma
@@ -375,12 +374,12 @@ describe('Shopping List Server Actions', () => {
       expect(mockPrisma.shoppingListItem.deleteMany).toHaveBeenCalledWith({
         where: { shoppingListId: 'list-1', source: 'recipe' },
       })
-      // Should create new recipe items with canonicalName and matchConfidence
+      // Should create new recipe items with matchConfidence
       expect(mockPrisma.shoppingListItem.createMany).toHaveBeenCalledWith({
         data: expect.arrayContaining([
-          expect.objectContaining({ name: 'chicken breast', source: 'recipe', canonicalName: 'chicken breast', matchConfidence: 'unmatched' }),
-          expect.objectContaining({ name: 'rice', source: 'recipe', canonicalName: 'rice', matchConfidence: 'unmatched' }),
-          expect.objectContaining({ name: 'soy sauce', source: 'recipe', canonicalName: 'soy sauce', matchConfidence: 'unmatched' }),
+          expect.objectContaining({ name: 'chicken breast', source: 'recipe', matchConfidence: 'unmatched' }),
+          expect.objectContaining({ name: 'rice', source: 'recipe', matchConfidence: 'unmatched' }),
+          expect.objectContaining({ name: 'soy sauce', source: 'recipe', matchConfidence: 'unmatched' }),
         ]),
       })
       // Should return listId and empty suggestions
@@ -445,17 +444,17 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
       mockPrisma.shoppingListItem.createMany.mockResolvedValue({ count: 1 })
 
-      // Master list has salt and soy sauce with canonicalName + embeddings
+      // Master list has salt and soy sauce with normalisedName + embeddings
       mockPrisma.masterListItem.findMany.mockResolvedValue([
-        { id: 'm1', name: 'Salt', canonicalName: 'salt', embedding: [0.1, 0.2], type: 'restock' },
-        { id: 'm2', name: 'Soy Sauce', canonicalName: 'soy sauce', embedding: [0.3, 0.4], type: 'restock' },
+        { id: 'm1', name: 'Salt', normalisedName: 'salt', embedding: [0.1, 0.2], type: 'restock' },
+        { id: 'm2', name: 'Soy Sauce', normalisedName: 'soy sauce', embedding: [0.3, 0.4], type: 'restock' },
       ])
 
       // Score ≥ 0.90: auto-match. Score < 0.50: unmatched. Score 0.50–0.89: suggestion.
-      mockMatchIngredients.mockResolvedValue([
-        { index: 0, name: 'chicken breast', canonicalName: 'chicken breast', matchedMasterItem: null, masterItemId: null, bestScore: 0.3, bestCandidate: 'salt' },
-        { index: 1, name: 'soy sauce', canonicalName: 'soy sauce', matchedMasterItem: 'soy sauce', masterItemId: 'm2', bestScore: 0.95, bestCandidate: 'soy sauce' },
-        { index: 2, name: 'salt', canonicalName: 'salt', matchedMasterItem: 'salt', masterItemId: 'm1', bestScore: 0.99, bestCandidate: 'salt' },
+      mockFindEmbeddingSuggestions.mockResolvedValue([
+        { index: 0, name: 'chicken breast', matchedMasterItem: null, masterItemId: null, bestScore: 0.3, bestCandidate: 'salt' },
+        { index: 1, name: 'soy sauce', matchedMasterItem: 'soy sauce', masterItemId: 'm2', bestScore: 0.95, bestCandidate: 'soy sauce' },
+        { index: 2, name: 'salt', matchedMasterItem: 'salt', masterItemId: 'm1', bestScore: 0.99, bestCandidate: 'salt' },
       ])
 
       const result = await syncMealIngredients(weekStart)
@@ -498,14 +497,14 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.shoppingListItem.createMany.mockResolvedValue({ count: 2 })
 
       mockPrisma.masterListItem.findMany.mockResolvedValue([
-        { id: 'm1', name: 'Garlic Granules', canonicalName: 'garlic (granules)', embedding: [0.1, 0.2], type: 'restock' },
-        { id: 'm2', name: 'Olive Oil', canonicalName: 'olive oil', embedding: [0.3, 0.4], type: 'restock' },
+        { id: 'm1', name: 'Garlic Granules', normalisedName: 'garlic (granules)', embedding: [0.1, 0.2], type: 'restock' },
+        { id: 'm2', name: 'Olive Oil', normalisedName: 'olive oil', embedding: [0.3, 0.4], type: 'restock' },
       ])
 
       // garlic: 0.74 (suggestion band), olive oil: 0.92 (auto-match)
-      mockMatchIngredients.mockResolvedValue([
-        { index: 0, name: 'garlic', canonicalName: 'garlic', matchedMasterItem: 'garlic (granules)', masterItemId: 'm1', bestScore: 0.74, bestCandidate: 'garlic (granules)' },
-        { index: 1, name: 'olive oil', canonicalName: 'olive oil', matchedMasterItem: 'olive oil', masterItemId: 'm2', bestScore: 0.92, bestCandidate: 'olive oil' },
+      mockFindEmbeddingSuggestions.mockResolvedValue([
+        { index: 0, name: 'garlic', matchedMasterItem: 'garlic (granules)', masterItemId: 'm1', bestScore: 0.74, bestCandidate: 'garlic (granules)' },
+        { index: 1, name: 'olive oil', matchedMasterItem: 'olive oil', masterItemId: 'm2', bestScore: 0.92, bestCandidate: 'olive oil' },
       ])
 
       const result = await syncMealIngredients(weekStart)
@@ -551,12 +550,12 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.shoppingListItem.createMany.mockResolvedValue({ count: 1 })
 
       mockPrisma.masterListItem.findMany.mockResolvedValue([
-        { id: 'm1', name: 'Garlic Granules', canonicalName: 'garlic (granules)', embedding: [0.1, 0.2], type: 'restock' },
+        { id: 'm1', name: 'Garlic Granules', normalisedName: 'garlic (granules)', embedding: [0.1, 0.2], type: 'restock' },
       ])
 
       // garlic matches at 0.74 (suggestion band)
-      mockMatchIngredients.mockResolvedValue([
-        { index: 0, name: 'garlic', canonicalName: 'garlic', matchedMasterItem: 'garlic (granules)', masterItemId: 'm1', bestScore: 0.74, bestCandidate: 'garlic (granules)' },
+      mockFindEmbeddingSuggestions.mockResolvedValue([
+        { index: 0, name: 'garlic', matchedMasterItem: 'garlic (granules)', masterItemId: 'm1', bestScore: 0.74, bestCandidate: 'garlic (granules)' },
       ])
 
       // But this pair was previously rejected
@@ -598,13 +597,13 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
       mockPrisma.shoppingListItem.createMany.mockResolvedValue({ count: 2 })
 
-      // Master list has items with canonicalName
+      // Master list has items with normalisedName
       mockPrisma.masterListItem.findMany.mockResolvedValue([
-        { id: 'm1', canonicalName: 'salt', embedding: [0.1, 0.2], type: 'restock' },
+        { id: 'm1', normalisedName: 'salt', embedding: [0.1, 0.2], type: 'restock' },
       ])
 
       // Embedding call fails
-      mockMatchIngredients.mockRejectedValue(new Error('Embedding service unavailable'))
+      mockFindEmbeddingSuggestions.mockRejectedValue(new Error('Embedding service unavailable'))
 
       await syncMealIngredients(weekStart)
 
@@ -637,12 +636,12 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
       mockPrisma.shoppingListItem.createMany.mockResolvedValue({ count: 1 })
 
-      // Master list returns empty (no items with canonicalName + embeddings)
+      // Master list returns empty (no items with normalisedName + embeddings)
       mockPrisma.masterListItem.findMany.mockResolvedValue([])
 
       await syncMealIngredients(weekStart)
 
-      expect(mockMatchIngredients).not.toHaveBeenCalled()
+      expect(mockFindEmbeddingSuggestions).not.toHaveBeenCalled()
       expect(mockPrisma.shoppingListItem.createMany).toHaveBeenCalled()
     })
 
@@ -863,23 +862,23 @@ describe('Shopping List Server Actions', () => {
   })
 
   describe('addMasterListItem', () => {
-    it('should create item, normalise baseIngredient, and compute embedding', async () => {
+    it('should create item, normalise, and compute embedding', async () => {
       const mockItem = { id: 'item-1', name: 'Sainsbury\'s Whole Milk 2L', type: 'staple', order: 0 }
       const mockEmbedding = [0.1, 0.2, 0.3]
 
       mockPrisma.masterListItem.aggregate.mockResolvedValue({ _max: { order: null } })
       mockPrisma.masterListItem.create.mockResolvedValue(mockItem)
-      mockPrisma.masterListItem.update.mockResolvedValue({ ...mockItem, baseIngredient: 'whole milk' })
-      mockNormaliseIngredients.mockResolvedValue([{ id: 'item-1', baseIngredient: 'whole milk' }])
+      mockPrisma.masterListItem.update.mockResolvedValue({ ...mockItem, normalisedName: 'whole milk' })
+      mockNormaliseMasterItems.mockResolvedValue([{ id: 'item-1', baseIngredient: 'whole milk' }])
       mockComputeEmbeddings.mockResolvedValue([mockEmbedding])
 
       const result = await addMasterListItem('cat-1', 'Sainsbury\'s Whole Milk 2L', 'staple')
 
-      expect(mockNormaliseIngredients).toHaveBeenCalledWith([{ id: 'item-1', name: 'Sainsbury\'s Whole Milk 2L' }])
+      expect(mockNormaliseMasterItems).toHaveBeenCalledWith([{ id: 'item-1', name: 'Sainsbury\'s Whole Milk 2L' }])
       expect(mockComputeEmbeddings).toHaveBeenCalledWith(['whole milk'])
       expect(mockPrisma.masterListItem.update).toHaveBeenCalledWith({
         where: { id: 'item-1' },
-        data: { baseIngredient: 'whole milk', canonicalName: 'whole milk', embedding: mockEmbedding },
+        data: { normalisedName: 'whole milk', embedding: mockEmbedding },
       })
       expect(result).toEqual(mockItem)
     })
@@ -889,7 +888,7 @@ describe('Shopping List Server Actions', () => {
 
       mockPrisma.masterListItem.aggregate.mockResolvedValue({ _max: { order: null } })
       mockPrisma.masterListItem.create.mockResolvedValue(mockItem)
-      mockNormaliseIngredients.mockRejectedValue(new Error('AI service unavailable'))
+      mockNormaliseMasterItems.mockRejectedValue(new Error('AI service unavailable'))
 
       const result = await addMasterListItem('cat-1', 'Milk', 'staple')
 
@@ -900,14 +899,14 @@ describe('Shopping List Server Actions', () => {
   })
 
   describe('updateMasterListItem', () => {
-    it('should update name, re-normalise baseIngredient, and recompute embedding', async () => {
+    it('should update name, re-normalise, and recompute embedding', async () => {
       const mockItem = { id: 'item-1', name: 'Warburtons Wholemeal Bread 800g' }
       const mockEmbedding = [0.4, 0.5, 0.6]
 
       mockPrisma.masterListItem.update
         .mockResolvedValueOnce(mockItem) // name update
-        .mockResolvedValueOnce({ ...mockItem, baseIngredient: 'wholemeal bread' }) // baseIngredient + embedding update
-      mockNormaliseIngredients.mockResolvedValue([{ id: 'item-1', baseIngredient: 'wholemeal bread' }])
+        .mockResolvedValueOnce({ ...mockItem, normalisedName: 'wholemeal bread' }) // normalisedName + embedding update
+      mockNormaliseMasterItems.mockResolvedValue([{ id: 'item-1', baseIngredient: 'wholemeal bread' }])
       mockComputeEmbeddings.mockResolvedValue([mockEmbedding])
 
       const result = await updateMasterListItem('item-1', 'Warburtons Wholemeal Bread 800g')
@@ -916,11 +915,11 @@ describe('Shopping List Server Actions', () => {
         where: { id: 'item-1' },
         data: { name: 'Warburtons Wholemeal Bread 800g' },
       })
-      expect(mockNormaliseIngredients).toHaveBeenCalledWith([{ id: 'item-1', name: 'Warburtons Wholemeal Bread 800g' }])
+      expect(mockNormaliseMasterItems).toHaveBeenCalledWith([{ id: 'item-1', name: 'Warburtons Wholemeal Bread 800g' }])
       expect(mockComputeEmbeddings).toHaveBeenCalledWith(['wholemeal bread'])
       expect(mockPrisma.masterListItem.update).toHaveBeenCalledWith({
         where: { id: 'item-1' },
-        data: { baseIngredient: 'wholemeal bread', canonicalName: 'wholemeal bread', embedding: mockEmbedding },
+        data: { normalisedName: 'wholemeal bread', embedding: mockEmbedding },
       })
       expect(result).toEqual(mockItem)
     })
@@ -929,7 +928,7 @@ describe('Shopping List Server Actions', () => {
       const mockItem = { id: 'item-1', name: 'New Name' }
 
       mockPrisma.masterListItem.update.mockResolvedValue(mockItem)
-      mockNormaliseIngredients.mockRejectedValue(new Error('AI service unavailable'))
+      mockNormaliseMasterItems.mockRejectedValue(new Error('AI service unavailable'))
 
       const result = await updateMasterListItem('item-1', 'New Name')
 

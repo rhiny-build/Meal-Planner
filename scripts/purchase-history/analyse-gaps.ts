@@ -181,16 +181,16 @@ async function analyseGaps() {
     .filter((item) => item.appearances >= MIN_APPEARANCES)
     .sort((a, b) => b.appearances - a.appearances || a.name.localeCompare(b.name));
 
-  // Step 2: Load MasterListItems, index by baseIngredient
+  // Step 2: Load MasterListItems, index by normalisedName
   const masterItems = await prisma.masterListItem.findMany({
-    select: { id: true, baseIngredient: true },
-    where: { baseIngredient: { not: null } },
+    select: { id: true, normalisedName: true },
+    where: { normalisedName: { not: null } },
   });
 
-  const baseIndex = new Map<string, string>(); // baseIngredient (lower) → baseIngredient (original)
+  const baseIndex = new Map<string, string>(); // normalisedName (lower) → normalisedName (original)
   for (const mi of masterItems) {
-    if (mi.baseIngredient) {
-      baseIndex.set(mi.baseIngredient.toLowerCase().trim(), mi.baseIngredient);
+    if (mi.normalisedName) {
+      baseIndex.set(mi.normalisedName.toLowerCase().trim(), mi.normalisedName);
     }
   }
 

@@ -10,7 +10,7 @@
  */
 
 import 'dotenv/config'
-import { normaliseIngredient } from '../lib/normalisation/normaliseWithFallback'
+import { normaliseIngredient } from '../lib/shopping-list/normaliseRecipeIngredient'
 
 // ── Types ───────────────────────────────────────────────────────────────────
 

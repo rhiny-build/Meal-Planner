@@ -1,11 +1,11 @@
 /**
- * Backfill canonicalName for all MasterListItems and re-embed using canonicalName.
+ * Backfill normalisedName for all MasterListItems and re-embed.
  *
- * Uses the LLM normalisation prompt to convert product names to canonical form
+ * Uses the LLM normalisation prompt to convert product names to normalised form
  * (e.g. "Sainsbury's Chopped Tomatoes 400g" → "tomatoes (tinned)").
- * Then recomputes embeddings using canonicalName as the text.
+ * Then recomputes embeddings using normalisedName as the text.
  *
- * Idempotent: skips items that already have canonicalName set.
+ * Idempotent: skips items that already have normalisedName set.
  *
  * Usage:
  *   npx tsx scripts/backfill-canonical-names.ts --dry-run   # preview only
@@ -14,8 +14,8 @@
 
 import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
-import { normaliseIngredients } from '../lib/ai/normaliseIngredients'
-import { computeEmbeddings } from '../lib/ai/embeddings'
+import { normaliseMasterItems } from '../lib/shopping-list/normaliseMasterItem'
+import { computeEmbeddings } from '../lib/shopping-list/ingredientEmbeddings'
 
 const BATCH_SIZE = 20
 const DRY_RUN = process.argv.includes('--dry-run')
@@ -27,18 +27,18 @@ async function main() {
     console.log('DRY RUN — no changes will be saved\n')
   }
 
-  // Find items without canonicalName (idempotent query)
+  // Find items without normalisedName (idempotent query)
   const items = await prisma.$queryRaw<
-    { id: string; name: string; baseIngredient: string | null }[]
+    { id: string; name: string; normalisedName: string | null }[]
   >`
-    SELECT id, name, "baseIngredient"
+    SELECT id, name, "normalisedName"
     FROM "MasterListItem"
-    WHERE "canonicalName" IS NULL
+    WHERE "normalisedName" IS NULL
     ORDER BY name ASC
   `
 
   if (items.length === 0) {
-    console.log('All items already have canonicalName set. Nothing to do.')
+    console.log('All items already have normalisedName set. Nothing to do.')
     return
   }
 
@@ -55,23 +55,22 @@ async function main() {
     console.log(`--- Batch ${batchNum}/${batches} (${batch.length} items) ---`)
 
     try {
-      // Step 1: Get canonicalName from LLM normalisation
-      const normResults = await normaliseIngredients(
+      // Step 1: Get normalisedName from LLM normalisation
+      const normResults = await normaliseMasterItems(
         batch.map((item) => ({ id: item.id, name: item.name }))
       )
 
-      // Step 2: Extract canonicalNames for embedding
-      const canonicalNames: string[] = []
-      const validItems: Array<{ id: string; name: string; baseIngredient: string; canonicalName: string }> = []
+      // Step 2: Extract normalisedNames for embedding
+      const normalisedNames: string[] = []
+      const validItems: Array<{ id: string; name: string; normalisedName: string }> = []
 
       for (const item of batch) {
         const result = normResults.find((r) => r.id === item.id)
         if (result) {
-          const canonicalName = result.canonicalName ?? result.baseIngredient
-          const baseIngredient = result.baseIngredient
-          canonicalNames.push(canonicalName)
-          validItems.push({ id: item.id, name: item.name, baseIngredient, canonicalName })
-          console.log(`  "${item.name}" → canonical: "${canonicalName}" (base: "${baseIngredient}")`)
+          const normalisedName = result.canonicalName ?? result.baseIngredient
+          normalisedNames.push(normalisedName)
+          validItems.push({ id: item.id, name: item.name, normalisedName })
+          console.log(`  "${item.name}" → normalised: "${normalisedName}"`)
         } else {
           console.log(`  ⚠ "${item.name}" — no normalisation result (skipping)`)
           errors++
@@ -83,8 +82,8 @@ async function main() {
         continue
       }
 
-      // Step 3: Compute embeddings from canonicalName
-      const embeddings = await computeEmbeddings(canonicalNames)
+      // Step 3: Compute embeddings from normalisedName
+      const embeddings = await computeEmbeddings(normalisedNames)
 
       // Step 4: Write to DB
       if (!DRY_RUN) {
@@ -92,8 +91,7 @@ async function main() {
           await prisma.masterListItem.update({
             where: { id: validItems[j].id },
             data: {
-              baseIngredient: validItems[j].baseIngredient,
-              canonicalName: validItems[j].canonicalName,
+              normalisedName: validItems[j].normalisedName,
               embedding: embeddings[j],
             },
           })

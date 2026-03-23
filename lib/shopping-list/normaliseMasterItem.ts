@@ -1,18 +1,24 @@
 /**
- * Normalise grocery product names to base ingredient concepts.
+ * Master item normalisation — LLM-based.
  *
- * Pure AI function — no DB access. Importable by server actions
- * and standalone scripts (e.g. backfill).
+ * Normalises user-entered master item names (e.g. "Sainsbury's Garlic Granules 100g")
+ * into a canonical form (e.g. "garlic (dried)") that is stored as `normalisedName`
+ * on MasterListItem and used to generate the embedding vector.
+ *
+ * Called on master item create/update only. Pure AI function — no DB access.
+ *
+ * For recipe ingredient normalisation (pipeline, transient), see
+ * lib/normalisation/normaliseRecipeIngredient.ts.
  */
 
-import { openai, MODEL } from './client'
-import { AI_CONFIG } from './config'
-import { SYSTEM_PROMPTS, buildNormaliseIngredientsPrompt } from './prompts'
+import { openai, MODEL } from '../ai/client'
+import { AI_CONFIG } from '../ai/config'
+import { SYSTEM_PROMPTS, buildNormaliseIngredientsPrompt } from '../ai/prompts'
 
 export type NormalisationInput = { id: string; name: string }
 export type NormalisationResult = { id: string; baseIngredient: string; canonicalName?: string }
 
-export async function normaliseIngredients(
+export async function normaliseMasterItems(
   items: NormalisationInput[]
 ): Promise<NormalisationResult[]> {
   if (items.length === 0) return []

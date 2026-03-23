@@ -102,7 +102,6 @@ model ShoppingListItem {
   checked         Boolean  @default(false) // Whether item has been purchased
   source          String   @default("recipe") // Item source: 'recipe' | 'staple' | 'restock' | 'manual'
   order           Int      // Display order
-  canonicalName   String?  // Normalised name with form e.g. "garlic (fresh)", "tomatoes (tinned)"
   masterItemId    String?  // FK → MasterListItem (nullable, set null on delete)
   matchConfidence  String?  // "explicit" | "embedding" | "unmatched" | "pending"
   similarityScore  Float?   // Cosine similarity score from embedding match (for display in review UI)
@@ -136,8 +135,7 @@ model MasterListItem {
   type           String   // 'staple' | 'restock'
   categoryId     String
   order          Int      // Display order within category
-  baseIngredient String?  // Normalised base concept for shopping list matching
-  canonicalName  String?  // Generic ingredient name + form e.g. "garlic (fresh)", "tomatoes (tinned)"
+  normalisedName String?  // Normalised name for shopping list matching e.g. "garlic (granules)", "lemon juice"
   embedding      Float[]  // Pre-computed embedding vector for fast ingredient matching
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -182,14 +180,16 @@ model RejectedSuggestion {
   @@index([canonicalName])
 }
 
-// NormalisationCache stores LLM normalisation results to avoid repeat calls
-model NormalisationCache {
+// Caches LLM normalisation results for recipe ingredients to avoid repeat calls
+model RecipeIngredientNormalisationCache {
   id        String   @id @default(cuid())
   input     String   @unique // raw ingredient string (lowercased)
   canonical String            // e.g., "spring onion (fresh)"
   base      String            // e.g., "spring onion"
   form      String?           // e.g., "fresh"
   createdAt DateTime @default(now())
+
+  @@map("NormalisationCache")
 }
 
 // PurchaseHistory stores receipt line items for restock reminder analysis

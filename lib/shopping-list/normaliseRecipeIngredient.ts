@@ -1,16 +1,24 @@
 /**
- * Normalise recipe ingredient names to canonical form.
+ * Recipe ingredient normalisation — pipeline entry point.
  *
- * Pure utility — no DB, no AI. Converts raw ingredient names like
- * "tinned tomatoes" into canonical form "tomato (tinned)" by:
- * 1. Lowercasing
- * 2. Stripping quantities/units
- * 3. Singularising
- * 4. Extracting form (fresh, dried, tinned, etc.)
+ * Normalises a raw recipe ingredient string (e.g. "2 garlic cloves") into
+ * canonical form (e.g. "garlic (fresh)") for embedding comparison.
+ *
+ * Pipeline:
+ * 1. Deterministic rules (normaliseName) — handles form extraction, singularisation
+ * 2. DB cache lookup — avoids repeat LLM calls
+ * 3. LLM fallback (only if USE_LLM=true) — semantic normalisation, cached for next time
+ *
+ * The result is transient — used only for embedding comparison during the
+ * shopping list pipeline. Never persisted on ShoppingListItem or MasterListItem.
+ *
+ * For master item normalisation (on create/update), see lib/shopping-list/normaliseMasterItem.ts.
  */
 
 import pluralize from 'pluralize'
-import { stripUnitsFromName } from '../shoppingListHelpers'
+import { stripUnitsFromName } from './aggregateRecipeIngredients'
+
+// ─── Types ──────────────────────────────────────────────────────────────────
 
 export interface NormalisedResult {
   canonical: string // "garlic (fresh)", "tomato (tinned)", "chicken breast"
@@ -18,6 +26,8 @@ export interface NormalisedResult {
   form: string | null // "fresh", "tinned", null
   confident: boolean // true when rules fired or input is a known staple
 }
+
+// ─── Deterministic normalisation rules ──────────────────────────────────────
 
 // Simple ingredients that are always confidently identified as-is.
 const ALWAYS_CONFIDENT = new Set([
@@ -75,6 +85,10 @@ const COMPOUND_EXCEPTIONS: Set<string> = new Set([
 
 /**
  * Normalise a single ingredient name to canonical form.
+ *
+ * Expects raw input including quantities and units (e.g. "2 garlic cloves",
+ * "500g chicken breast"). Handles its own unit stripping — callers should
+ * NOT pre-strip.
  */
 export function normaliseName(raw: string): NormalisedResult {
   if (!raw || !raw.trim()) {
@@ -138,13 +152,6 @@ export function normaliseName(raw: string): NormalisedResult {
 }
 
 /**
- * Batch normalise multiple ingredient names.
- */
-export function normaliseNames(names: string[]): NormalisedResult[] {
-  return names.map(normaliseName)
-}
-
-/**
  * Singularise a word or phrase.
  * Applies pluralize.singular to the last word (the noun) in multi-word names.
  */
@@ -158,4 +165,85 @@ function singularise(text: string): string {
   words[words.length - 1] = singular
 
   return words.join(' ')
+}
+
+// ─── Pipeline entry points ──────────────────────────────────────────────────
+
+/**
+ * Non-cached normalisation — deterministic rules + optional LLM fallback.
+ * Used by the eval script only. The pipeline uses normaliseRecipeIngredient.
+ */
+export async function normaliseIngredient(
+  raw: string
+): Promise<NormalisedResult> {
+  // 1. Deterministic normalisation
+  const result = normaliseName(raw)
+  if (result.confident) {
+    return result
+  }
+
+  // 2. LLM fallback (only if enabled)
+  if (!process.env.USE_LLM) {
+    return result
+  }
+
+  // Lazy-import to avoid loading OpenAI when LLM is disabled
+  const { llmNormalise } = await import('./normaliseRecipeIngredientLLM')
+  return llmNormalise(raw)
+}
+
+/**
+ * Normalise a raw recipe ingredient string to canonical form with DB caching.
+ * This is the primary entry point used by the shopping list pipeline (Step 2).
+ */
+export async function normaliseRecipeIngredient(
+  raw: string
+): Promise<NormalisedResult> {
+  // 1. Deterministic — no cache needed, it's instant
+  const result = normaliseName(raw)
+  if (result.confident) {
+    return result
+  }
+
+  // 2. Check cache before hitting LLM
+  const { prisma } = await import('../prisma')
+  const cacheKey = raw.toLowerCase().trim()
+  const cached = await prisma.recipeIngredientNormalisationCache.findUnique({
+    where: { input: cacheKey },
+  })
+
+  if (cached) {
+    return {
+      canonical: cached.canonical,
+      base: cached.base,
+      form: cached.form,
+      confident: true,
+    }
+  }
+
+  // 3. LLM fallback (only if enabled)
+  if (!process.env.USE_LLM) {
+    return result
+  }
+
+  const { llmNormalise } = await import('./normaliseRecipeIngredientLLM')
+  const llmResult = await llmNormalise(raw)
+
+  // 4. Cache the result
+  await prisma.recipeIngredientNormalisationCache.upsert({
+    where: { input: cacheKey },
+    create: {
+      input: cacheKey,
+      canonical: llmResult.canonical,
+      base: llmResult.base,
+      form: llmResult.form,
+    },
+    update: {
+      canonical: llmResult.canonical,
+      base: llmResult.base,
+      form: llmResult.form,
+    },
+  })
+
+  return llmResult
 }
