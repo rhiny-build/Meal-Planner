@@ -293,7 +293,7 @@ export default function ShoppingListClient({
         return {
           shoppingListItemId: dbItem.id,
           ingredientName: s.ingredientName,
-          canonicalName: s.canonicalName,
+          normalisedName: s.normalisedName,
           suggestedMasterItemId: s.suggestedMasterItemId,
           suggestedMasterItemName: s.suggestedMasterItemName,
           score: s.score,

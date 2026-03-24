@@ -52,7 +52,6 @@ const mockPrisma = prisma as unknown as {
 const mockItem = {
   id: 'item-1',
   name: 'garlic cloves',
-  canonicalName: 'garlic (fresh)',
   matchConfidence: 'pending',
   masterItemId: 'master-1',
   similarityScore: 0.78,

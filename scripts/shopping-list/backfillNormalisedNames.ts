@@ -67,7 +67,7 @@ async function main() {
       for (const item of batch) {
         const result = normResults.find((r) => r.id === item.id)
         if (result) {
-          const normalisedName = result.canonicalName ?? result.baseIngredient
+          const normalisedName = result.normalisedName ?? result.baseIngredient
           normalisedNames.push(normalisedName)
           validItems.push({ id: item.id, name: item.name, normalisedName })
           console.log(`  "${item.name}" → normalised: "${normalisedName}"`)
