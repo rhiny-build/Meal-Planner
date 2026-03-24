@@ -331,7 +331,7 @@ export async function syncMealIngredients(weekStart: Date) {
   const dedupMap = new Map<string, NormalisedItem>()
 
   for (const item of unresolvedItems) {
-    const existing = dedupMap.get(item.normalisedName)
+    const existing = dedupMap.get(item.displayedName)
     if (existing) {
       for (const src of item.sources) {
         if (!existing.sources.includes(src)) {
@@ -339,7 +339,7 @@ export async function syncMealIngredients(weekStart: Date) {
         }
       }
     } else {
-      dedupMap.set(item.normalisedName, { ...item })
+      dedupMap.set(item.displayedName, { ...item })
     }
   }
 
@@ -352,7 +352,7 @@ export async function syncMealIngredients(weekStart: Date) {
   if (unresolvedItems.length > dedupedItems.length) {
     for (const item of dedupedItems) {
       if (item.sources.length > 1) {
-        logLines.push(`  Merged: "${item.normalisedName}" (from: ${item.sources.join(', ')})`)
+        logLines.push(`  Merged: "${item.displayedName}" (from: ${item.sources.join(', ')})`)
       }
     }
   }

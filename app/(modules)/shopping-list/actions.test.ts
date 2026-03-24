@@ -688,6 +688,49 @@ describe('Shopping List Server Actions', () => {
         ],
       })
     })
+
+    it('should dedup items with different normalisedName but same displayedName', async () => {
+      const weekStart = new Date('2026-02-03')
+      const mockList = { id: 'list-1', weekStart, items: [] }
+      // Two recipes each use parsley in a different form
+      // "fresh parsley" → normalisedName: "parsley (fresh)", displayedName: "parsley"
+      // "dried parsley"  → normalisedName: "parsley (dried)",  displayedName: "parsley"
+      const mockMealPlans = [
+        {
+          lunchRecipe: null,
+          proteinRecipe: {
+            name: 'Chicken Salad',
+            structuredIngredients: [{ name: 'fresh parsley' }],
+          },
+          carbRecipe: null,
+          vegetableRecipe: null,
+        },
+        {
+          lunchRecipe: null,
+          proteinRecipe: {
+            name: 'Pasta',
+            structuredIngredients: [{ name: 'dried parsley' }],
+          },
+          carbRecipe: null,
+          vegetableRecipe: null,
+        },
+      ]
+
+      mockPrisma.shoppingList.findUnique.mockResolvedValue(mockList)
+      mockPrisma.mealPlan.findMany.mockResolvedValue(mockMealPlans)
+      mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
+      mockPrisma.shoppingListItem.createMany.mockResolvedValue({ count: 1 })
+
+      await syncMealIngredients(weekStart)
+
+      // Both forms should merge into a single "parsley" item
+      const createCall = mockPrisma.shoppingListItem.createMany.mock.calls[0][0]
+      const parsleyItems = createCall.data.filter((d: { name: string }) => d.name === 'parsley')
+      expect(parsleyItems).toHaveLength(1)
+      // The merged item should note both recipe sources
+      expect(parsleyItems[0].notes).toContain('Chicken Salad')
+      expect(parsleyItems[0].notes).toContain('Pasta')
+    })
   })
 
   describe('includeMasterListItem', () => {
