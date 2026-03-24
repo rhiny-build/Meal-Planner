@@ -122,7 +122,8 @@ export async function syncMealIngredients(weekStart: Date) {
   // ─── Step 2: Normalise — transient normalised form for matching ─────
   type NormalisedItem = {
     name: string              // original aggregated name
-    normalisedName: string    // normalised e.g. "garlic (fresh)"
+    normalisedName: string    // normalised e.g. "garlic (fresh)" — for embedding match
+    displayedName: string     // user-facing e.g. "garlic" — written to ShoppingListItem.name
     sources: string[]         // recipe names
     resolved: boolean         // set to true when matched in step 3 or 4
     matchConfidence: 'explicit' | 'embedding' | 'unmatched' | 'pending'
@@ -132,10 +133,11 @@ export async function syncMealIngredients(weekStart: Date) {
 
   const items: NormalisedItem[] = await Promise.all(
     aggregatedItems.map(async (item) => {
-      const { canonical } = await normaliseRecipeIngredient(item.name)
+      const { canonical, base } = await normaliseRecipeIngredient(item.name)
       return {
         name: item.name,
         normalisedName: canonical || item.name.toLowerCase(),
+        displayedName: base || item.name.toLowerCase(),
         sources: item.sources,
         resolved: false,
         matchConfidence: 'unmatched' as const,
@@ -358,7 +360,7 @@ export async function syncMealIngredients(weekStart: Date) {
 
   // Build shopping list items from deduped ingredients (unmatched + pending)
   const shoppingListData = dedupedItems.map((item, idx) => ({
-    name: item.normalisedName,
+    name: item.displayedName,
     matchConfidence: item.matchConfidence,
     masterItemId: item.masterItemId,
     similarityScore: item.similarityScore,
