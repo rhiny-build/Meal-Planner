@@ -3,24 +3,19 @@
 /**
  * Shopping List Client Component
  *
- * Manages shopping list state and UI interactions.
- * Receives initial data from server component, uses server actions for mutations.
+ * Orchestrates the shopping list page: tab navigation, tab content,
+ * and modals. State and handlers live in useShoppingList hook.
  */
 
-import { useState, useTransition, useOptimistic } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { toast } from 'sonner'
-import { getMonday } from '@/lib/dateUtils'
-import { formatShoppingListAsText } from '@/lib/shopping-list/aggregateRecipeIngredients'
-import { toggleItem, addItem, deleteShoppingListItem, syncMealIngredients, createIngredientMapping, addMasterListItem } from '../actions'
-import type { EmbeddingSuggestion } from '../actions'
+import { useShoppingList } from '../hooks/useShoppingList'
+import type { Tab } from '../hooks/useShoppingList'
 import type { Recipe } from '@/types'
 import type { ShoppingList, ShoppingListItem, Category, MasterListItem } from '@prisma/client'
-import type { PendingSuggestion } from './SuggestionRow'
 import Button from '@/components/Button'
+import TabNavigation from './TabNavigation'
 import ShoppingListHeader from './ShoppingListHeader'
 import ShoppingListItems from './ShoppingListItems'
-import AddItemForm from './AddItemForm'
+import ShoppingListTabContent from './ShoppingListTabContent'
 import MasterListTab from './MasterListTab'
 import DeleteItemModal from './DeleteItemModal'
 import EmbeddingReviewModal from './EmbeddingReviewModal'
@@ -28,7 +23,6 @@ import StaleBanner from './StaleBanner'
 
 type ShoppingListWithItems = ShoppingList & { items: ShoppingListItem[] }
 type CategoryWithItems = Category & { items: MasterListItem[] }
-type Tab = 'meals' | 'staples' | 'restock' | 'list'
 
 interface ShoppingListClientProps {
   initialList: ShoppingListWithItems
@@ -45,340 +39,41 @@ export default function ShoppingListClient({
   recipes,
   categories,
 }: ShoppingListClientProps) {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const [isPending, startTransition] = useTransition()
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [itemToDelete, setItemToDelete] = useState<ShoppingListItem | null>(null)
-  const [pendingSuggestions, setPendingSuggestions] = useState<PendingSuggestion[] | null>(null)
-  const [isGenerating, setIsGenerating] = useState(false)
-
-  // OPTIMISTIC UPDATES: Instead of reading items directly from server props
-  // (initialList.items), we maintain a local "optimistic" copy via useOptimistic.
-  // When the user toggles a checkbox, we update this copy instantly — no waiting
-  // for the server. Here's the lifecycle:
-  //
-  //   1. User clicks checkbox → setOptimisticItem() → UI updates immediately
-  //   2. Server action runs in the background (toggleItem + revalidatePath)
-  //   3. Server responds with fresh data → initialList.items updates →
-  //      useOptimistic automatically switches from optimistic → real state
-  //   4. Since both match (the toggle succeeded), the user sees no flash
-  //   5. If the server action FAILS, React reverts to the real state (pre-toggle)
-  //
-  // The second argument is a reducer: given the current items and an update,
-  // it returns a new array with just that one item's `checked` field flipped.
-  const [optimisticItems, setOptimisticItem] = useOptimistic(
-    initialList.items,
-    (currentItems: ShoppingListItem[], update: { id: string; checked: boolean }) =>
-      currentItems.map(item =>
-        item.id === update.id ? { ...item, checked: update.checked } : item
-      )
-  )
-
-  // Current tab is derived from URL or initial props
-  const tabParam = searchParams.get('tab') as Tab | null
-  const activeTab = tabParam || initialTab
-
-  // Current week is derived from URL or initial props
-  const weekParam = searchParams.get('week')
-  const currentWeekStart = weekParam ? getMonday(new Date(weekParam)) : initialWeekStart
-
-  const setActiveTab = (tab: Tab) => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (tab === 'meals') {
-      params.delete('tab')
-    } else {
-      params.set('tab', tab)
-    }
-    router.push(`/shopping-list?${params.toString()}`)
-  }
-
-  const navigateToWeek = (date: Date) => {
-    const params = new URLSearchParams(searchParams.toString())
-    params.set('week', date.toISOString().split('T')[0])
-    router.push(`/shopping-list?${params.toString()}`)
-  }
-
-  const goToPreviousWeek = () => {
-    const newDate = new Date(currentWeekStart)
-    newDate.setDate(newDate.getDate() - 7)
-    navigateToWeek(newDate)
-  }
-
-  const goToNextWeek = () => {
-    const newDate = new Date(currentWeekStart)
-    newDate.setDate(newDate.getDate() + 7)
-    navigateToWeek(newDate)
-  }
-
-  const handleToggle = (itemId: string, checked: boolean) => {
-    startTransition(async () => {
-      // Update UI immediately — the user sees the checkbox flip right away.
-      // This must be inside startTransition so React knows it's optimistic.
-      setOptimisticItem({ id: itemId, checked })
-      try {
-        await toggleItem(itemId, checked)
-      } catch (error) {
-        console.error('Error toggling item:', error)
-        toast.error('Failed to update item')
-      }
-    })
-  }
-
-  const handleAddItem = async (name: string) => {
-    if (!initialList) return
-
-    startTransition(async () => {
-      try {
-        await addItem(initialList.id, name)
-        setShowAddForm(false)
-        toast.success('Item added!')
-      } catch (error) {
-        console.error('Error adding item:', error)
-        toast.error('Failed to add item')
-      }
-    })
-  }
-
-  const handleAddToMasterList = (name: string, type: 'staple' | 'restock', categoryId: string) => {
-    if (!initialList) return
-
-    startTransition(async () => {
-      try {
-        await addMasterListItem(categoryId, name, type)
-        await addItem(initialList.id, name)
-        setShowAddForm(false)
-        toast.success(`Added to shopping list and saved as ${type}!`)
-      } catch (error) {
-        console.error('Error adding item to master list:', error)
-        toast.error('Failed to add item')
-      }
-    })
-  }
-
-  const handleExport = () => {
-    if (!initialList || optimisticItems.length === 0) {
-      toast.warning('No items to export')
-      return
-    }
-
-    const text = formatShoppingListAsText(optimisticItems)
-
-    navigator.clipboard.writeText(text).then(() => {
-      toast.success('Shopping list copied to clipboard!')
-    }).catch(() => {
-      // Fallback for older browsers
-      const textarea = document.createElement('textarea')
-      textarea.value = text
-      document.body.appendChild(textarea)
-      textarea.select()
-      document.execCommand('copy')
-      document.body.removeChild(textarea)
-      toast.success('Shopping list copied to clipboard!')
-    })
-  }
-
-  const handleDeleteClick = (item: ShoppingListItem) => {
-    setItemToDelete(item)
-  }
-
-  const handleMapToExisting = (masterItemId: string) => {
-    if (!itemToDelete) return
-    const name = itemToDelete.name
-    const id = itemToDelete.id
-    startTransition(async () => {
-      try {
-        await createIngredientMapping(name, masterItemId)
-        await deleteShoppingListItem(id)
-        setItemToDelete(null)
-        toast.success('Mapped and removed!')
-      } catch (error) {
-        console.error('Error mapping item:', error)
-        toast.error('Failed to map item')
-      }
-    })
-  }
-
-  const handleCreateAndMap = (name: string, type: 'staple' | 'restock', categoryId: string) => {
-    if (!itemToDelete) return
-    const recipeName = itemToDelete.name
-    const itemId = itemToDelete.id
-    startTransition(async () => {
-      try {
-        const newItem = await addMasterListItem(categoryId, name, type)
-        await createIngredientMapping(recipeName, newItem.id)
-        await deleteShoppingListItem(itemId)
-        setItemToDelete(null)
-        toast.success('Added to master list and mapped!')
-      } catch (error) {
-        console.error('Error creating and mapping item:', error)
-        toast.error('Failed to create item')
-      }
-    })
-  }
-
-  const handleJustDelete = () => {
-    if (!itemToDelete) return
-    const id = itemToDelete.id
-    startTransition(async () => {
-      try {
-        await deleteShoppingListItem(id)
-        setItemToDelete(null)
-        toast.success('Item removed')
-      } catch (error) {
-        console.error('Error deleting item:', error)
-        toast.error('Failed to delete item')
-      }
-    })
-  }
-
-  const handleGenerateList = async () => {
-    setIsGenerating(true)
-    try {
-      const result = await syncMealIngredients(currentWeekStart)
-      if (result?.suggestions && result.suggestions.length > 0) {
-        // Map EmbeddingSuggestion to PendingSuggestion (need shoppingListItemId)
-        // After sync, pending items are written to DB — find them by matching
-        // For now, we need to re-fetch the list to get the item IDs
-        router.refresh()
-        // Small delay to let the server component re-render with new data
-        await new Promise((resolve) => setTimeout(resolve, 500))
-        // Re-fetch to get the pending item IDs
-        const suggestions = await buildPendingSuggestions(result.suggestions)
-        if (suggestions.length > 0) {
-          setPendingSuggestions(suggestions)
-        } else {
-          toast.success('Shopping list generated!')
-        }
-      } else {
-        toast.success('Shopping list generated!')
-        router.refresh()
-      }
-    } catch (error) {
-      console.error('Error generating shopping list:', error)
-      toast.error('Failed to generate shopping list')
-    } finally {
-      setIsGenerating(false)
-    }
-  }
-
-  const handleReviewComplete = () => {
-    setPendingSuggestions(null)
-    router.refresh()
-    toast.success('Shopping list ready!')
-  }
-
-  // Build PendingSuggestion[] from pipeline output by fetching pending items from the page data
-  async function buildPendingSuggestions(
-    suggestions: EmbeddingSuggestion[]
-  ): Promise<PendingSuggestion[]> {
-    // After sync + router.refresh(), initialList should have the new pending items.
-    // But since state may not have updated yet, we fetch directly.
-    const { getShoppingList } = await import('../actions')
-    const freshList = await getShoppingList(currentWeekStart)
-    if (!freshList) return []
-
-    const pendingItems = freshList.items.filter((i) => i.matchConfidence === 'pending')
-
-    const usedIds = new Set<string>()
-    return suggestions
-      .map((s) => {
-        const dbItem = pendingItems.find(
-          (i) =>
-            !usedIds.has(i.id) &&
-            i.name === s.ingredientName
-        )
-        if (!dbItem) return null
-        usedIds.add(dbItem.id)
-        return {
-          shoppingListItemId: dbItem.id,
-          ingredientName: s.ingredientName,
-          normalisedName: s.normalisedName,
-          suggestedMasterItemId: s.suggestedMasterItemId,
-          suggestedMasterItemName: s.suggestedMasterItemName,
-          score: s.score,
-        }
-      })
-      .filter((s): s is PendingSuggestion => s !== null)
-  }
-
-  // Flat list of all master items for the review modal's reassign dropdown
-  const allMasterItems = categories.flatMap((c) => c.items)
-
-  // Filter categories by item type for staples/restock tabs
-  const staplesCategories = categories
-    .map(cat => ({
-      ...cat,
-      items: cat.items.filter(item => item.type === 'staple'),
-    }))
-    .filter(cat => cat.items.length > 0)
-
-  const restockCategories = categories
-    .map(cat => ({
-      ...cat,
-      items: cat.items.filter(item => item.type === 'restock'),
-    }))
-    .filter(cat => cat.items.length > 0)
-
-  // Get sets of item names that are in the current shopping list by source
-  const includedStapleNames = new Set(
-    optimisticItems
-      .filter(item => item.source === 'staple')
-      .map(item => item.name)
-  )
-  const includedRestockNames = new Set(
-    optimisticItems
-      .filter(item => item.source === 'restock')
-      .map(item => item.name)
-  )
+  const {
+    isPending,
+    isGenerating,
+    showAddForm,
+    setShowAddForm,
+    itemToDelete,
+    pendingSuggestions,
+    optimisticItems,
+    activeTab,
+    currentWeekStart,
+    setActiveTab,
+    goToPreviousWeek,
+    goToNextWeek,
+    handleToggle,
+    handleAddItem,
+    handleAddToMasterList,
+    handleExport,
+    handleDeleteClick,
+    handleMapToExisting,
+    handleCreateAndMap,
+    handleJustDelete,
+    handleGenerateList,
+    handleReviewComplete,
+    allMasterItems,
+    staplesCategories,
+    restockCategories,
+    includedStapleNames,
+    includedRestockNames,
+  } = useShoppingList({ initialList, initialWeekStart, initialTab, categories })
 
   return (
     <div className="max-w-4xl mx-auto px-4">
       <h1 className="text-3xl font-bold mb-6">Shopping List</h1>
 
-      {/* Tab Navigation */}
-      <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
-        <button
-          onClick={() => setActiveTab('meals')}
-          className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'meals'
-              ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-          }`}
-        >
-          This Week&apos;s Meals
-        </button>
-        <button
-          onClick={() => setActiveTab('staples')}
-          className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'staples'
-              ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-          }`}
-        >
-          Staples
-        </button>
-        <button
-          onClick={() => setActiveTab('restock')}
-          className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'restock'
-              ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-          }`}
-        >
-          Restock
-        </button>
-        <button
-          onClick={() => setActiveTab('list')}
-          className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'list'
-              ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-          }`}
-        >
-          Shopping List
-        </button>
-      </div>
+      <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* This Week's Meals Tab */}
       {activeTab === 'meals' && (
@@ -439,101 +134,20 @@ export default function ShoppingListClient({
             <StaleBanner onRegenerate={handleGenerateList} isPending={isGenerating} />
           )}
 
-          {optimisticItems.length === 0 ? (
-            <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <p className="text-gray-600 dark:text-gray-400">
-                No items yet. Save a meal plan or customise your staples and restock items.
-              </p>
-            </div>
-          ) : (
-            <>
-              {(() => {
-                const recipeItems = optimisticItems.filter(i => i.source === 'recipe')
-                const masterItems = optimisticItems.filter(i => i.source === 'staple' || i.source === 'restock')
-                const manualItems = optimisticItems.filter(i => i.source === 'manual')
-                return (
-                  <>
-                    {recipeItems.length > 0 && (
-                      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
-                        <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
-                          <span className="text-lg">🍽</span>
-                          Meal Plan Ingredients
-                          <span className="text-xs font-normal bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">
-                            {recipeItems.length}
-                          </span>
-                        </h2>
-                        <ShoppingListItems
-                          items={recipeItems}
-                          recipes={recipes}
-                          onToggle={handleToggle}
-                          onDelete={handleDeleteClick}
-                        />
-                      </div>
-                    )}
-                    {masterItems.length > 0 && (
-                      <div className="mt-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
-                        <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
-                          <span className="text-lg">📋</span>
-                          Master List Items
-                          <span className="text-xs font-normal bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">
-                            {masterItems.length}
-                          </span>
-                        </h2>
-                        <ShoppingListItems
-                          items={masterItems}
-                          recipes={recipes}
-                          onToggle={handleToggle}
-                        />
-                      </div>
-                    )}
-                    {manualItems.length > 0 && (
-                      <div className="mt-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
-                        <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
-                          <span className="text-lg">✏️</span>
-                          Manual Items
-                          <span className="text-xs font-normal bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full">
-                            {manualItems.length}
-                          </span>
-                        </h2>
-                        <ShoppingListItems
-                          items={manualItems}
-                          recipes={recipes}
-                          onToggle={handleToggle}
-                        />
-                      </div>
-                    )}
-                  </>
-                )
-              })()}
-
-              <div className="mt-4 flex gap-2">
-                {showAddForm ? (
-                  <AddItemForm
-                    onAdd={handleAddItem}
-                    onAddToMasterList={handleAddToMasterList}
-                    onCancel={() => setShowAddForm(false)}
-                    categories={categories}
-                  />
-                ) : (
-                  <>
-                    <Button
-                      variant="secondary"
-                      onClick={() => setShowAddForm(true)}
-                      disabled={isPending}
-                    >
-                      + Add Item
-                    </Button>
-                    <Button
-                      onClick={handleGenerateList}
-                      disabled={isGenerating || isPending}
-                    >
-                      {isGenerating ? 'Generating...' : 'Generate Shopping List'}
-                    </Button>
-                  </>
-                )}
-              </div>
-            </>
-          )}
+          <ShoppingListTabContent
+            items={optimisticItems}
+            recipes={recipes}
+            categories={categories}
+            isPending={isPending}
+            isGenerating={isGenerating}
+            showAddForm={showAddForm}
+            onToggle={handleToggle}
+            onDelete={handleDeleteClick}
+            onAddItem={handleAddItem}
+            onAddToMasterList={handleAddToMasterList}
+            onGenerateList={handleGenerateList}
+            onShowAddForm={setShowAddForm}
+          />
         </>
       )}
 
