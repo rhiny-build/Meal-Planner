@@ -53,7 +53,7 @@ After the file restructuring, shopping list items display internal normalised na
 
 ---
 
-### Phase 5: Documentation cleanup
+### Phase 5: Documentation cleanup ✅
 
 - Update `claude.md` — remove all `canonicalName` references
 - Update `docs/backlog.md` — mark P0 as resolved
