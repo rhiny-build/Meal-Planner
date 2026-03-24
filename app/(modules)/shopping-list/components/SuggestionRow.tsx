@@ -12,7 +12,7 @@ import ReassignDropdown from './ReassignDropdown'
 export interface PendingSuggestion {
   shoppingListItemId: string
   ingredientName: string
-  canonicalName: string
+  normalisedName: string
   suggestedMasterItemId: string
   suggestedMasterItemName: string
   score: number

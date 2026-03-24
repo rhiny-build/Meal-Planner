@@ -33,12 +33,12 @@ export default function EmbeddingReviewModal({
 
   const resolvedCount = Object.keys(resolutions).length
 
-  // Mark all suggestions sharing the same canonicalName as resolved
-  const resolveByCanonical = (canonicalName: string, resolution: Resolution) => {
+  // Mark all suggestions sharing the same normalisedName as resolved
+  const resolveByNormalisedName = (normalisedName: string, resolution: Resolution) => {
     setResolutions((prev) => {
       const updated = { ...prev }
       for (const sug of suggestions) {
-        if (sug.canonicalName === canonicalName) {
+        if (sug.normalisedName === normalisedName) {
           updated[sug.shoppingListItemId] = resolution
         }
       }
@@ -50,7 +50,7 @@ export default function EmbeddingReviewModal({
     startTransition(async () => {
       try {
         await confirmSuggestion(s.shoppingListItemId, s.suggestedMasterItemId)
-        resolveByCanonical(s.canonicalName, 'confirmed')
+        resolveByNormalisedName(s.normalisedName, 'confirmed')
       } catch {
         toast.error('Failed to confirm suggestion')
       }
@@ -62,7 +62,7 @@ export default function EmbeddingReviewModal({
     startTransition(async () => {
       try {
         await reassignSuggestion(s.shoppingListItemId, newMasterItemId)
-        resolveByCanonical(s.canonicalName, { reassignedTo: masterItem?.name ?? 'selected item' })
+        resolveByNormalisedName(s.normalisedName, { reassignedTo: masterItem?.name ?? 'selected item' })
       } catch {
         toast.error('Failed to reassign suggestion')
       }
@@ -72,8 +72,8 @@ export default function EmbeddingReviewModal({
   const handleReject = (s: PendingSuggestion) => {
     startTransition(async () => {
       try {
-        await rejectSuggestion(s.shoppingListItemId, s.suggestedMasterItemId, s.canonicalName)
-        resolveByCanonical(s.canonicalName, 'rejected')
+        await rejectSuggestion(s.shoppingListItemId, s.suggestedMasterItemId, s.normalisedName)
+        resolveByNormalisedName(s.normalisedName, 'rejected')
       } catch {
         toast.error('Failed to reject suggestion')
       }

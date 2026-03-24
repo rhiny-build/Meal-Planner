@@ -13,10 +13,8 @@ export const AI_CONFIG = {
   normaliseIngredients: {},
   embeddings: {
     model: 'text-embedding-3-small' as const,
-    similarityThreshold: 0.82, // legacy — used by findBestMatches default
     autoMatchThreshold: 0.90,  // ≥ this: auto-resolve + write mapping
     suggestionThreshold: 0.65, // ≥ this (and < auto): surface as suggestion for user review
-    deduplicationThreshold: 0.75,
   },
   extractIngredients: {},
 } as const

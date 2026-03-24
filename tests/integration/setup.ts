@@ -77,6 +77,8 @@ export async function teardownTestDatabase() {
  */
 export async function clearTestDatabase() {
   // Delete in order to respect foreign key constraints
+  await testPrisma.rejectedSuggestion.deleteMany()
+  await testPrisma.ingredientMapping.deleteMany()
   await testPrisma.shoppingListItem.deleteMany()
   await testPrisma.shoppingList.deleteMany()
   await testPrisma.mealPlan.deleteMany()

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { normaliseName, normaliseNames } from './normalise'
+import { normaliseName } from './normaliseRecipeIngredient'
 
 describe('normaliseName', () => {
   describe('form extraction', () => {
@@ -159,20 +159,5 @@ describe('normaliseName', () => {
       const result = normaliseName('rice')
       expect(result).toEqual({ canonical: 'rice', base: 'rice', form: null, confident: false })
     })
-  })
-})
-
-describe('normaliseNames', () => {
-  it('should normalise a batch of names', () => {
-    const results = normaliseNames(['fresh garlic', 'tinned tomatoes', 'chicken breast'])
-    expect(results).toEqual([
-      { canonical: 'garlic (fresh)', base: 'garlic', form: 'fresh', confident: true },
-      { canonical: 'tomato (tinned)', base: 'tomato', form: 'tinned', confident: true },
-      { canonical: 'chicken breast', base: 'chicken breast', form: null, confident: false },
-    ])
-  })
-
-  it('should handle empty array', () => {
-    expect(normaliseNames([])).toEqual([])
   })
 })

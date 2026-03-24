@@ -7,82 +7,40 @@ Living document for tracking features, bugs, and improvements.
 
 ### Priority 1.8: P1 Bugs (2026-02-09)
 
-- [x] **Shopping list: master list / weekly instantiation logic broken** — Fixed: shopping list is now a live view. Auto-created with staples on page visit, meal ingredients sync on meal plan save, Generate button removed. (2026-02-09)
-- [x] **Shopping list: checkbox toggle causes full-list re-render** — Fixed: added React 19 `useOptimistic` hook for instant client-side updates. Server action still syncs in the background; no more visible flash. (2026-02-09)
-
----
-
-### Priority 2: AI Utilisation
-
-Read Shopping-List-Normalisation.md in Docs
-
-- [x] **Ingredient normalisation MVP** — Added `baseIngredient` field to MasterListItem, AI normalisation module (`lib/ai/normaliseIngredients.ts`), backfill script with --dry-run support. All 52 master list items backfilled. (2026-02-10)
-- [x] **Normalisation matching** — Use `baseIngredient` to filter staples/restock from shopping list generation (next step)
-- [x] **Add/edit hooks** — Wire normalisation into add/edit MasterListItem flow. `addMasterListItem` and `updateMasterListItem` now auto-normalise with graceful fallback. (2026-02-11)
+- 
 - [ ] URL extraction returning wrong recipe (investigate HTML parsing/prompt) - e.g., honey garlic chicken URL returned "Classic Tomato Basil Pasta"
 - [x] **Meal plan completion overwrites user selections** — Fixed: grouped available recipes by slot type in the prompt so the AI can only pick valid recipes per column (lunch/protein/carb/vegetable). (2026-02-11)
-- [ ] Experiment with OpenAI for better aggregation of shopping list ingredients
 
 ---
 
 ## Next Tier
 
 ### UX Improvements
-- [ ] Convert select elements to react-select and complete styling
-- [ ] Modernise UX: experiment with different themes (let user choose)
-- [ ] Add This Week / Next Week tabs to meal plan header
-- [ ] Consider drag and drop functionality for meals
+- 
 
 ### Bugs
 - [ ] Inspire Me reject marks two recipes instead of one (investigate)
+- [ ] **Shopping list shows raw recipe text instead of clean ingredient name** — e.g. "½ small red onion very thinly sliced, about ⅛-inch wide" instead of "red onion". The pipeline writes `item.name` (the original aggregated recipe ingredient string) to `ShoppingListItem.name`. Should use the normalised base ingredient name for display.
 
 ### Observability
 - [ ] Add logging for AI prompts/responses (viewable in Vercel function logs)
-- [ ] Audit blocking AI calls in the codebase — ensure no user-facing action awaits a slow AI call without timeout or background processing
-
----
+- 
 
 ## Later / UX Pass
 
-### Visual & Interaction
-- [ ] Visual refresh - modernize look and feel
-- [ ] Drag-and-drop meals between days
-- [ ] Mobile responsiveness: editing on phone (viewing complete)
 
 ### Shopping List Enhancements
-- [ ] Lazy canonicalName computation — In Step 4 of the sync pipeline, if a MasterListItem has no canonicalName, compute it on the fly and save it. Makes the system self-healing.
+- [ ] Lazy normalisedName computation — In Step 4 of the sync pipeline, if a MasterListItem has no normalisedName, compute it on the fly and save it. Makes the system self-healing.
 - [ ] Remove backfill script from deploy — Once lazy computation is in place, remove `scripts/backfill-canonical-names.ts` from the build pipeline and delete the script.
 - [ ] Reorder items within categories (drag-and-drop)
-- [ ] Fuzzy matching for semantic duplicates (mayo/mayonnaise, salt/salt and pepper)
+
 
 ### AI Quality
 - [ ] Improve ingredient extraction quality (incomplete items like "boneless", "Dressing")
 
----
-
-## Completed
-
-- [x] Dynamic dish types management (protein/carb types stored in database, manageable via Settings) (2026-02-06)
-- [x] Category management in Settings (add/edit/delete categories for staples/restock) (2026-02-06)
-- [x] Settings page with master list management UI (2026-02-06)
-- [x] Mobile meal plan view with swipe navigation and day persistence (2026-02-06)
-- [x] Shopping list tab separation - 4 tabs: Meals | Staples | Restock | Shopping List (2026-02-05)
-- [x] Testing infrastructure with Vitest - 150 tests (2026-02-05)
-- [x] Shopping list staples/restock feature (2026-02-04)
-- [x] Add day notes field (localStorage, auto-clears after week passes)
-- [x] Add vegetable dish support (checkbox in recipes, third column in meal plan grid)
-- [x] Remember last viewed week (localStorage persistence)
-- [x] Refresh recipes list on navigation (visibilitychange listener)
-- [x] Fix unit stripping bugs (parenthetical quantities, unit-only prefixes)
-- [x] Add Radix Tooltip for truncated recipe names in meal plan grid
-- [x] Add lunch support (schema, recipes, meal plan grid, shopping list)
+### Tech Debt
+- [ ] **Move pending suggestions out of ShoppingListItem** — `matchConfidence`, `masterItemId`, and `similarityScore` on `ShoppingListItem` are almost always null/unmatched. The only useful state is `pending` (for the review modal). Consider a dedicated `PendingSuggestion` table or transient in-memory state, and remove these columns from `ShoppingListItem`.
+- [x] **lib/ and scripts/ restructuring** — Shopping list files reorganised into `lib/shopping-list/` and `scripts/shopping-list/` with descriptive names. `lib/normalisation/` merged and removed. (2026-03-20)
 
 ---
 
-## Notes
-
-- **2026-02-04**: Critical issue - seed script data loss. See [Critical-Issues-Log.md](docs/Critical-Issues-Log.md)
-- Perplexity integration for "Inspire Me" search working well
-- Shopping list schema discussion resolved: keeping simple text-based approach (no foreign keys to ingredients)
-- Code review completed 2026-01-31 - see [Code-Review-2026-01-31.md](Code-Review-2026-01-31.md) for full details
-- Shopping list feature design doc: [Shopping-List-Feature-Design.md](docs/Shopping-List-Feature-Design.md) - Phase 1 & 2 complete

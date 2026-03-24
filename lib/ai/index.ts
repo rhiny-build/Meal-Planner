@@ -17,5 +17,5 @@
 
 export { extractIngredientsFromURL } from './extractIngredientsFromURL'
 export { modifyMealPlan } from './modifyMealPlan'
-export { normaliseIngredients } from './normaliseIngredients'
-export type { NormalisationInput, NormalisationResult } from './normaliseIngredients'
+export { normaliseMasterItems } from '../shopping-list/normaliseMasterItem'
+export type { NormalisationInput, NormalisationResult } from '../shopping-list/normaliseMasterItem'

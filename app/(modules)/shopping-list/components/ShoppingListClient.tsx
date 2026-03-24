@@ -11,7 +11,7 @@ import { useState, useTransition, useOptimistic } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { getMonday } from '@/lib/dateUtils'
-import { formatShoppingListAsText } from '@/lib/shoppingListHelpers'
+import { formatShoppingListAsText } from '@/lib/shopping-list/aggregateRecipeIngredients'
 import { toggleItem, addItem, deleteShoppingListItem, syncMealIngredients, createIngredientMapping, addMasterListItem } from '../actions'
 import type { EmbeddingSuggestion } from '../actions'
 import type { Recipe } from '@/types'
@@ -269,7 +269,6 @@ export default function ShoppingListClient({
   }
 
   // Build PendingSuggestion[] from pipeline output by fetching pending items from the page data
-  // We match by canonicalName since that's the stable key between pipeline output and DB items
   async function buildPendingSuggestions(
     suggestions: EmbeddingSuggestion[]
   ): Promise<PendingSuggestion[]> {
@@ -287,14 +286,14 @@ export default function ShoppingListClient({
         const dbItem = pendingItems.find(
           (i) =>
             !usedIds.has(i.id) &&
-            (i.canonicalName === s.canonicalName || i.name === s.ingredientName)
+            i.name === s.ingredientName
         )
         if (!dbItem) return null
         usedIds.add(dbItem.id)
         return {
           shoppingListItemId: dbItem.id,
           ingredientName: s.ingredientName,
-          canonicalName: s.canonicalName,
+          normalisedName: s.normalisedName,
           suggestedMasterItemId: s.suggestedMasterItemId,
           suggestedMasterItemName: s.suggestedMasterItemName,
           score: s.score,

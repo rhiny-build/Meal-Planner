@@ -130,6 +130,7 @@ CRITICAL:
  *
  * Expected JSON response shape:
  * { items: { id: string, baseIngredient: string, canonicalName: string }[] }
+ * Note: LLM returns `canonicalName` — mapped to `normalisedName` in calling code.
  */
 export function buildNormaliseIngredientsPrompt(itemsList: string): string {
   return `Normalise these grocery product names to their base ingredient concept.

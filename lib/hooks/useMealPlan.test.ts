@@ -12,13 +12,13 @@ import { getMonday } from '@/lib/dateUtils'
 import type { Recipe, WeekPlan } from '@/types'
 
 // Mock AI modules to prevent OpenAI client initialization in jsdom
-vi.mock('@/lib/ai/matchIngredients', () => ({
-  matchIngredientsAgainstMasterList: vi.fn(),
+vi.mock('@/lib/shopping-list/matchRecipeToMaster', () => ({
+  findEmbeddingSuggestions: vi.fn(),
 }))
-vi.mock('@/lib/ai/normaliseIngredients', () => ({
-  normaliseIngredients: vi.fn(),
+vi.mock('@/lib/shopping-list/normaliseMasterItem', () => ({
+  normaliseMasterItems: vi.fn(),
 }))
-vi.mock('@/lib/ai/embeddings', () => ({
+vi.mock('@/lib/shopping-list/ingredientEmbeddings', () => ({
   computeEmbeddings: vi.fn(),
 }))
 

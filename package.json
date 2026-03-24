@@ -17,7 +17,9 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
-    "backfill:ingredients": "npx tsx scripts/backfill-base-ingredients.ts"
+    "import:receipts": "npx tsx scripts/purchase-history/import-receipts.ts",
+    "analyse:purchases": "npx tsx scripts/purchase-history/analyse-frequency.ts",
+    "analyse:gaps": "npx tsx scripts/purchase-history/analyse-gaps.ts"
   },
   "keywords": [],
   "author": "",
@@ -32,9 +34,11 @@
     "@types/node": "^25.0.6",
     "@types/react": "^19.2.8",
     "@types/react-dom": "^19.2.3",
+    "@vercel/blob": "^2.3.1",
     "dotenv": "^17.2.3",
     "next": "^16.1.1",
     "openai": "^6.16.0",
+    "pdf-parse": "^1.1.1",
     "pluralize": "^8.0.0",
     "prisma": "^5.22.0",
     "react": "^19.2.4",

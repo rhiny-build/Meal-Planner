@@ -1,5 +1,11 @@
 # Backlog
 
+## ~~P0: Shopping List Display Name Bug~~ ✅ RESOLVED
+
+Fixed in `feature_shopping_list_cleanup` branch. Items now display `displayedName` (user-friendly, derived from `baseIngredient`). Dedup keys on `displayedName` so form variants (fresh/dried/etc) merge into one item. See `docs/plan-shopping-list-naming-fix.md` for full details.
+
+---
+
 ## Next Up: Ingredient Mapping UI + Master List Gaps
 
 ### Context

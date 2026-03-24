@@ -60,14 +60,14 @@ export async function reassignSuggestion(
 export async function rejectSuggestion(
   shoppingListItemId: string,
   masterItemId: string,
-  canonicalName: string,
+  normalisedName: string,
 ) {
   // Record rejection (idempotent via upsert on unique constraint)
   await prisma.rejectedSuggestion.upsert({
     where: {
-      canonicalName_masterItemId: { canonicalName, masterItemId },
+      normalisedName_masterItemId: { normalisedName, masterItemId },
     },
-    create: { canonicalName, masterItemId },
+    create: { normalisedName, masterItemId },
     update: {},
   })
 

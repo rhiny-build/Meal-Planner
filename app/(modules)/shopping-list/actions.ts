@@ -11,16 +11,16 @@ import { writeFileSync, mkdirSync } from 'fs'
 import { join } from 'path'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { aggregateIngredients, collectIngredientsFromMealPlans } from '@/lib/shoppingListHelpers'
-import { matchIngredientsAgainstMasterList } from '@/lib/ai/matchIngredients'
-import { normaliseIngredients } from '@/lib/ai/normaliseIngredients'
-import { computeEmbeddings } from '@/lib/ai/embeddings'
+import { aggregateIngredients, collectRecipeIngredients } from '@/lib/shopping-list/aggregateRecipeIngredients'
+import { findEmbeddingSuggestions } from '@/lib/shopping-list/matchRecipeToMaster'
+import { normaliseMasterItems } from '@/lib/shopping-list/normaliseMasterItem'
+import { computeEmbeddings } from '@/lib/shopping-list/ingredientEmbeddings'
 import { AI_CONFIG } from '@/lib/ai/config'
-import { normaliseIngredientCached } from '@/lib/normalisation/normaliseWithFallback'
+import { normaliseRecipeIngredient } from '@/lib/shopping-list/normaliseRecipeIngredient'
 
 export type EmbeddingSuggestion = {
   ingredientName: string
-  canonicalName: string
+  normalisedName: string
   suggestedMasterItemId: string
   suggestedMasterItemName: string
   score: number
@@ -65,12 +65,12 @@ export async function ensureShoppingListExists(weekStart: Date) {
 /**
  * Sync meal ingredients into the shopping list from the current meal plan.
  *
- * 5-step matching pipeline:
- *   1. Collect + Aggregate (from meal plans)
- *   2. Normalise (local, no API — produces canonicalName per ingredient)
- *   3. Explicit mapping lookup (IngredientMapping table)
- *   4. Embedding match (for items not resolved in step 3)
- *   5. Cross-recipe dedup + Write (group unmatched by canonicalName)
+ * Pipeline:
+ *   Step 1: Collect and aggregate recipe ingredients
+ *   Step 2: Normalise — local rules + optional LLM, produces normalisedName for matching
+ *   Step 3: Mapping table lookup — suppress known ingredients (no UI, no computation)
+ *   Step 4: Embedding suggestions — surface likely matches for user confirmation
+ *   Step 5: Write remaining items to shopping list
  *
  * Replaces only source='recipe' items, preserving staples/restock/manual.
  */
@@ -84,11 +84,11 @@ export async function syncMealIngredients(weekStart: Date) {
   // Debug log lines accumulated across all steps
   const logLines: string[] = [
     `Shopping List Pipeline Debug — ${new Date().toISOString()}`,
-    `Embedding match threshold: ${AI_CONFIG.embeddings.similarityThreshold}`,
+    `Embedding match thresholds: auto=${AI_CONFIG.embeddings.autoMatchThreshold}, suggestion=${AI_CONFIG.embeddings.suggestionThreshold}`,
     '',
   ]
 
-  // ─── STEP 1: COLLECT + AGGREGATE ────────────────────────────────────
+  // ─── Step 1: Collect and aggregate recipe ingredients ───────────────
   const mealPlans = await prisma.mealPlan.findMany({
     where: { date: { gte: normalizedWeekStart, lt: weekEnd } },
     include: {
@@ -99,7 +99,7 @@ export async function syncMealIngredients(weekStart: Date) {
     },
   })
 
-  const allIngredients = collectIngredientsFromMealPlans(mealPlans)
+  const allIngredients = collectRecipeIngredients(mealPlans)
   const aggregatedItems = aggregateIngredients(allIngredients)
 
   logLines.push(
@@ -119,13 +119,13 @@ export async function syncMealIngredients(weekStart: Date) {
     return
   }
 
-  // ─── STEP 2: NORMALISE ──────────────────────────────────────────────
-  // Deterministic rules first, then LLM fallback (if USE_LLM=true) with DB cache.
+  // ─── Step 2: Normalise — transient normalised form for matching ─────
   type NormalisedItem = {
-    name: string         // original aggregated name
-    canonicalName: string // normalised e.g. "garlic (fresh)"
-    sources: string[]    // recipe names
-    resolved: boolean    // set to true when matched in step 3 or 4
+    name: string              // original aggregated name
+    normalisedName: string    // normalised e.g. "garlic (fresh)" — for embedding match
+    displayedName: string     // user-facing e.g. "garlic" — written to ShoppingListItem.name
+    sources: string[]         // recipe names
+    resolved: boolean         // set to true when matched in step 3 or 4
     matchConfidence: 'explicit' | 'embedding' | 'unmatched' | 'pending'
     masterItemId: string | null
     similarityScore: number | null // cosine similarity from embedding match
@@ -133,10 +133,11 @@ export async function syncMealIngredients(weekStart: Date) {
 
   const items: NormalisedItem[] = await Promise.all(
     aggregatedItems.map(async (item) => {
-      const { canonical } = await normaliseIngredientCached(item.name)
+      const { canonical, base } = await normaliseRecipeIngredient(item.name)
       return {
         name: item.name,
-        canonicalName: canonical || item.name.toLowerCase(),
+        normalisedName: canonical || item.name.toLowerCase(),
+        displayedName: base || item.name.toLowerCase(),
         sources: item.sources,
         resolved: false,
         matchConfidence: 'unmatched' as const,
@@ -148,12 +149,11 @@ export async function syncMealIngredients(weekStart: Date) {
 
   logLines.push(
     '=== STEP 2: NORMALISE ===',
-    ...items.map((item) => `  "${item.name}" → "${item.canonicalName}"`),
+    ...items.map((item) => `  "${item.name}" → "${item.normalisedName}"`),
     '',
   )
 
-  // ─── STEP 3: EXPLICIT MAPPING LOOKUP ────────────────────────────────
-  // Check IngredientMapping table for known ingredient→master mappings.
+  // ─── Step 3: Mapping table lookup — suppress known ingredients ──────
   try {
     const recipeNames = items.filter((i) => !i.resolved).map((i) => i.name.toLowerCase())
     if (recipeNames.length > 0) {
@@ -183,7 +183,7 @@ export async function syncMealIngredients(weekStart: Date) {
           prisma.ingredientMapping.update({
             where: { id: mapping.id },
             data: { confirmedCount: { increment: 1 } },
-          }).catch(() => {})
+          }).catch((error) => console.error('[Pipeline] DB write failed:', error))
         }
       }
 
@@ -199,12 +199,7 @@ export async function syncMealIngredients(weekStart: Date) {
     logLines.push('=== STEP 3: EXPLICIT MAPPING LOOKUP ===', `  (error: ${error})`, '')
   }
 
-  // ─── STEP 4: EMBEDDING MATCH (two-tier) ────────────────────────────
-  // For items not resolved in step 3, embed their canonicalName and compare
-  // against MasterListItem embeddings. Uses two thresholds:
-  //   ≥ autoMatchThreshold (0.90): auto-resolve + write mapping
-  //   ≥ suggestionThreshold (0.50): surface as pending suggestion for user review
-  //   < suggestionThreshold: ignore (unmatched)
+  // ─── Step 4: Embedding suggestions — surface likely matches ────────
   const suggestions: EmbeddingSuggestion[] = []
   const { autoMatchThreshold, suggestionThreshold } = AI_CONFIG.embeddings
 
@@ -214,26 +209,26 @@ export async function syncMealIngredients(weekStart: Date) {
     if (unresolvedItems.length > 0) {
       const masterListItems = await prisma.masterListItem.findMany({
         where: {
-          canonicalName: { not: null },
+          normalisedName: { not: null },
           embedding: { isEmpty: false },
         },
-        select: { id: true, name: true, canonicalName: true, embedding: true, type: true },
+        select: { id: true, name: true, normalisedName: true, embedding: true, type: true },
       })
       const masterItems = masterListItems.map((item) => ({
         id: item.id,
         name: item.name,
-        canonicalName: item.canonicalName as string,
+        normalisedName: item.normalisedName as string,
         embedding: item.embedding,
       }))
 
       logLines.push('=== STEP 4: EMBEDDING MATCH (two-tier) ===')
 
       if (masterItems.length > 0) {
-        const textsToEmbed = unresolvedItems.map((i) => i.canonicalName)
+        const textsToEmbed = unresolvedItems.map((i) => i.normalisedName)
         const ingredientEmbeddings = await computeEmbeddings(textsToEmbed)
 
         // Use the lower suggestion threshold to get all potential matches
-        const matchResults = await matchIngredientsAgainstMasterList({
+        const matchResults = await findEmbeddingSuggestions({
           recipeIngredients: textsToEmbed,
           masterItems,
           precomputedEmbeddings: ingredientEmbeddings,
@@ -243,12 +238,12 @@ export async function syncMealIngredients(weekStart: Date) {
         // Load rejected suggestions to filter them out
         const rejectedPairs = await prisma.rejectedSuggestion.findMany({
           where: {
-            canonicalName: { in: unresolvedItems.map((i) => i.canonicalName) },
+            normalisedName: { in: unresolvedItems.map((i) => i.normalisedName) },
           },
-          select: { canonicalName: true, masterItemId: true },
+          select: { normalisedName: true, masterItemId: true },
         })
         const rejectedSet = new Set(
-          rejectedPairs.map((r) => `${r.canonicalName}::${r.masterItemId}`)
+          rejectedPairs.map((r) => `${r.normalisedName}::${r.masterItemId}`)
         )
 
         let autoMatchCount = 0
@@ -265,7 +260,7 @@ export async function syncMealIngredients(weekStart: Date) {
             item.masterItemId = match.masterItemId
             autoMatchCount++
             logLines.push(
-              `  ✓ AUTO "${item.name}" [${item.canonicalName}] → "${match.matchedMasterItem}" (score: ${match.bestScore.toFixed(4)})`
+              `  ✓ AUTO "${item.name}" [${item.normalisedName}] → "${match.matchedMasterItem}" (score: ${match.bestScore.toFixed(4)})`
             )
 
             // Write mapping so next run resolves via Step 3 (fire-and-forget)
@@ -282,14 +277,14 @@ export async function syncMealIngredients(weekStart: Date) {
                 confirmedCount: 1,
               },
               update: { confirmedCount: { increment: 1 } },
-            }).catch(() => {})
+            }).catch((error) => console.error('[Pipeline] DB write failed:', error))
 
           } else if (match.matchedMasterItem && match.bestScore >= suggestionThreshold) {
             // MEDIUM confidence — surface as suggestion (unless previously rejected)
-            const rejectKey = `${item.canonicalName}::${match.masterItemId}`
+            const rejectKey = `${item.normalisedName}::${match.masterItemId}`
             if (rejectedSet.has(rejectKey)) {
               logLines.push(
-                `  ⊘ REJECTED "${item.name}" [${item.canonicalName}] → "${match.matchedMasterItem}" (score: ${match.bestScore.toFixed(4)}, previously rejected)`
+                `  ⊘ REJECTED "${item.name}" [${item.normalisedName}] → "${match.matchedMasterItem}" (score: ${match.bestScore.toFixed(4)}, previously rejected)`
               )
             } else {
               item.matchConfidence = 'pending'
@@ -299,18 +294,18 @@ export async function syncMealIngredients(weekStart: Date) {
               const masterName = masterItems.find((m) => m.id === match.masterItemId)?.name ?? match.matchedMasterItem
               suggestions.push({
                 ingredientName: item.name,
-                canonicalName: item.canonicalName,
+                normalisedName: item.normalisedName,
                 suggestedMasterItemId: match.masterItemId!,
                 suggestedMasterItemName: masterName,
                 score: match.bestScore,
               })
               logLines.push(
-                `  ? SUGGEST "${item.name}" [${item.canonicalName}] → "${match.matchedMasterItem}" (score: ${match.bestScore.toFixed(4)})`
+                `  ? SUGGEST "${item.name}" [${item.normalisedName}] → "${match.matchedMasterItem}" (score: ${match.bestScore.toFixed(4)})`
               )
             }
           } else {
             logLines.push(
-              `  ✗ "${item.name}" [${item.canonicalName}] — best: "${match.bestCandidate}" (score: ${match.bestScore.toFixed(4)})`
+              `  ✗ "${item.name}" [${item.normalisedName}] — best: "${match.bestCandidate}" (score: ${match.bestScore.toFixed(4)})`
             )
           }
         }
@@ -321,7 +316,7 @@ export async function syncMealIngredients(weekStart: Date) {
           '',
         )
       } else {
-        logLines.push('  (no master list items with canonicalName + embeddings)', '')
+        logLines.push('  (no master list items with normalisedName + embeddings)', '')
       }
     } else {
       logLines.push('=== STEP 4: EMBEDDING MATCH ===', '  (all items already resolved)', '')
@@ -331,14 +326,12 @@ export async function syncMealIngredients(weekStart: Date) {
     logLines.push('=== STEP 4: EMBEDDING MATCH ===', `  (error: ${error})`, '')
   }
 
-  // ─── STEP 5: CROSS-RECIPE DEDUP + WRITE ─────────────────────────────
-  // Group remaining unmatched/pending items by canonicalName (string equality).
-  // Merge duplicates and combine sources.
+  // ─── Step 5: Write remaining items to shopping list ─────────────────
   const unresolvedItems = items.filter((i) => !i.resolved)
   const dedupMap = new Map<string, NormalisedItem>()
 
   for (const item of unresolvedItems) {
-    const existing = dedupMap.get(item.canonicalName)
+    const existing = dedupMap.get(item.displayedName)
     if (existing) {
       for (const src of item.sources) {
         if (!existing.sources.includes(src)) {
@@ -346,7 +339,7 @@ export async function syncMealIngredients(weekStart: Date) {
         }
       }
     } else {
-      dedupMap.set(item.canonicalName, { ...item })
+      dedupMap.set(item.displayedName, { ...item })
     }
   }
 
@@ -359,7 +352,7 @@ export async function syncMealIngredients(weekStart: Date) {
   if (unresolvedItems.length > dedupedItems.length) {
     for (const item of dedupedItems) {
       if (item.sources.length > 1) {
-        logLines.push(`  Merged: "${item.canonicalName}" (from: ${item.sources.join(', ')})`)
+        logLines.push(`  Merged: "${item.displayedName}" (from: ${item.sources.join(', ')})`)
       }
     }
   }
@@ -367,8 +360,7 @@ export async function syncMealIngredients(weekStart: Date) {
 
   // Build shopping list items from deduped ingredients (unmatched + pending)
   const shoppingListData = dedupedItems.map((item, idx) => ({
-    name: item.name,
-    canonicalName: item.canonicalName,
+    name: item.displayedName,
     matchConfidence: item.matchConfidence,
     masterItemId: item.masterItemId,
     similarityScore: item.similarityScore,
@@ -599,13 +591,13 @@ export async function addMasterListItem(
 
   // Normalise + compute embedding in the background — don't block the user or break the add
   try {
-    const [result] = await normaliseIngredients([{ id: item.id, name: item.name }])
+    const [result] = await normaliseMasterItems([{ id: item.id, name: item.name }])
     if (result?.baseIngredient) {
-      const canonicalName = result.canonicalName ?? result.baseIngredient
-      const [embedding] = await computeEmbeddings([canonicalName])
+      const normalisedName = result.normalisedName ?? result.baseIngredient
+      const [embedding] = await computeEmbeddings([normalisedName])
       await prisma.masterListItem.update({
         where: { id: item.id },
-        data: { baseIngredient: result.baseIngredient, canonicalName, embedding },
+        data: { normalisedName, embedding },
       })
     }
   } catch (error) {
@@ -628,13 +620,13 @@ export async function updateMasterListItem(itemId: string, name: string) {
 
   // Re-normalise + recompute embedding after rename — don't block the user or break the update
   try {
-    const [result] = await normaliseIngredients([{ id: item.id, name: item.name }])
+    const [result] = await normaliseMasterItems([{ id: item.id, name: item.name }])
     if (result?.baseIngredient) {
-      const canonicalName = result.canonicalName ?? result.baseIngredient
-      const [embedding] = await computeEmbeddings([canonicalName])
+      const normalisedName = result.normalisedName ?? result.baseIngredient
+      const [embedding] = await computeEmbeddings([normalisedName])
       await prisma.masterListItem.update({
         where: { id: item.id },
-        data: { baseIngredient: result.baseIngredient, canonicalName, embedding },
+        data: { normalisedName, embedding },
       })
     }
   } catch (error) {
