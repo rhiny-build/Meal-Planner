@@ -8,14 +8,17 @@
  * Idempotent: skips items that already have normalisedName set.
  *
  * Usage:
- *   npx tsx scripts/backfill-canonical-names.ts --dry-run   # preview only
- *   npx tsx scripts/backfill-canonical-names.ts              # normalise, embed, and save
+ *   npx tsx scripts/shopping-list/backfillNormalisedNames.ts --dry-run   # preview only
+ *   npx tsx scripts/shopping-list/backfillNormalisedNames.ts              # normalise, embed, and save
+ *
+ * Note: Removed from the build pipeline (was previously run on every deploy).
+ * Run manually if new MasterListItems need normalisedName + embedding backfill.
  */
 
 import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
-import { normaliseMasterItems } from '../lib/shopping-list/normaliseMasterItem'
-import { computeEmbeddings } from '../lib/shopping-list/ingredientEmbeddings'
+import { normaliseMasterItems } from '../../lib/shopping-list/normaliseMasterItem'
+import { computeEmbeddings } from '../../lib/shopping-list/ingredientEmbeddings'
 
 const BATCH_SIZE = 20
 const DRY_RUN = process.argv.includes('--dry-run')

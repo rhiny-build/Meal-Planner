@@ -296,6 +296,7 @@ export function useShoppingList({
     showAddForm,
     setShowAddForm,
     itemToDelete,
+    setItemToDelete,
     pendingSuggestions,
     optimisticItems,
     activeTab,

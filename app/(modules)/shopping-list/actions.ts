@@ -1,5 +1,3 @@
-'use server'
-
 /**
  * Shopping List Server Actions — Barrel Re-export
  *

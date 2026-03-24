@@ -45,6 +45,7 @@ export default function ShoppingListClient({
     showAddForm,
     setShowAddForm,
     itemToDelete,
+    setItemToDelete,
     pendingSuggestions,
     optimisticItems,
     activeTab,
