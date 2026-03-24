@@ -560,7 +560,7 @@ describe('Shopping List Server Actions', () => {
 
       // But this pair was previously rejected
       mockPrisma.rejectedSuggestion.findMany.mockResolvedValue([
-        { canonicalName: 'garlic', masterItemId: 'm1' },
+        { normalisedName: 'garlic', masterItemId: 'm1' },
       ])
 
       const result = await syncMealIngredients(weekStart)

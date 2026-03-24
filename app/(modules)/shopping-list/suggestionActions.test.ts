@@ -116,12 +116,12 @@ describe('rejectSuggestion', () => {
     // Should create rejection record (idempotent upsert)
     expect(mockPrisma.rejectedSuggestion.upsert).toHaveBeenCalledWith({
       where: {
-        canonicalName_masterItemId: {
-          canonicalName: 'garlic (fresh)',
+        normalisedName_masterItemId: {
+          normalisedName: 'garlic (fresh)',
           masterItemId: 'master-1',
         },
       },
-      create: { canonicalName: 'garlic (fresh)', masterItemId: 'master-1' },
+      create: { normalisedName: 'garlic (fresh)', masterItemId: 'master-1' },
       update: {},
     })
 
@@ -148,7 +148,7 @@ describe('rejectSuggestion', () => {
     // Simulate duplicate: upsert returns existing record (no error)
     mockPrisma.rejectedSuggestion.upsert.mockResolvedValue({
       id: 'existing-rejection',
-      canonicalName: 'garlic (fresh)',
+      normalisedName: 'garlic (fresh)',
       masterItemId: 'master-1',
     })
 

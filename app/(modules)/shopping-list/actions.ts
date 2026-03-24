@@ -238,12 +238,12 @@ export async function syncMealIngredients(weekStart: Date) {
         // Load rejected suggestions to filter them out
         const rejectedPairs = await prisma.rejectedSuggestion.findMany({
           where: {
-            canonicalName: { in: unresolvedItems.map((i) => i.normalisedName) },
+            normalisedName: { in: unresolvedItems.map((i) => i.normalisedName) },
           },
-          select: { canonicalName: true, masterItemId: true },
+          select: { normalisedName: true, masterItemId: true },
         })
         const rejectedSet = new Set(
-          rejectedPairs.map((r) => `${r.canonicalName}::${r.masterItemId}`)
+          rejectedPairs.map((r) => `${r.normalisedName}::${r.masterItemId}`)
         )
 
         let autoMatchCount = 0

@@ -169,15 +169,15 @@ model IngredientMapping {
 // RejectedSuggestion stores user rejections of embedding suggestions
 // so the same suggestion is not surfaced again in future syncs
 model RejectedSuggestion {
-  id            String   @id @default(cuid())
-  canonicalName String   // Normalised ingredient name (e.g. "garlic (fresh)")
-  masterItemId  String   // The master item that was wrongly suggested
-  createdAt     DateTime @default(now())
+  id             String   @id @default(cuid())
+  normalisedName String   // Normalised ingredient name (e.g. "garlic (fresh)")
+  masterItemId   String   // The master item that was wrongly suggested
+  createdAt      DateTime @default(now())
 
   masterItem MasterListItem @relation(fields: [masterItemId], references: [id], onDelete: Cascade)
 
-  @@unique([canonicalName, masterItemId])
-  @@index([canonicalName])
+  @@unique([normalisedName, masterItemId])
+  @@index([normalisedName])
 }
 
 // Caches LLM normalisation results for recipe ingredients to avoid repeat calls
