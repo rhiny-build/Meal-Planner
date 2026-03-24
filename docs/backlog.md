@@ -1,5 +1,24 @@
 # Backlog
 
+## Refactor: Split Large Shopping List Files
+
+**Previous attempt:** `refactor_split_shopping_list_actions` (deleted — too diverged to rebase)
+
+### 1. Split `actions.ts` (~600 lines) into 4 modules
+
+- `syncPipeline.ts` — the 5-step sync logic (Steps 1–5: aggregate → normalise → explicit match → embedding match → dedup & write)
+- `masterListActions.ts` — master list CRUD (`addMasterListItem`, `updateMasterListItem`, `deleteMasterListItem`, `includeMasterListItem`, `excludeMasterListItem`)
+- `ingredientMappingActions.ts` — `createIngredientMapping`
+- `actions.ts` — thin re-export barrel
+
+### 2. Refactor `ShoppingListClient.tsx` (~500 lines)
+
+- Extract `TabNavigation` component (tab bar for recipe/staple/restock tabs)
+- Extract `ShoppingListTabContent` component (list rendering per tab)
+- Extract `useShoppingList` hook (all state + data fetching + generate/check handlers)
+
+---
+
 ## ~~P0: Shopping List Display Name Bug~~ ✅ RESOLVED
 
 Fixed in `feature_shopping_list_cleanup` branch. Items now display `displayedName` (user-friendly, derived from `baseIngredient`). Dedup keys on `displayedName` so form variants (fresh/dried/etc) merge into one item. See `docs/plan-shopping-list-naming-fix.md` for full details.
