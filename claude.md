@@ -90,20 +90,22 @@ For significant features, create a design doc in `/docs/` that includes:
 - Implementation phases with outcomes
 - Open questions
 
+## MCP Servers
+
+### Playwright
+Used for UI testing and browser automation.
+- Always say "use Playwright MCP" explicitly
+- Start dev server first: `npm run dev`
+- App runs at: `http://localhost:3000`
+
+### Chrome DevTools
+Used for console errors, network debugging, and DOM inspection.
+- Use when diagnosing runtime errors after pipeline changes
+- Use after any shopping list generation to verify no console errors
+
 ## Custom Commands
 
-### `help debug`
 
-**Purpose**: Guide the user through debugging so they learn the skill, NOT to fix the issue quickly.
-
-**STRICT RULES - NO EXCEPTIONS**:
-- **2-3 lines max per response.** End with ONE guiding question or hint. Nothing more.
-- **NEVER explain the bug, its cause, or solution** - even partially. Only ask questions that help the user discover it themselves.
-- **NEVER read multiple files at once** to "understand the flow" - let the user guide you to what they want to explore.
-- **If tempted to over-explain**: STOP. Delete your response and write a shorter one with just a question.
-- **Only reveal more if the user explicitly says**: "just tell me" or "what's the answer"
-
-## Common Commands
 
 ### Development
 ```bash
@@ -167,7 +169,7 @@ Review up to date architecure.md for reference
 - **`config.ts`**: AI model config, embedding thresholds (auto: 0.90, suggestion: 0.65, dedup: 0.75)
 - **`embeddings.ts`**: `computeEmbeddings()`, `cosineSimilarity()`, `findBestMatches()`, `deduplicateByEmbedding()`
 - **`matchIngredients.ts`**: `matchIngredientsAgainstMasterList()` — orchestrates embedding match against master list
-- **`normaliseIngredients.ts`**: LLM-based normalisation returning `baseIngredient` and `canonicalName`
+- **`normaliseIngredients.ts`**: LLM-based normalisation returning `baseIngredient` and `normalisedName`
 - **`prompts.ts`**: AI prompt templates for normalisation and extraction
 
 ### Shopping List Module (`app/(modules)/shopping-list/`)
@@ -183,7 +185,6 @@ Review up to date architecure.md for reference
 
 ### Scripts
 
-- **`scripts/backfill-canonical-names.ts`**: Backfill `canonicalName` on MasterListItem and re-embed (idempotent, supports `--dry-run`)
 - **`scripts/backfill-embeddings.ts`**: Backfill embedding vectors for master list items
 
 ### API Routes
@@ -244,10 +245,10 @@ The app uses a relational model with named relations for multiple references:
 
 **Recipe**: Can serve as protein, carb, or vegetable in different meal plans
 **MealPlan**: References up to 3 recipes (protein, carb, vegetable) per day
-**MasterListItem**: Household staples/restock items with `canonicalName` and embedding vectors for ingredient matching
+**MasterListItem**: Household staples/restock items with `normalisedName` and embedding vectors for ingredient matching
 **IngredientMapping**: Learned mappings from recipe ingredient names to master list items (upsert with `confirmedCount`)
-**ShoppingListItem**: Items on weekly list with `source` ('recipe'|'staple'|'restock'|'manual'), `canonicalName`, `masterItemId` FK, `matchConfidence` ('explicit'|'embedding'|'unmatched'|'pending'), and `similarityScore` (float, for review UI)
-**RejectedSuggestion**: Records rejected embedding suggestions so they don't resurface (unique on `canonicalName` + `masterItemId`)
+**ShoppingListItem**: Items on weekly list with `source` ('recipe'|'staple'|'restock'|'manual'), `displayedName` (user-facing), `masterItemId` FK, `matchConfidence` ('explicit'|'embedding'|'unmatched'|'pending'), and `similarityScore` (float, for review UI)
+**RejectedSuggestion**: Records rejected embedding suggestions so they don't resurface (unique on `normalisedName` + `masterItemId`)
 **ShoppingList.stale**: Boolean flag set when meal plan changes after list was generated; reset when pipeline runs
 
 Key feature: Optional fields allow flexible meal composition (protein-only, carb-only, or combined meals).
