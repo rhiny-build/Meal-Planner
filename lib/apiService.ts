@@ -17,7 +17,7 @@ export const fetchMealPlan = async (startDate: Date, days: string[]): Promise<We
 
     try {
       const response = await fetch(
-        `/api/meal-plan?startDate=${startDate.toISOString()}`
+        `/api/meal-plan?startDate=${startDate.toISOString().split('T')[0]}`
       )
       const json = await response.json()
       data = json ?? { mealPlans: [] }
@@ -87,14 +87,14 @@ try {
       await fetch('/api/meal-plan/delete', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startDate: startDate.toISOString() }),
+        body: JSON.stringify({ startDate: startDate.toISOString().split('T')[0] }),
       })
 
       // Then create new meals
       const response = await fetch('/api/meal-plan/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startDate: startDate.toISOString(), mealPlans: updates }),
+        body: JSON.stringify({ startDate: startDate.toISOString().split('T')[0], mealPlans: updates }),
       })
 
       if (response.ok) {
