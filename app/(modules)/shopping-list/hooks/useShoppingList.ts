@@ -10,7 +10,7 @@
 import { useState, useTransition, useOptimistic } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { getMonday } from '@/lib/dateUtils'
+import { getWeekStart } from '@/lib/dateUtils'
 import { formatShoppingListAsText } from '@/lib/shopping-list/aggregateRecipeIngredients'
 import {
   toggleItem,
@@ -63,7 +63,7 @@ export function useShoppingList({
   const activeTab = tabParam || initialTab
 
   const weekParam = searchParams.get('week')
-  const currentWeekStart = weekParam ? getMonday(new Date(weekParam)) : initialWeekStart
+  const currentWeekStart = weekParam ? getWeekStart(new Date(weekParam)) : initialWeekStart
 
   // Navigation
   const setActiveTab = (tab: Tab) => {
