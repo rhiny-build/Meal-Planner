@@ -78,7 +78,7 @@ model MealPlan {
 // ShoppingList model stores generated shopping lists for a week
 model ShoppingList {
   id        String   @id @default(cuid())
-  weekStart DateTime // The Monday of the week this list is for
+  weekStart DateTime // The start date of the week this list is for
   stale     Boolean  @default(false) // True when meal plan changed after list was generated
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -205,6 +205,12 @@ model PurchaseHistory {
   masterItem MasterListItem? @relation(fields: [masterItemId], references: [id])
 
   @@index([purchaseDate])
+}
+
+// SystemSetting stores key-value application preferences (e.g., weekStartDay)
+model SystemSetting {
+  key   String @id
+  value String
 }
 
 // DishType model stores dynamic protein and carb types
