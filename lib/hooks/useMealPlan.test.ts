@@ -8,7 +8,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { useMealPlan } from './useMealPlan'
-import { getMonday } from '@/lib/dateUtils'
+import { getWeekStart, getMonday } from '@/lib/dateUtils'
 import type { Recipe, WeekPlan } from '@/types'
 
 // Mock AI modules to prevent OpenAI client initialization in jsdom
@@ -100,7 +100,8 @@ function createMockFetchResponse(data: unknown, ok = true) {
 
 describe('useMealPlan', () => {
   // Use current week's Monday to avoid isWeekPast clearing notes
-  const startDate = getMonday(new Date())
+  const weekStartDay = 1
+  const startDate = getWeekStart(new Date(), weekStartDay)
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -123,7 +124,7 @@ describe('useMealPlan', () => {
 
   describe('Recipe Filtering', () => {
     it('should filter vegetable recipes correctly', async () => {
-      const { result } = renderHook(() => useMealPlan(startDate))
+      const { result } = renderHook(() => useMealPlan(startDate, weekStartDay))
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -136,7 +137,7 @@ describe('useMealPlan', () => {
     })
 
     it('should include recipes with multiple types in multiple lists', async () => {
-      const { result } = renderHook(() => useMealPlan(startDate))
+      const { result } = renderHook(() => useMealPlan(startDate, weekStartDay))
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -155,7 +156,7 @@ describe('useMealPlan', () => {
 
   describe('handleRecipeChange', () => {
     it('should update vegetableRecipeId when column is vegetable', async () => {
-      const { result } = renderHook(() => useMealPlan(startDate))
+      const { result } = renderHook(() => useMealPlan(startDate, weekStartDay))
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -170,7 +171,7 @@ describe('useMealPlan', () => {
     })
 
     it('should update proteinRecipeId when column is protein', async () => {
-      const { result } = renderHook(() => useMealPlan(startDate))
+      const { result } = renderHook(() => useMealPlan(startDate, weekStartDay))
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -184,7 +185,7 @@ describe('useMealPlan', () => {
     })
 
     it('should update carbRecipeId when column is carb', async () => {
-      const { result } = renderHook(() => useMealPlan(startDate))
+      const { result } = renderHook(() => useMealPlan(startDate, weekStartDay))
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -200,7 +201,7 @@ describe('useMealPlan', () => {
 
   describe('selectedCount', () => {
     it('should include vegetables in selected count', async () => {
-      const { result } = renderHook(() => useMealPlan(startDate))
+      const { result } = renderHook(() => useMealPlan(startDate, weekStartDay))
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -223,7 +224,7 @@ describe('useMealPlan', () => {
 
   describe('handleClear', () => {
     it('should clear vegetableRecipeId along with protein and carb', async () => {
-      const { result } = renderHook(() => useMealPlan(startDate))
+      const { result } = renderHook(() => useMealPlan(startDate, weekStartDay))
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -253,7 +254,7 @@ describe('useMealPlan', () => {
     it('should not clear when user cancels confirmation', async () => {
       vi.mocked(confirm).mockReturnValueOnce(false)
 
-      const { result } = renderHook(() => useMealPlan(startDate))
+      const { result } = renderHook(() => useMealPlan(startDate, weekStartDay))
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -274,7 +275,7 @@ describe('useMealPlan', () => {
 
   describe('applyGeneratedPlan', () => {
     it('should apply vegetableRecipeId from AI-generated plan', async () => {
-      const { result } = renderHook(() => useMealPlan(startDate))
+      const { result } = renderHook(() => useMealPlan(startDate, weekStartDay))
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -323,7 +324,7 @@ describe('useMealPlan', () => {
     })
 
     it('should initialize with empty notes', async () => {
-      const { result } = renderHook(() => useMealPlan(startDate))
+      const { result } = renderHook(() => useMealPlan(startDate, weekStartDay))
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -333,7 +334,7 @@ describe('useMealPlan', () => {
     })
 
     it('should update notes via handleNoteChange', async () => {
-      const { result } = renderHook(() => useMealPlan(startDate))
+      const { result } = renderHook(() => useMealPlan(startDate, weekStartDay))
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -347,7 +348,7 @@ describe('useMealPlan', () => {
     })
 
     it('should persist notes to localStorage', async () => {
-      const { result } = renderHook(() => useMealPlan(startDate))
+      const { result } = renderHook(() => useMealPlan(startDate, weekStartDay))
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -369,7 +370,7 @@ describe('useMealPlan', () => {
       const storageKey = `mealPlanNotes_${startDate.toISOString().split('T')[0]}`
       localStorage.setItem(storageKey, JSON.stringify({ Wednesday: 'Work late' }))
 
-      const { result } = renderHook(() => useMealPlan(startDate))
+      const { result } = renderHook(() => useMealPlan(startDate, weekStartDay))
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -380,7 +381,7 @@ describe('useMealPlan', () => {
 
     it('should use different storage keys for different weeks', async () => {
       // Use current week and next week (not past weeks which get cleared)
-      const week1 = getMonday(new Date())
+      const week1 = getWeekStart(new Date(), weekStartDay)
       const week2 = new Date(week1)
       week2.setDate(week2.getDate() + 7) // Next week
 
@@ -393,14 +394,14 @@ describe('useMealPlan', () => {
       localStorage.setItem(storageKey2, JSON.stringify({ Monday: 'Week 2 note' }))
 
       // Render hook for week 1
-      const { result: result1 } = renderHook(() => useMealPlan(week1))
+      const { result: result1 } = renderHook(() => useMealPlan(week1, weekStartDay))
       await waitFor(() => {
         expect(result1.current.isLoading).toBe(false)
       })
       expect(result1.current.dayNotes['Monday']).toBe('Week 1 note')
 
       // Render hook for week 2
-      const { result: result2 } = renderHook(() => useMealPlan(week2))
+      const { result: result2 } = renderHook(() => useMealPlan(week2, weekStartDay))
       await waitFor(() => {
         expect(result2.current.isLoading).toBe(false)
       })
@@ -408,7 +409,7 @@ describe('useMealPlan', () => {
     })
 
     it('should handle multiple notes across days', async () => {
-      const { result } = renderHook(() => useMealPlan(startDate))
+      const { result } = renderHook(() => useMealPlan(startDate, weekStartDay))
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -443,7 +444,7 @@ describe('useMealPlan', () => {
       const storageKey = `mealPlanNotes_${pastWeek.toISOString().split('T')[0]}`
       localStorage.setItem(storageKey, JSON.stringify({ Monday: 'Old note' }))
 
-      const { result } = renderHook(() => useMealPlan(pastWeek))
+      const { result } = renderHook(() => useMealPlan(pastWeek, weekStartDay))
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
