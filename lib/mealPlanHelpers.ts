@@ -6,7 +6,18 @@
 
 import type { RecipeWithIngredients, WeekPlan } from '@/types'
 
-export const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+const ALL_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+/**
+ * Get the ordered day names for a week starting on the given day.
+ * @param startDay - JS Date.getDay() value (0=Sun, 1=Mon, ..., 6=Sat). Defaults to 1 (Monday).
+ */
+export function getOrderedDays(startDay: number = 1): string[] {
+  return [...ALL_DAYS.slice(startDay), ...ALL_DAYS.slice(0, startDay)]
+}
+
+/** @deprecated Use getOrderedDays() instead */
+export const DAYS = getOrderedDays(1)
 
 export type MealSlotColumn = 'lunch' | 'protein' | 'carb' | 'vegetable'
 export type RecipeIdKey = 'lunchRecipeId' | 'proteinRecipeId' | 'carbRecipeId' | 'vegetableRecipeId'
@@ -26,7 +37,7 @@ export function getRecipeKeyFromColumn(column: MealSlotColumn): RecipeIdKey {
 }
 
 /**
- * Calculate the start and end dates for a week (Monday-Sunday)
+ * Calculate the start and end dates for a 7-day week
  */
 export function getWeekBounds(startDate: Date): { startDate: Date; endDate: Date } {
   const start = new Date(startDate)
@@ -40,31 +51,36 @@ export function getWeekBounds(startDate: Date): { startDate: Date; endDate: Date
 }
 
 /**
- * Validate that a date is a Monday
- * @throws Error if date is not a Monday
+ * Validate that a date falls on the expected week start day
+ * @throws Error if date doesn't match the expected start day
  */
-export function validateMonday(date: Date): void {
-  if (date.getDay() !== 1) {
-    throw new Error('Start date must be a Monday')
+export function validateWeekStart(date: Date, startDay: number = 1): void {
+  if (date.getDay() !== startDay) {
+    const expectedDay = ALL_DAYS[startDay]
+    throw new Error(`Start date must be a ${expectedDay}`)
   }
 }
 
+/** @deprecated Use validateWeekStart instead */
+export function validateMonday(date: Date): void {
+  validateWeekStart(date, 1)
+}
+
 /**
- * Parse start date from query param or use current week's Monday
+ * Parse start date from query param or calculate current week's start
  */
-export function parseStartDate(paramValue: string | null): Date {
+export function parseStartDate(paramValue: string | null, startDay: number = 1): Date {
   if (paramValue) {
     return new Date(paramValue)
   }
 
-  // Get current week's Monday
   const today = new Date()
   const dayOfWeek = today.getDay()
-  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
-  const monday = new Date(today)
-  monday.setDate(today.getDate() + diff)
+  const diff = (dayOfWeek - startDay + 7) % 7
+  const weekStart = new Date(today)
+  weekStart.setDate(today.getDate() - diff)
 
-  return monday
+  return weekStart
 }
 
 /**
@@ -141,8 +157,9 @@ export function applyGeneratedPlanToWeek(
 /**
  * Create a blank week plan (7 days, all recipe IDs empty).
  */
-export function createEmptyWeekPlan(startDate: Date): WeekPlan[] {
-  return DAYS.map((day, index) => {
+export function createEmptyWeekPlan(startDate: Date, startDay: number = 1): WeekPlan[] {
+  const days = getOrderedDays(startDay)
+  return days.map((day, index) => {
     const date = new Date(startDate)
     date.setDate(date.getDate() + index)
     return { day, date, lunchRecipeId: '', proteinRecipeId: '', carbRecipeId: '', vegetableRecipeId: '' }

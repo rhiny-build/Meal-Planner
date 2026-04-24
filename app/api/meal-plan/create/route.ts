@@ -6,14 +6,15 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { validateMonday, getWeekBounds } from '@/lib/mealPlanHelpers'
+import { validateWeekStart, getWeekBounds } from '@/lib/mealPlanHelpers'
+import { getWeekStartDay } from '@/app/(modules)/settings/preferenceActions'
 import type { BulkMealPlanRequest } from '@/types'
 
 /**
  * POST /api/meal-plan/create
  * Saves a weekly meal plan
  * Request body:
- * - startDate: ISO date string (must be Monday)
+ * - startDate: ISO date string (must be the configured week start day)
  * - mealPlans: Array of { dayOfWeek, proteinRecipeId?, carbRecipeId?, vegetableRecipeId? }
  */
 export async function POST(request: NextRequest) {
@@ -29,10 +30,11 @@ export async function POST(request: NextRequest) {
     }
 
     const startDate = new Date(body.startDate)
+    const startDay = await getWeekStartDay()
 
-    // Validate it's a Monday
+    // Validate it's the correct week start day
     try {
-      validateMonday(startDate)
+      validateWeekStart(startDate, startDay)
     } catch (error) {
       return NextResponse.json(
         { error: error instanceof Error ? error.message : 'Invalid date' },

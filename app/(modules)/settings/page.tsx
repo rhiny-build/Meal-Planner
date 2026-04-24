@@ -7,6 +7,7 @@
 
 import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
+import { getWeekStartDay } from './preferenceActions'
 import SettingsClient from './components/SettingsClient'
 
 interface PageProps {
@@ -36,13 +37,16 @@ async function SettingsContent({ searchParams }: PageProps) {
   const proteinTypes = dishTypes.filter(t => t.category === 'protein')
   const carbTypes = dishTypes.filter(t => t.category === 'carb')
 
+  const weekStartDay = await getWeekStartDay()
+
   return (
     <SettingsClient
-      initialTab={tabParam as 'master-lists' | 'categories' | 'dish-types' | undefined}
+      initialTab={tabParam as 'master-lists' | 'categories' | 'dish-types' | 'preferences' | undefined}
       initialType={typeParam as 'staple' | 'restock' | undefined}
       categories={categories}
       proteinTypes={proteinTypes}
       carbTypes={carbTypes}
+      weekStartDay={weekStartDay}
     />
   )
 }

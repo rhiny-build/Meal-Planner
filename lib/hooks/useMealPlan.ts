@@ -11,7 +11,7 @@ import { fetchMealPlan as fetchMealPlanService, fetchAllRecipes, saveMealPlan } 
 import { useDayNotes } from './useDayNotes'
 import { useAutoRefresh } from './useAutoRefresh'
 import {
-  DAYS,
+  getOrderedDays,
   filterRecipesByType,
   calculateSelectedCount,
   getRecipeKeyFromColumn,
@@ -22,12 +22,13 @@ import {
 import type { MealSlotColumn } from '@/lib/mealPlanHelpers'
 
 
-export function useMealPlan(startDate: Date) {
+export function useMealPlan(startDate: Date, weekStartDay: number = 1) {
   const [allRecipes, setAllRecipes] = useState<RecipeWithIngredients[]>([])
   const [weekPlan, setWeekPlan] = useState<WeekPlan[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
 
+  const days = getOrderedDays(weekStartDay)
   const { dayNotes, handleNoteChange } = useDayNotes(startDate)
 
   const fetchData = useCallback(async () => {
@@ -35,7 +36,7 @@ export function useMealPlan(startDate: Date) {
     try {
       const [recipes, plan] = await Promise.all([
         fetchAllRecipes(),
-        fetchMealPlanService(startDate, DAYS)
+        fetchMealPlanService(startDate, days)
       ])
       setAllRecipes(recipes)
       setWeekPlan(plan)
@@ -60,7 +61,7 @@ export function useMealPlan(startDate: Date) {
   const handleSave = async () => {
     setIsSaving(true)
     try {
-      const savedPlan = await saveMealPlan(startDate, weekPlan, DAYS)
+      const savedPlan = await saveMealPlan(startDate, weekPlan, days)
       if (savedPlan.length > 0) {
         setWeekPlan(savedPlan)
       }
@@ -73,7 +74,7 @@ export function useMealPlan(startDate: Date) {
 
   const handleClear = () => {
     if (!confirm('Clear all selections for this week?')) return
-    setWeekPlan(createEmptyWeekPlan(startDate))
+    setWeekPlan(createEmptyWeekPlan(startDate, weekStartDay))
   }
 
   const handleSwapRecipes = (column: MealSlotColumn, fromDayIndex: number, toDayIndex: number) => {
