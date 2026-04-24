@@ -28,6 +28,20 @@ vi.stubGlobal('confirm', vi.fn(() => true))
 // Mock window.alert for save messages
 vi.stubGlobal('alert', vi.fn())
 
+// Provide a working localStorage mock (Node 22's built-in conflicts with jsdom)
+const localStorageMock = (() => {
+  let store: Record<string, string> = {}
+  return {
+    getItem: (key: string) => store[key] ?? null,
+    setItem: (key: string, value: string) => { store[key] = value },
+    removeItem: (key: string) => { delete store[key] },
+    clear: () => { store = {} },
+    get length() { return Object.keys(store).length },
+    key: (index: number) => Object.keys(store)[index] ?? null,
+  }
+})()
+vi.stubGlobal('localStorage', localStorageMock)
+
 // Sample recipe fixtures with different dish types
 const mockRecipes: Recipe[] = [
   {

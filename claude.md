@@ -70,6 +70,7 @@ Break the work into small, end-to-end milestones. Each phase must have:
 A phase is only "done" when:
 - The outcome is achieved and working
 - Tests are written and passing
+- Validated via Playwright MCP in the browser (start dev server, navigate to the affected pages, and verify the feature works end-to-end)
 - Relevant docs are updated
 
 ### 3. Architecture Reference
