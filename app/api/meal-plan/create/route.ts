@@ -6,8 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { validateWeekStart, getWeekBounds } from '@/lib/mealPlanHelpers'
-import { getWeekStartDay } from '@/app/(modules)/settings/preferenceActions'
+import { getWeekBounds } from '@/lib/mealPlanHelpers'
 import type { BulkMealPlanRequest } from '@/types'
 
 /**
@@ -30,17 +29,6 @@ export async function POST(request: NextRequest) {
     }
 
     const startDate = new Date(body.startDate)
-    const startDay = await getWeekStartDay()
-
-    // Validate it's the correct week start day
-    try {
-      validateWeekStart(startDate, startDay)
-    } catch (error) {
-      return NextResponse.json(
-        { error: error instanceof Error ? error.message : 'Invalid date' },
-        { status: 400 }
-      )
-    }
 
     // Delete existing meal plans for this week
     const { endDate } = getWeekBounds(startDate)
