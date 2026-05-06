@@ -41,11 +41,10 @@ export async function syncMealIngredients(weekStart: Date) {
   const weekEnd = new Date(normalizedWeekStart)
   weekEnd.setDate(weekEnd.getDate() + 7)
 
-  logger.warn('pipeline:start', {
+  logger.warn('Shopping list generation started', {
     weekStart: normalizedWeekStart.toISOString(),
     weekEnd: weekEnd.toISOString(),
-    autoThreshold: AI_CONFIG.embeddings.autoMatchThreshold,
-    suggestionThreshold: AI_CONFIG.embeddings.suggestionThreshold,
+    note: 'If weekStart looks wrong, the week-start day setting may not be applied correctly on navigation',
   })
 
   // ─── Step 1: Collect and aggregate recipe ingredients ───────────────
@@ -62,16 +61,20 @@ export async function syncMealIngredients(weekStart: Date) {
   const allIngredients = collectRecipeIngredients(mealPlans)
   const aggregatedItems = aggregateIngredients(allIngredients)
 
-  logger.info('pipeline:step1', {
+  logger.info('Step 1: Collected ingredients from meal plan', {
     mealPlansFound: mealPlans.length,
     rawIngredients: allIngredients.length,
     aggregatedItems: aggregatedItems.length,
   })
 
   if (aggregatedItems.length === 0) {
-    logger.warn('pipeline:no-ingredients', {
+    const cause = mealPlans.length === 0
+      ? 'No meal plan records exist for this week — the week start date sent to the pipeline may be wrong (check weekStart above), or no meal plan has been saved for this week'
+      : `${mealPlans.length} meal plan days found but none have recipes assigned — the meal plan may not have been saved correctly`
+    logger.warn('Shopping list generation stopped: no ingredients found', {
       weekStart: normalizedWeekStart.toISOString(),
       mealPlansFound: mealPlans.length,
+      possibleCause: cause,
     })
     const shoppingList = await ensureShoppingListExists(weekStart)
     await prisma.shoppingListItem.deleteMany({
@@ -109,7 +112,8 @@ export async function syncMealIngredients(weekStart: Date) {
     })
   )
 
-  logger.info('pipeline:step2', {
+  logger.info('Step 2: Ingredients normalised for matching', {
+    count: items.length,
     normalisations: items.map((i) => ({ from: i.name, to: i.normalisedName })),
   })
 
@@ -138,17 +142,17 @@ export async function syncMealIngredients(weekStart: Date) {
           prisma.ingredientMapping.update({
             where: { id: mapping.id },
             data: { confirmedCount: { increment: 1 } },
-          }).catch((error) => logger.error('pipeline:mapping-update-failed', { error: String(error) }))
+          }).catch((error) => logger.error('Failed to increment mapping confirmation count (non-critical)', { error: String(error) }))
         }
       }
 
       const remaining = items.filter((i) => !i.resolved).length
-      logger.info('pipeline:step3', { explicitMatches: explicitCount, remaining })
+      logger.info('Step 3: Resolved ingredients via saved mappings', { explicitMatches: explicitCount, remaining })
     } else {
-      logger.info('pipeline:step3', { explicitMatches: 0, remaining: 0, note: 'no items to check' })
+      logger.info('Step 3: No ingredients to look up in saved mappings', {})
     }
   } catch (error) {
-    logger.error('pipeline:step3-failed', { error: String(error) })
+    logger.error('Step 3 failed: database error looking up saved ingredient mappings', { error: String(error) })
   }
 
   // ─── Step 4: Embedding suggestions — surface likely matches ────────
@@ -206,9 +210,8 @@ export async function syncMealIngredients(weekStart: Date) {
             item.matchConfidence = 'embedding'
             item.masterItemId = match.masterItemId
             autoMatchCount++
-            logger.info('pipeline:step4:auto', {
+            logger.info('Step 4: Ingredient auto-matched to master list (high confidence)', {
               ingredient: item.name,
-              normalised: item.normalisedName,
               matchedTo: match.matchedMasterItem,
               score: match.bestScore,
             })
@@ -226,14 +229,14 @@ export async function syncMealIngredients(weekStart: Date) {
                 confirmedCount: 1,
               },
               update: { confirmedCount: { increment: 1 } },
-            }).catch((error) => logger.error('pipeline:mapping-upsert-failed', { error: String(error) }))
+            }).catch((error) => logger.error('Failed to save auto-matched ingredient mapping (non-critical — match still applied)', { error: String(error) }))
 
           } else if (match.matchedMasterItem && match.bestScore >= suggestionThreshold) {
             const rejectKey = `${item.normalisedName}::${match.masterItemId}`
             if (rejectedSet.has(rejectKey)) {
-              logger.info('pipeline:step4:rejected', {
+              logger.info('Step 4: Ingredient skipped — previously rejected suggestion', {
                 ingredient: item.name,
-                matchedTo: match.matchedMasterItem,
+                rejectedMatch: match.matchedMasterItem,
                 score: match.bestScore,
               })
             } else {
@@ -249,31 +252,36 @@ export async function syncMealIngredients(weekStart: Date) {
                 suggestedMasterItemName: masterName,
                 score: match.bestScore,
               })
-              logger.info('pipeline:step4:suggestion', {
+              logger.info('Step 4: Ingredient flagged for your review (medium confidence match)', {
                 ingredient: item.name,
-                matchedTo: masterName,
+                suggestedMatch: masterName,
                 score: match.bestScore,
               })
             }
           } else {
-            logger.info('pipeline:step4:unmatched', {
+            logger.info('Step 4: Ingredient has no match in master list — will appear unmatched on the list', {
               ingredient: item.name,
-              bestCandidate: match.bestCandidate,
+              closestCandidate: match.bestCandidate,
               score: match.bestScore,
             })
           }
         }
 
         const stillUnresolved = items.filter((i) => !i.resolved && i.matchConfidence !== 'pending').length
-        logger.info('pipeline:step4:summary', { autoMatched: autoMatchCount, suggestions: suggestionCount, unmatched: stillUnresolved })
+        logger.info('Step 4: Embedding matching complete', { autoMatched: autoMatchCount, pendingReview: suggestionCount, unmatched: stillUnresolved })
       } else {
-        logger.warn('pipeline:step4:no-master-items', { note: 'no master list items with normalisedName + embeddings' })
+        logger.warn('Step 4: Embedding matching skipped — no master list items have embeddings', {
+          possibleCause: 'Master list is empty, or items were added without running the embedding backfill script',
+        })
       }
     } else {
-      logger.info('pipeline:step4:skipped', { note: 'all items already resolved' })
+      logger.info('Step 4: Embedding matching skipped — all ingredients already resolved via saved mappings', {})
     }
   } catch (error) {
-    logger.error('pipeline:step4-failed', { error: String(error) })
+    logger.error('Step 4 failed: AI embedding matching threw an error — ingredients written as unmatched', {
+      error: String(error),
+      possibleCause: 'OpenAI API may be unavailable or the API key is invalid',
+    })
   }
 
   // ─── Step 5: Write remaining items to shopping list ─────────────────
@@ -295,9 +303,9 @@ export async function syncMealIngredients(weekStart: Date) {
 
   const dedupedItems = Array.from(dedupMap.values())
 
-  logger.info('pipeline:step5:dedup', {
-    before: unresolvedItems.length,
-    after: dedupedItems.length,
+  logger.info('Step 5: Deduplicated ingredients that appear across multiple recipes', {
+    beforeDedup: unresolvedItems.length,
+    afterDedup: dedupedItems.length,
   })
 
   // Build shopping list items from deduped ingredients (unmatched + pending)
@@ -330,9 +338,10 @@ export async function syncMealIngredients(weekStart: Date) {
     data: { stale: false },
   })
 
-  logger.warn('pipeline:complete', {
+  logger.warn('Shopping list generation complete', {
     itemsWritten: shoppingListData.length,
-    suggestions: suggestions.length,
+    pendingReview: suggestions.length,
+    note: shoppingListData.length === 0 ? 'List is empty — all ingredients were matched to the master list and suppressed from the shopping list' : undefined,
   })
 
   revalidatePath('/shopping-list')
