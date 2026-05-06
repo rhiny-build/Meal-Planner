@@ -31,6 +31,7 @@ type CategoryWithItems = Category & { items: MasterListItem[] }
 interface UseShoppingListOptions {
   initialList: ShoppingListWithItems
   initialWeekStart: Date
+  startDay: number
   initialTab?: Tab
   categories: CategoryWithItems[]
 }
@@ -38,6 +39,7 @@ interface UseShoppingListOptions {
 export function useShoppingList({
   initialList,
   initialWeekStart,
+  startDay,
   initialTab = 'meals',
   categories,
 }: UseShoppingListOptions) {
@@ -63,7 +65,7 @@ export function useShoppingList({
   const activeTab = tabParam || initialTab
 
   const weekParam = searchParams.get('week')
-  const currentWeekStart = weekParam ? getWeekStart(new Date(weekParam)) : initialWeekStart
+  const currentWeekStart = weekParam ? getWeekStart(new Date(weekParam), startDay) : initialWeekStart
 
   // Navigation
   const setActiveTab = (tab: Tab) => {

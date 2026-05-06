@@ -27,6 +27,7 @@ type CategoryWithItems = Category & { items: MasterListItem[] }
 interface ShoppingListClientProps {
   initialList: ShoppingListWithItems
   initialWeekStart: Date
+  startDay: number
   initialTab?: Tab
   recipes: Recipe[]
   categories: CategoryWithItems[]
@@ -35,6 +36,7 @@ interface ShoppingListClientProps {
 export default function ShoppingListClient({
   initialList,
   initialWeekStart,
+  startDay,
   initialTab = 'meals',
   recipes,
   categories,
@@ -68,7 +70,7 @@ export default function ShoppingListClient({
     restockCategories,
     includedStapleNames,
     includedRestockNames,
-  } = useShoppingList({ initialList, initialWeekStart, initialTab, categories })
+  } = useShoppingList({ initialList, initialWeekStart, startDay, initialTab, categories })
 
   return (
     <div className="max-w-4xl mx-auto px-4">

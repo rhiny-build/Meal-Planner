@@ -52,6 +52,7 @@ async function ShoppingListContent({ searchParams }: PageProps) {
     <ShoppingListClient
       initialList={shoppingList}
       initialWeekStart={weekStart}
+      startDay={startDay}
       initialTab={tabParam as 'meals' | 'staples' | 'restock' | 'list' | undefined}
       recipes={recipes as any}
       categories={categories}
