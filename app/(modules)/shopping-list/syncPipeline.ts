@@ -11,9 +11,8 @@
  *   Step 5: Write remaining items to shopping list
  */
 
-import { writeFileSync, mkdirSync } from 'fs'
-import { join } from 'path'
 import { revalidatePath } from 'next/cache'
+import { logger } from '@/lib/logger'
 import { prisma } from '@/lib/prisma'
 import { aggregateIngredients, collectRecipeIngredients } from '@/lib/shopping-list/aggregateRecipeIngredients'
 import { findEmbeddingSuggestions } from '@/lib/shopping-list/matchRecipeToMaster'
@@ -42,12 +41,12 @@ export async function syncMealIngredients(weekStart: Date) {
   const weekEnd = new Date(normalizedWeekStart)
   weekEnd.setDate(weekEnd.getDate() + 7)
 
-  // Debug log lines accumulated across all steps
-  const logLines: string[] = [
-    `Shopping List Pipeline Debug — ${new Date().toISOString()}`,
-    `Embedding match thresholds: auto=${AI_CONFIG.embeddings.autoMatchThreshold}, suggestion=${AI_CONFIG.embeddings.suggestionThreshold}`,
-    '',
-  ]
+  logger.warn('pipeline:start', {
+    weekStart: normalizedWeekStart.toISOString(),
+    weekEnd: weekEnd.toISOString(),
+    autoThreshold: AI_CONFIG.embeddings.autoMatchThreshold,
+    suggestionThreshold: AI_CONFIG.embeddings.suggestionThreshold,
+  })
 
   // ─── Step 1: Collect and aggregate recipe ingredients ───────────────
   const mealPlans = await prisma.mealPlan.findMany({
@@ -63,19 +62,21 @@ export async function syncMealIngredients(weekStart: Date) {
   const allIngredients = collectRecipeIngredients(mealPlans)
   const aggregatedItems = aggregateIngredients(allIngredients)
 
-  logLines.push(
-    '=== STEP 1: COLLECT + AGGREGATE ===',
-    `  Raw ingredients: ${allIngredients.length} → ${aggregatedItems.length} after aggregation`,
-    '',
-  )
+  logger.info('pipeline:step1', {
+    mealPlansFound: mealPlans.length,
+    rawIngredients: allIngredients.length,
+    aggregatedItems: aggregatedItems.length,
+  })
 
   if (aggregatedItems.length === 0) {
-    // Nothing to process — just clear old recipe items
+    logger.warn('pipeline:no-ingredients', {
+      weekStart: normalizedWeekStart.toISOString(),
+      mealPlansFound: mealPlans.length,
+    })
     const shoppingList = await ensureShoppingListExists(weekStart)
     await prisma.shoppingListItem.deleteMany({
       where: { shoppingListId: shoppingList.id, source: 'recipe' },
     })
-    writeDebugLog(logLines)
     revalidatePath('/shopping-list')
     return
   }
@@ -108,11 +109,9 @@ export async function syncMealIngredients(weekStart: Date) {
     })
   )
 
-  logLines.push(
-    '=== STEP 2: NORMALISE ===',
-    ...items.map((item) => `  "${item.name}" → "${item.normalisedName}"`),
-    '',
-  )
+  logger.info('pipeline:step2', {
+    normalisations: items.map((i) => ({ from: i.name, to: i.normalisedName })),
+  })
 
   // ─── Step 3: Mapping table lookup — suppress known ingredients ──────
   try {
@@ -125,7 +124,6 @@ export async function syncMealIngredients(weekStart: Date) {
 
       const mappingsByName = new Map(mappings.map((m) => [m.recipeName, m]))
 
-      logLines.push('=== STEP 3: EXPLICIT MAPPING LOOKUP ===')
       let explicitCount = 0
 
       for (const item of items) {
@@ -136,28 +134,21 @@ export async function syncMealIngredients(weekStart: Date) {
           item.matchConfidence = 'explicit'
           item.masterItemId = mapping.masterItemId
           explicitCount++
-          logLines.push(
-            `  ✓ "${item.name}" → master:"${mapping.masterItem.name}" (explicit, confirmedCount: ${mapping.confirmedCount})`
-          )
 
-          // Increment confirmedCount (fire-and-forget, don't block pipeline)
           prisma.ingredientMapping.update({
             where: { id: mapping.id },
             data: { confirmedCount: { increment: 1 } },
-          }).catch((error) => console.error('[Pipeline] DB write failed:', error))
+          }).catch((error) => logger.error('pipeline:mapping-update-failed', { error: String(error) }))
         }
       }
 
       const remaining = items.filter((i) => !i.resolved).length
-      logLines.push(
-        `  Resolved: ${explicitCount}/${items.length}, remaining: ${remaining}`,
-        '',
-      )
+      logger.info('pipeline:step3', { explicitMatches: explicitCount, remaining })
     } else {
-      logLines.push('=== STEP 3: EXPLICIT MAPPING LOOKUP ===', '  (no items to check)', '')
+      logger.info('pipeline:step3', { explicitMatches: 0, remaining: 0, note: 'no items to check' })
     }
   } catch (error) {
-    logLines.push('=== STEP 3: EXPLICIT MAPPING LOOKUP ===', `  (error: ${error})`, '')
+    logger.error('pipeline:step3-failed', { error: String(error) })
   }
 
   // ─── Step 4: Embedding suggestions — surface likely matches ────────
@@ -182,13 +173,10 @@ export async function syncMealIngredients(weekStart: Date) {
         embedding: item.embedding,
       }))
 
-      logLines.push('=== STEP 4: EMBEDDING MATCH (two-tier) ===')
-
       if (masterItems.length > 0) {
         const textsToEmbed = unresolvedItems.map((i) => i.normalisedName)
         const ingredientEmbeddings = await computeEmbeddings(textsToEmbed)
 
-        // Use the lower suggestion threshold to get all potential matches
         const matchResults = await findEmbeddingSuggestions({
           recipeIngredients: textsToEmbed,
           masterItems,
@@ -196,7 +184,6 @@ export async function syncMealIngredients(weekStart: Date) {
           threshold: suggestionThreshold,
         })
 
-        // Load rejected suggestions to filter them out
         const rejectedPairs = await prisma.rejectedSuggestion.findMany({
           where: {
             normalisedName: { in: unresolvedItems.map((i) => i.normalisedName) },
@@ -215,16 +202,17 @@ export async function syncMealIngredients(weekStart: Date) {
           const item = unresolvedItems[j]
 
           if (match.matchedMasterItem && match.bestScore >= autoMatchThreshold) {
-            // HIGH confidence — auto-resolve and write mapping for future runs
             item.resolved = true
             item.matchConfidence = 'embedding'
             item.masterItemId = match.masterItemId
             autoMatchCount++
-            logLines.push(
-              `  ✓ AUTO "${item.name}" [${item.normalisedName}] → "${match.matchedMasterItem}" (score: ${match.bestScore.toFixed(4)})`
-            )
+            logger.info('pipeline:step4:auto', {
+              ingredient: item.name,
+              normalised: item.normalisedName,
+              matchedTo: match.matchedMasterItem,
+              score: match.bestScore,
+            })
 
-            // Write mapping so next run resolves via Step 3 (fire-and-forget)
             prisma.ingredientMapping.upsert({
               where: {
                 recipeName_masterItemId: {
@@ -238,15 +226,16 @@ export async function syncMealIngredients(weekStart: Date) {
                 confirmedCount: 1,
               },
               update: { confirmedCount: { increment: 1 } },
-            }).catch((error) => console.error('[Pipeline] DB write failed:', error))
+            }).catch((error) => logger.error('pipeline:mapping-upsert-failed', { error: String(error) }))
 
           } else if (match.matchedMasterItem && match.bestScore >= suggestionThreshold) {
-            // MEDIUM confidence — surface as suggestion (unless previously rejected)
             const rejectKey = `${item.normalisedName}::${match.masterItemId}`
             if (rejectedSet.has(rejectKey)) {
-              logLines.push(
-                `  ⊘ REJECTED "${item.name}" [${item.normalisedName}] → "${match.matchedMasterItem}" (score: ${match.bestScore.toFixed(4)}, previously rejected)`
-              )
+              logger.info('pipeline:step4:rejected', {
+                ingredient: item.name,
+                matchedTo: match.matchedMasterItem,
+                score: match.bestScore,
+              })
             } else {
               item.matchConfidence = 'pending'
               item.masterItemId = match.masterItemId
@@ -260,31 +249,31 @@ export async function syncMealIngredients(weekStart: Date) {
                 suggestedMasterItemName: masterName,
                 score: match.bestScore,
               })
-              logLines.push(
-                `  ? SUGGEST "${item.name}" [${item.normalisedName}] → "${match.matchedMasterItem}" (score: ${match.bestScore.toFixed(4)})`
-              )
+              logger.info('pipeline:step4:suggestion', {
+                ingredient: item.name,
+                matchedTo: masterName,
+                score: match.bestScore,
+              })
             }
           } else {
-            logLines.push(
-              `  ✗ "${item.name}" [${item.normalisedName}] — best: "${match.bestCandidate}" (score: ${match.bestScore.toFixed(4)})`
-            )
+            logger.info('pipeline:step4:unmatched', {
+              ingredient: item.name,
+              bestCandidate: match.bestCandidate,
+              score: match.bestScore,
+            })
           }
         }
 
         const stillUnresolved = items.filter((i) => !i.resolved && i.matchConfidence !== 'pending').length
-        logLines.push(
-          `  Auto-matched: ${autoMatchCount}, Suggestions: ${suggestionCount}, Unmatched: ${stillUnresolved}`,
-          '',
-        )
+        logger.info('pipeline:step4:summary', { autoMatched: autoMatchCount, suggestions: suggestionCount, unmatched: stillUnresolved })
       } else {
-        logLines.push('  (no master list items with normalisedName + embeddings)', '')
+        logger.warn('pipeline:step4:no-master-items', { note: 'no master list items with normalisedName + embeddings' })
       }
     } else {
-      logLines.push('=== STEP 4: EMBEDDING MATCH ===', '  (all items already resolved)', '')
+      logger.info('pipeline:step4:skipped', { note: 'all items already resolved' })
     }
   } catch (error) {
-    console.error('Embedding matching failed, keeping unmatched items:', error)
-    logLines.push('=== STEP 4: EMBEDDING MATCH ===', `  (error: ${error})`, '')
+    logger.error('pipeline:step4-failed', { error: String(error) })
   }
 
   // ─── Step 5: Write remaining items to shopping list ─────────────────
@@ -306,18 +295,10 @@ export async function syncMealIngredients(weekStart: Date) {
 
   const dedupedItems = Array.from(dedupMap.values())
 
-  logLines.push(
-    '=== STEP 5: CROSS-RECIPE DEDUP ===',
-    `  Unmatched/pending items: ${unresolvedItems.length} → ${dedupedItems.length} after dedup`,
-  )
-  if (unresolvedItems.length > dedupedItems.length) {
-    for (const item of dedupedItems) {
-      if (item.sources.length > 1) {
-        logLines.push(`  Merged: "${item.displayedName}" (from: ${item.sources.join(', ')})`)
-      }
-    }
-  }
-  logLines.push(`  Final shopping list items: ${dedupedItems.length}`, '')
+  logger.info('pipeline:step5:dedup', {
+    before: unresolvedItems.length,
+    after: dedupedItems.length,
+  })
 
   // Build shopping list items from deduped ingredients (unmatched + pending)
   const shoppingListData = dedupedItems.map((item, idx) => ({
@@ -344,28 +325,17 @@ export async function syncMealIngredients(weekStart: Date) {
     })
   }
 
-  // Reset stale flag — list is now up to date
   await prisma.shoppingList.update({
     where: { id: shoppingList.id },
     data: { stale: false },
   })
 
-  writeDebugLog(logLines)
+  logger.warn('pipeline:complete', {
+    itemsWritten: shoppingListData.length,
+    suggestions: suggestions.length,
+  })
+
   revalidatePath('/shopping-list')
 
   return { listId: shoppingList.id, suggestions }
-}
-
-/**
- * Write pipeline debug log to disk.
- */
-function writeDebugLog(lines: string[]) {
-  try {
-    const logDir = join(process.cwd(), 'logs')
-    mkdirSync(logDir, { recursive: true })
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-    writeFileSync(join(logDir, `shopping-list-sync-${timestamp}.log`), lines.join('\n'))
-  } catch (logError) {
-    console.error('Failed to write pipeline debug log:', logError)
-  }
 }
