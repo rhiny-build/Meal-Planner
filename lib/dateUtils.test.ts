@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { getWeekStart, getMonday, formatDate, isWeekStartDay, isMonday } from '@/lib/dateUtils'
+import { getWeekStart, getMonday, formatDate, isWeekStartDay, isMonday, parseDateParam, formatDateParam } from '@/lib/dateUtils'
 
 describe('dateUtils', () => {
   describe('getWeekStart', () => {
@@ -119,6 +119,47 @@ describe('dateUtils', () => {
       const sunday = new Date('2025-01-05')
       expect(isWeekStartDay(sunday, 0)).toBe(true)
       expect(isWeekStartDay(sunday, 1)).toBe(false)
+    })
+  })
+
+  describe('parseDateParam', () => {
+    it('should parse YYYY-MM-DD as local date', () => {
+      const result = parseDateParam('2026-05-05')
+      expect(result.getFullYear()).toBe(2026)
+      expect(result.getMonth()).toBe(4) // May
+      expect(result.getDate()).toBe(5)
+    })
+
+    it('should return a local midnight date (not UTC midnight)', () => {
+      const result = parseDateParam('2026-05-05')
+      expect(result.getHours()).toBe(0)
+      expect(result.getMinutes()).toBe(0)
+      expect(result.getSeconds()).toBe(0)
+    })
+
+    it('should handle month boundaries correctly', () => {
+      const result = parseDateParam('2026-03-01')
+      expect(result.getFullYear()).toBe(2026)
+      expect(result.getMonth()).toBe(2) // March
+      expect(result.getDate()).toBe(1)
+    })
+  })
+
+  describe('formatDateParam', () => {
+    it('should format a date as YYYY-MM-DD using local date parts', () => {
+      const date = new Date(2026, 4, 5) // local May 5
+      expect(formatDateParam(date)).toBe('2026-05-05')
+    })
+
+    it('should zero-pad month and day', () => {
+      const date = new Date(2026, 0, 7) // local Jan 7
+      expect(formatDateParam(date)).toBe('2026-01-07')
+    })
+
+    it('should round-trip with parseDateParam', () => {
+      const original = '2026-04-28'
+      const parsed = parseDateParam(original)
+      expect(formatDateParam(parsed)).toBe(original)
     })
   })
 
