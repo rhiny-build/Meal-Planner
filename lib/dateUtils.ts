@@ -23,6 +23,20 @@ export const getWeekStart = (date: Date, startDay: number = 1): Date => {
 /** @deprecated Use getWeekStart instead */
 export const getMonday = (date: Date): Date => getWeekStart(date, 1)
 
+/** Parse a YYYY-MM-DD string as a local date (avoids UTC midnight / timezone shift). */
+export const parseDateParam = (dateStr: string): Date => {
+  const [year, month, day] = dateStr.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
+/** Format a Date as a YYYY-MM-DD string using local time (safe for URL params). */
+export const formatDateParam = (date: Date): string => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 /**
  * Format a date for display (e.g., "Jan 15")
  * @param date - The date to format

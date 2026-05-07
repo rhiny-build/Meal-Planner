@@ -7,7 +7,7 @@
 
 import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
-import { getWeekStart } from '@/lib/dateUtils'
+import { getWeekStart, formatDateParam, parseDateParam } from '@/lib/dateUtils'
 import { getWeekStartDay } from '@/app/(modules)/settings/preferenceActions'
 import { ensureShoppingListExists } from './actions'
 import ShoppingListClient from './components/ShoppingListClient'
@@ -23,7 +23,7 @@ async function ShoppingListContent({ searchParams }: PageProps) {
 
   // Determine the week to display
   const startDay = await getWeekStartDay()
-  const weekStart = weekParam ? getWeekStart(new Date(weekParam), startDay) : getWeekStart(new Date(), startDay)
+  const weekStart = weekParam ? getWeekStart(parseDateParam(weekParam), startDay) : getWeekStart(new Date(), startDay)
   weekStart.setHours(0, 0, 0, 0)
 
   // Ensure shopping list exists (auto-creates with staples if first visit)
@@ -51,7 +51,7 @@ async function ShoppingListContent({ searchParams }: PageProps) {
   return (
     <ShoppingListClient
       initialList={shoppingList}
-      initialWeekStart={weekStart}
+      initialWeekStart={formatDateParam(weekStart)}
       startDay={startDay}
       initialTab={tabParam as 'meals' | 'staples' | 'restock' | 'list' | undefined}
       recipes={recipes as any}

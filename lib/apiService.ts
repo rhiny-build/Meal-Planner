@@ -8,6 +8,7 @@
  */
 
 import type { MealPlanWithRecipe, WeekPlan, RecipeWithIngredients } from '@/types'
+import { formatDateParam } from '@/lib/dateUtils'
 import { toast } from 'sonner'
 
 
@@ -17,7 +18,7 @@ export const fetchMealPlan = async (startDate: Date, days: string[]): Promise<We
 
     try {
       const response = await fetch(
-        `/api/meal-plan?startDate=${startDate.toISOString().split('T')[0]}`
+        `/api/meal-plan?startDate=${formatDateParam(startDate)}`
       )
       const json = await response.json()
       data = json ?? { mealPlans: [] }
@@ -87,14 +88,14 @@ try {
       await fetch('/api/meal-plan/delete', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startDate: startDate.toISOString().split('T')[0] }),
+        body: JSON.stringify({ startDate: formatDateParam(startDate) }),
       })
 
       // Then create new meals
       const response = await fetch('/api/meal-plan/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startDate: startDate.toISOString().split('T')[0], mealPlans: updates }),
+        body: JSON.stringify({ startDate: formatDateParam(startDate), mealPlans: updates }),
       })
 
       if (response.ok) {

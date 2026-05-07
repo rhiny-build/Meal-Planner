@@ -26,7 +26,7 @@ type CategoryWithItems = Category & { items: MasterListItem[] }
 
 interface ShoppingListClientProps {
   initialList: ShoppingListWithItems
-  initialWeekStart: Date
+  initialWeekStart: string
   startDay: number
   initialTab?: Tab
   recipes: Recipe[]

@@ -10,7 +10,7 @@
 import { useState, useTransition, useOptimistic } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { getWeekStart } from '@/lib/dateUtils'
+import { getWeekStart, parseDateParam, formatDateParam } from '@/lib/dateUtils'
 import { formatShoppingListAsText } from '@/lib/shopping-list/aggregateRecipeIngredients'
 import {
   toggleItem,
@@ -30,7 +30,7 @@ type CategoryWithItems = Category & { items: MasterListItem[] }
 
 interface UseShoppingListOptions {
   initialList: ShoppingListWithItems
-  initialWeekStart: Date
+  initialWeekStart: string
   startDay: number
   initialTab?: Tab
   categories: CategoryWithItems[]
@@ -65,7 +65,10 @@ export function useShoppingList({
   const activeTab = tabParam || initialTab
 
   const weekParam = searchParams.get('week')
-  const currentWeekStart = weekParam ? getWeekStart(new Date(weekParam), startDay) : initialWeekStart
+  const currentWeekStart = getWeekStart(
+    weekParam ? parseDateParam(weekParam) : parseDateParam(initialWeekStart),
+    startDay
+  )
 
   // Navigation
   const setActiveTab = (tab: Tab) => {
@@ -82,7 +85,7 @@ export function useShoppingList({
     const newDate = new Date(currentWeekStart)
     newDate.setDate(newDate.getDate() - 7)
     const params = new URLSearchParams(searchParams.toString())
-    params.set('week', newDate.toISOString().split('T')[0])
+    params.set('week', formatDateParam(newDate))
     router.push(`/shopping-list?${params.toString()}`)
   }
 
@@ -90,7 +93,7 @@ export function useShoppingList({
     const newDate = new Date(currentWeekStart)
     newDate.setDate(newDate.getDate() + 7)
     const params = new URLSearchParams(searchParams.toString())
-    params.set('week', newDate.toISOString().split('T')[0])
+    params.set('week', formatDateParam(newDate))
     router.push(`/shopping-list?${params.toString()}`)
   }
 

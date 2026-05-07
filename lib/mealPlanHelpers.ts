@@ -5,6 +5,7 @@
  */
 
 import type { RecipeWithIngredients, WeekPlan } from '@/types'
+import { parseDateParam } from '@/lib/dateUtils'
 
 const ALL_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -71,7 +72,7 @@ export function validateMonday(date: Date): void {
  */
 export function parseStartDate(paramValue: string | null, startDay: number = 1): Date {
   if (paramValue) {
-    return new Date(paramValue)
+    return parseDateParam(paramValue)
   }
 
   const today = new Date()
