@@ -41,6 +41,7 @@ Living document for tracking features, bugs, and improvements.
 ### Tech Debt
 - [ ] **Move pending suggestions out of ShoppingListItem** — `matchConfidence`, `masterItemId`, and `similarityScore` on `ShoppingListItem` are almost always null/unmatched. The only useful state is `pending` (for the review modal). Consider a dedicated `PendingSuggestion` table or transient in-memory state, and remove these columns from `ShoppingListItem`.
 - [x] **lib/ and scripts/ restructuring** — Shopping list files reorganised into `lib/shopping-list/` and `scripts/shopping-list/` with descriptive names. `lib/normalisation/` merged and removed. (2026-03-20)
+- [x] **Timezone bug in date string parsing** — `new Date('YYYY-MM-DD')` parsed as UTC midnight caused off-by-one calendar day in non-UTC timezones (broken in production on Vercel). Added `parseDateParam`/`formatDateParam` helpers to `lib/dateUtils.ts`. Applied to shopping list navigation, meal plan week parsing, and API payloads. (2026-05-07)
 
 ---
 
