@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model MasterListItem {
+  id             String   @id @default(cuid())
+  name           String
+  type           String
+  categoryId     String
+  order          Int
+  normalisedName String?
+  embedding      Float[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  category            Category               @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  mappings            IngredientMapping[]
+  rejectedSuggestions RejectedSuggestion[]
+  purchaseHistory     PurchaseHistory[]
+  classificationLogs  AgentClassificationLog[]
+
+  @@index([categoryId])
+  @@index([type])
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  order     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items MasterListItem[]
+}
+
+model IngredientMapping {
+  id             String   @id @default(cuid())
+  recipeName     String
+  masterItemId   String
+  confirmedCount Int      @default(1)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  masterItem MasterListItem @relation(fields: [masterItemId], references: [id], onDelete: Cascade)
+
+  @@unique([recipeName, masterItemId])
+  @@index([recipeName])
+}
+
+model RecipeIngredientNormalisationCache {
+  id        String   @id @default(cuid())
+  input     String   @unique
+  canonical String
+  base      String
+  form      String?
+  createdAt DateTime @default(now())
+
+  @@map("NormalisationCache")
+}
+
+model RejectedSuggestion {
+  id             String   @id @default(cuid())
+  normalisedName String
+  masterItemId   String
+  createdAt      DateTime @default(now())
+
+  masterItem MasterListItem @relation(fields: [masterItemId], references: [id], onDelete: Cascade)
+
+  @@unique([normalisedName, masterItemId])
+  @@index([normalisedName])
+}
+
+model PurchaseHistory {
+  id           String   @id @default(cuid())
+  rawName      String
+  purchaseDate DateTime
+  masterItemId String?
+  source       String   @default("batch_import")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  masterItem MasterListItem? @relation(fields: [masterItemId], references: [id])
+
+  @@index([purchaseDate])
+}
+
+model AgentClassificationLog {
+  id              String    @id @default(cuid())
+  rawName         String
+  suggestedItemId String?
+  confidence      Float
+  reasoning       String
+  status          String
+  runId           String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  suggestedItem MasterListItem? @relation(fields: [suggestedItemId], references: [id], onDelete: SetNull)
+
+  @@index([rawName])
+  @@index([status])
+  @@index([runId])
+}
