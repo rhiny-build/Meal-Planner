@@ -88,6 +88,7 @@ import {
   createIngredientMapping,
 } from './actions'
 import { prisma } from '@/lib/prisma'
+import { formatDateParam } from '@/lib/dateUtils'
 import { findEmbeddingSuggestions } from '@/lib/shopping-list/matchRecipeToMaster'
 import { normaliseMasterItems } from '@/lib/shopping-list/normaliseMasterItem'
 import { computeEmbeddings } from '@/lib/shopping-list/ingredientEmbeddings'
@@ -167,7 +168,7 @@ describe('Shopping List Server Actions', () => {
 
       mockPrisma.shoppingList.findUnique.mockResolvedValue(mockList)
 
-      const result = await getShoppingList(weekStart)
+      const result = await getShoppingList(formatDateParam(weekStart))
 
       expect(mockPrisma.shoppingList.findUnique).toHaveBeenCalledWith({
         where: { weekStart: expect.any(Date) },
@@ -179,7 +180,7 @@ describe('Shopping List Server Actions', () => {
     it('should return null when no list exists', async () => {
       mockPrisma.shoppingList.findUnique.mockResolvedValue(null)
 
-      const result = await getShoppingList(new Date('2026-02-03'))
+      const result = await getShoppingList('2026-02-03')
 
       expect(result).toBeNull()
     })
@@ -188,7 +189,7 @@ describe('Shopping List Server Actions', () => {
       const weekStart = new Date('2026-02-03T15:30:00Z')
       mockPrisma.shoppingList.findUnique.mockResolvedValue(null)
 
-      await getShoppingList(weekStart)
+      await getShoppingList(formatDateParam(weekStart))
 
       const calledDate = mockPrisma.shoppingList.findUnique.mock.calls[0][0].where.weekStart
       expect(calledDate.getHours()).toBe(0)
@@ -368,7 +369,7 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
       mockPrisma.shoppingListItem.createMany.mockResolvedValue({ count: 3 })
 
-      const result = await syncMealIngredients(weekStart)
+      const result = await syncMealIngredients(formatDateParam(weekStart))
 
       // Should delete old recipe items
       expect(mockPrisma.shoppingListItem.deleteMany).toHaveBeenCalledWith({
@@ -398,7 +399,7 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.mealPlan.findMany.mockResolvedValue([])
       mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
 
-      const result = await syncMealIngredients(new Date('2026-02-03'))
+      const result = await syncMealIngredients('2026-02-03')
 
       expect(mockPrisma.shoppingListItem.deleteMany).toHaveBeenCalled()
       expect(mockPrisma.shoppingListItem.createMany).not.toHaveBeenCalled()
@@ -415,7 +416,7 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.mealPlan.findMany.mockResolvedValue([])
       mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
 
-      await syncMealIngredients(new Date('2026-02-03'))
+      await syncMealIngredients('2026-02-03')
 
       expect(mockPrisma.shoppingList.create).toHaveBeenCalled()
     })
@@ -457,7 +458,7 @@ describe('Shopping List Server Actions', () => {
         { index: 2, name: 'salt', matchedMasterItem: 'salt', masterItemId: 'm1', bestScore: 0.99, bestCandidate: 'salt' },
       ])
 
-      const result = await syncMealIngredients(weekStart)
+      const result = await syncMealIngredients(formatDateParam(weekStart))
 
       // Only chicken breast should remain (soy sauce and salt auto-matched at ≥0.90)
       expect(mockPrisma.shoppingListItem.createMany).toHaveBeenCalledWith({
@@ -507,7 +508,7 @@ describe('Shopping List Server Actions', () => {
         { index: 1, name: 'olive oil', matchedMasterItem: 'olive oil', masterItemId: 'm2', bestScore: 0.92, bestCandidate: 'olive oil' },
       ])
 
-      const result = await syncMealIngredients(weekStart)
+      const result = await syncMealIngredients(formatDateParam(weekStart))
 
       // garlic should be written as pending with its score
       expect(mockPrisma.shoppingListItem.createMany).toHaveBeenCalledWith({
@@ -563,7 +564,7 @@ describe('Shopping List Server Actions', () => {
         { normalisedName: 'garlic', masterItemId: 'm1' },
       ])
 
-      const result = await syncMealIngredients(weekStart)
+      const result = await syncMealIngredients(formatDateParam(weekStart))
 
       // garlic should be written as unmatched (not pending), no suggestion returned
       expect(mockPrisma.shoppingListItem.createMany).toHaveBeenCalledWith({
@@ -605,7 +606,7 @@ describe('Shopping List Server Actions', () => {
       // Embedding call fails
       mockFindEmbeddingSuggestions.mockRejectedValue(new Error('Embedding service unavailable'))
 
-      await syncMealIngredients(weekStart)
+      await syncMealIngredients(formatDateParam(weekStart))
 
       // All items should be written (no filtering on failure)
       expect(mockPrisma.shoppingListItem.createMany).toHaveBeenCalledWith({
@@ -639,7 +640,7 @@ describe('Shopping List Server Actions', () => {
       // Master list returns empty (no items with normalisedName + embeddings)
       mockPrisma.masterListItem.findMany.mockResolvedValue([])
 
-      await syncMealIngredients(weekStart)
+      await syncMealIngredients(formatDateParam(weekStart))
 
       expect(mockFindEmbeddingSuggestions).not.toHaveBeenCalled()
       expect(mockPrisma.shoppingListItem.createMany).toHaveBeenCalled()
@@ -679,7 +680,7 @@ describe('Shopping List Server Actions', () => {
         },
       ])
 
-      await syncMealIngredients(weekStart)
+      await syncMealIngredients(formatDateParam(weekStart))
 
       // Only chicken breast should remain (garlic resolved via explicit mapping)
       expect(mockPrisma.shoppingListItem.createMany).toHaveBeenCalledWith({
@@ -721,7 +722,7 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
       mockPrisma.shoppingListItem.createMany.mockResolvedValue({ count: 1 })
 
-      await syncMealIngredients(weekStart)
+      await syncMealIngredients(formatDateParam(weekStart))
 
       // Both forms should merge into a single "parsley" item
       const createCall = mockPrisma.shoppingListItem.createMany.mock.calls[0][0]
@@ -751,7 +752,7 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.shoppingListItem.aggregate.mockResolvedValue({ _max: { order: null } })
       mockPrisma.shoppingListItem.create.mockResolvedValue(mockItem)
 
-      const result = await includeMasterListItem(weekStart, 'master-1', 'Milk', 'staple')
+      const result = await includeMasterListItem(formatDateParam(weekStart), 'master-1', 'Milk', 'staple')
 
       expect(mockPrisma.shoppingListItem.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
@@ -778,7 +779,7 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.shoppingListItem.aggregate.mockResolvedValue({ _max: { order: 5 } })
       mockPrisma.shoppingListItem.create.mockResolvedValue(mockItem)
 
-      const result = await includeMasterListItem(weekStart, 'master-2', 'Olive Oil', 'restock')
+      const result = await includeMasterListItem(formatDateParam(weekStart), 'master-2', 'Olive Oil', 'restock')
 
       expect(mockPrisma.shoppingListItem.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
@@ -801,7 +802,7 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.shoppingListItem.aggregate.mockResolvedValue({ _max: { order: null } })
       mockPrisma.shoppingListItem.create.mockResolvedValue(mockItem)
 
-      await includeMasterListItem(weekStart, 'master-1', 'Milk', 'staple')
+      await includeMasterListItem(formatDateParam(weekStart), 'master-1', 'Milk', 'staple')
 
       expect(mockPrisma.shoppingList.create).toHaveBeenCalledWith({
         data: { weekStart: expect.any(Date) },
@@ -820,7 +821,7 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.shoppingList.findUnique.mockResolvedValue(mockList)
       mockPrisma.shoppingListItem.findFirst.mockResolvedValue(existingItem)
 
-      const result = await includeMasterListItem(weekStart, 'master-1', 'Milk', 'staple')
+      const result = await includeMasterListItem(formatDateParam(weekStart), 'master-1', 'Milk', 'staple')
 
       expect(mockPrisma.shoppingListItem.create).not.toHaveBeenCalled()
       expect(result).toEqual(existingItem)
@@ -835,7 +836,7 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.shoppingList.findUnique.mockResolvedValue(mockList)
       mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 1 })
 
-      const result = await excludeMasterListItem(weekStart, 'Milk', 'staple')
+      const result = await excludeMasterListItem(formatDateParam(weekStart), 'Milk', 'staple')
 
       expect(mockPrisma.shoppingListItem.deleteMany).toHaveBeenCalledWith({
         where: {
@@ -854,7 +855,7 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.shoppingList.findUnique.mockResolvedValue(mockList)
       mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 1 })
 
-      const result = await excludeMasterListItem(weekStart, 'Olive Oil', 'restock')
+      const result = await excludeMasterListItem(formatDateParam(weekStart), 'Olive Oil', 'restock')
 
       expect(mockPrisma.shoppingListItem.deleteMany).toHaveBeenCalledWith({
         where: {
@@ -876,7 +877,7 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.shoppingList.create.mockResolvedValue(mockCreatedList)
       mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 1 })
 
-      const result = await excludeMasterListItem(weekStart, 'Milk', 'staple')
+      const result = await excludeMasterListItem(formatDateParam(weekStart), 'Milk', 'staple')
 
       expect(mockPrisma.shoppingList.create).toHaveBeenCalled()
       expect(mockPrisma.shoppingListItem.deleteMany).toHaveBeenCalledWith({
@@ -896,7 +897,7 @@ describe('Shopping List Server Actions', () => {
       mockPrisma.shoppingList.findUnique.mockResolvedValue(mockList)
       mockPrisma.shoppingListItem.deleteMany.mockResolvedValue({ count: 0 })
 
-      await excludeMasterListItem(weekStart, 'Milk', 'staple')
+      await excludeMasterListItem(formatDateParam(weekStart), 'Milk', 'staple')
 
       const calledDate = mockPrisma.shoppingList.findUnique.mock.calls[0][0].where.weekStart
       expect(calledDate.getHours()).toBe(0)

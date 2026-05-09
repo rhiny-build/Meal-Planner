@@ -19,6 +19,7 @@ import { findEmbeddingSuggestions } from '@/lib/shopping-list/matchRecipeToMaste
 import { computeEmbeddings } from '@/lib/shopping-list/ingredientEmbeddings'
 import { AI_CONFIG } from '@/lib/ai/config'
 import { normaliseRecipeIngredient } from '@/lib/shopping-list/normaliseRecipeIngredient'
+import { parseDateParam } from '@/lib/dateUtils'
 import { ensureShoppingListExists } from './shoppingListActions'
 
 export type EmbeddingSuggestion = {
@@ -34,8 +35,8 @@ export type EmbeddingSuggestion = {
  *
  * Replaces only source='recipe' items, preserving staples/restock/manual.
  */
-export async function syncMealIngredients(weekStart: Date) {
-  const normalizedWeekStart = new Date(weekStart)
+export async function syncMealIngredients(weekStartStr: string) {
+  const normalizedWeekStart = parseDateParam(weekStartStr)
   normalizedWeekStart.setHours(0, 0, 0, 0)
 
   const weekEnd = new Date(normalizedWeekStart)
@@ -76,7 +77,7 @@ export async function syncMealIngredients(weekStart: Date) {
       mealPlansFound: mealPlans.length,
       possibleCause: cause,
     })
-    const shoppingList = await ensureShoppingListExists(weekStart)
+    const shoppingList = await ensureShoppingListExists(normalizedWeekStart)
     await prisma.shoppingListItem.deleteMany({
       where: { shoppingListId: shoppingList.id, source: 'recipe' },
     })
@@ -321,7 +322,7 @@ export async function syncMealIngredients(weekStart: Date) {
   }))
 
   // Ensure list exists, then replace recipe items
-  const shoppingList = await ensureShoppingListExists(weekStart)
+  const shoppingList = await ensureShoppingListExists(normalizedWeekStart)
 
   await prisma.shoppingListItem.deleteMany({
     where: { shoppingListId: shoppingList.id, source: 'recipe' },

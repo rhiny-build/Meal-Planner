@@ -9,6 +9,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
+import { parseDateParam } from '@/lib/dateUtils'
 
 /**
  * Ensure a shopping list exists for the week, creating one with default staples if needed.
@@ -98,8 +99,8 @@ export async function addItem(shoppingListId: string, name: string) {
  * Get shopping list for a specific week
  * This is used by the server component for initial data fetch
  */
-export async function getShoppingList(weekStart: Date) {
-  const normalizedWeekStart = new Date(weekStart)
+export async function getShoppingList(weekStartStr: string) {
+  const normalizedWeekStart = parseDateParam(weekStartStr)
   normalizedWeekStart.setHours(0, 0, 0, 0)
 
   const shoppingList = await prisma.shoppingList.findUnique({
@@ -119,12 +120,12 @@ export async function getShoppingList(weekStart: Date) {
  * Used for both staples (checking) and restock items (adding)
  */
 export async function includeMasterListItem(
-  weekStart: Date,
+  weekStartStr: string,
   masterItemId: string,
   itemName: string,
   source: 'staple' | 'restock'
 ) {
-  const normalizedWeekStart = new Date(weekStart)
+  const normalizedWeekStart = parseDateParam(weekStartStr)
   normalizedWeekStart.setHours(0, 0, 0, 0)
 
   // Ensure shopping list exists for this week
@@ -179,11 +180,11 @@ export async function includeMasterListItem(
  * Used for staples (unchecking) and restock items (removing)
  */
 export async function excludeMasterListItem(
-  weekStart: Date,
+  weekStartStr: string,
   itemName: string,
   source: 'staple' | 'restock'
 ) {
-  // Ensure list exists (auto-creates with staples if needed)
+  const weekStart = parseDateParam(weekStartStr)
   const shoppingList = await ensureShoppingListExists(weekStart)
 
   // Delete the item by name and source

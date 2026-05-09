@@ -19,7 +19,7 @@ interface MasterListTabProps {
   type: 'staple' | 'restock'
   categories: CategoryWithItems[]
   description: string
-  weekStart: Date
+  weekStart: string
   includedItemNames: Set<string> // Names of items already in the shopping list
 }
 

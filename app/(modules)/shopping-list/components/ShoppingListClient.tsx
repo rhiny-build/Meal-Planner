@@ -10,6 +10,7 @@
 import { useShoppingList } from '../hooks/useShoppingList'
 import type { Tab } from '../hooks/useShoppingList'
 import type { Recipe } from '@/types'
+import { formatDateParam } from '@/lib/dateUtils'
 import type { ShoppingList, ShoppingListItem, Category, MasterListItem } from '@prisma/client'
 import Button from '@/components/Button'
 import TabNavigation from './TabNavigation'
@@ -160,7 +161,7 @@ export default function ShoppingListClient({
           type="staple"
           categories={staplesCategories}
           description="Items bought every week. Uncheck items you don't need this week."
-          weekStart={currentWeekStart}
+          weekStart={formatDateParam(currentWeekStart)}
           includedItemNames={includedStapleNames}
         />
       )}
@@ -171,7 +172,7 @@ export default function ShoppingListClient({
           type="restock"
           categories={restockCategories}
           description="Household items to restock as needed. Check items you need this week."
-          weekStart={currentWeekStart}
+          weekStart={formatDateParam(currentWeekStart)}
           includedItemNames={includedRestockNames}
         />
       )}

@@ -217,7 +217,7 @@ export function useShoppingList({
   const handleGenerateList = async () => {
     setIsGenerating(true)
     try {
-      const result = await syncMealIngredients(currentWeekStart)
+      const result = await syncMealIngredients(formatDateParam(currentWeekStart))
       if (result?.suggestions && result.suggestions.length > 0) {
         router.refresh()
         await new Promise((resolve) => setTimeout(resolve, 500))
@@ -249,7 +249,7 @@ export function useShoppingList({
     suggestions: EmbeddingSuggestion[]
   ): Promise<PendingSuggestion[]> {
     const { getShoppingList } = await import('../actions')
-    const freshList = await getShoppingList(currentWeekStart)
+    const freshList = await getShoppingList(formatDateParam(currentWeekStart))
     if (!freshList) return []
 
     const pendingItems = freshList.items.filter((i) => i.matchConfidence === 'pending')
