@@ -3,10 +3,18 @@ export type Cadence = 'staple' | 'restock' | 'watching'
 export interface PurchasePattern {
   cadence: Cadence
   purchaseCount: number
-  avgIntervalDays: number | null
+  medianIntervalDays: number | null
   weeksPresent: number
   totalWeeks: number
   reasoning: string
+}
+
+function medianOf(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 === 1
+    ? sorted[mid]
+    : (sorted[mid - 1] + sorted[mid]) / 2
 }
 
 /**
@@ -37,23 +45,25 @@ export function calculatePurchasePattern(
 
   // Sort dates ascending to calculate inter-purchase intervals
   const sorted = [...purchaseDates].sort((a, b) => a.getTime() - b.getTime())
-  let avgIntervalDays: number | null = null
+  let medianIntervalDays: number | null = null
   if (sorted.length >= 2) {
     const intervals: number[] = []
     for (let i = 1; i < sorted.length; i++) {
       intervals.push((sorted[i].getTime() - sorted[i - 1].getTime()) / 86400000)
     }
-    avgIntervalDays = intervals.reduce((s, v) => s + v, 0) / intervals.length
+    medianIntervalDays = medianOf(intervals)
   }
+
+  const pct = Math.round(weekFraction * 100)
 
   if (weekFraction >= stapleThreshold) {
     return {
       cadence: 'staple',
       purchaseCount: count,
-      avgIntervalDays,
+      medianIntervalDays,
       weeksPresent,
       totalWeeks,
-      reasoning: `Present in ${weeksPresent}/${totalWeeks} weeks (${Math.round(weekFraction * 100)}%) — classified as staple`,
+      reasoning: `Bought in ${weeksPresent} of ${totalWeeks} shopping trips (${pct}%) — classified as staple`,
     }
   }
 
@@ -61,20 +71,20 @@ export function calculatePurchasePattern(
     return {
       cadence: 'restock',
       purchaseCount: count,
-      avgIntervalDays,
+      medianIntervalDays,
       weeksPresent,
       totalWeeks,
-      reasoning: `Purchased ${count} times across ${weeksPresent} weeks (${Math.round(weekFraction * 100)}% of weeks)${avgIntervalDays ? `, avg interval ${Math.round(avgIntervalDays)} days` : ''}`,
+      reasoning: `Bought in ${weeksPresent} of ${totalWeeks} shopping trips (${pct}%)${medianIntervalDays ? ` — typically every ${Math.round(medianIntervalDays)} days` : ''}`,
     }
   }
 
   return {
     cadence: 'watching',
     purchaseCount: count,
-    avgIntervalDays,
+    medianIntervalDays,
     weeksPresent,
     totalWeeks,
-    reasoning: `Only ${count} purchase(s) in ${weeksPresent} weeks — insufficient pattern to classify`,
+    reasoning: `Bought in ${weeksPresent} of ${totalWeeks} shopping trips — not enough purchases to classify (need 3+)`,
   }
 }
 

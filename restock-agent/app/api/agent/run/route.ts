@@ -54,7 +54,7 @@ export async function POST() {
         const rejectedNames = new Set(rejections.map((r) => r.normalisedName.toLowerCase()))
 
         const masterItems = await prisma.masterListItem.findMany({
-          select: { id: true, name: true, normalisedName: true },
+          select: { id: true, name: true, type: true, normalisedName: true },
         })
 
         let logged = 0, skipped = 0
@@ -78,6 +78,13 @@ export async function POST() {
           }
 
           const match = await findMatch(rawName, masterItems, prisma, openai)
+
+          if (match?.type === 'staple') {
+            skipped++
+            send(`log:[staple] ${rawName} → ${match.name}`)
+            continue
+          }
+
           const reasoning = match
             ? `${pattern.reasoning}. Match: ${match.name} — ${match.reasoning}`
             : `${pattern.reasoning}. No matching MasterListItem found`

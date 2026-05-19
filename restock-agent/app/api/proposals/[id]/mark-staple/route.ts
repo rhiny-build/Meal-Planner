@@ -12,7 +12,7 @@ export async function POST(
 
   await prisma.agentClassificationLog.update({
     where: { id },
-    data: { status: 'rejected' },
+    data: { status: 'user_staple' },
   })
 
   if (log.suggestedItemId) {

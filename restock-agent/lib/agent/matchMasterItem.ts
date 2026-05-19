@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client'
 export interface MatchResult {
   id: string
   name: string
+  type: string
   confidence: number
   reasoning: string
 }
@@ -11,6 +12,7 @@ export interface MatchResult {
 interface SlimMasterItem {
   id: string
   name: string
+  type: string
   normalisedName: string | null
 }
 
@@ -119,6 +121,7 @@ Respond with JSON:
     return {
       id: matched.id,
       name: matched.normalisedName ?? matched.name,
+      type: matched.type,
       confidence: Math.min(1, Math.max(0, json.confidence)),
       reasoning: `[OpenAI] ${json.reasoning}`,
     }
@@ -154,16 +157,19 @@ export async function findMatch(
     return {
       id: nameMatch.item.id,
       name: nameMatch.item.normalisedName ?? nameMatch.item.name,
+      type: nameMatch.item.type,
       confidence,
       reasoning: `Name similarity ${Math.round(nameMatch.score * 100)}%${cached ? ' (via normalisation cache)' : ''}${mapping ? ', supported by ingredient mapping' : ''}`,
     }
   }
 
-  // 4. Fall back to OpenAI
+  // 4. Fall back to OpenAI — look up type from matched item
   const aiMatch = await askOpenAI(lookupName, masterItems, openai)
   if (aiMatch) {
+    const matchedItem = masterItems.find((i) => i.id === aiMatch.id)
     return {
       ...aiMatch,
+      type: matchedItem?.type ?? 'restock',
       confidence: Math.min(1, aiMatch.confidence + mappingBonus),
     }
   }
@@ -173,6 +179,7 @@ export async function findMatch(
     return {
       id: nameMatch.item.id,
       name: nameMatch.item.normalisedName ?? nameMatch.item.name,
+      type: nameMatch.item.type,
       confidence: Math.min(0.65, nameMatch.score + mappingBonus),
       reasoning: `Weak name similarity ${Math.round(nameMatch.score * 100)}% — needs review`,
     }

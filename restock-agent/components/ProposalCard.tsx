@@ -102,10 +102,21 @@ export default function ProposalCard({ proposal }: { proposal: Proposal }) {
           disabled={isPending}
           onClick={() =>
             handle(() =>
+              callAction(`/api/proposals/${proposal.id}/mark-staple`)
+            )
+          }
+          className="text-xs px-3 py-1.5 rounded bg-gray-100 text-gray-500 hover:bg-gray-200 disabled:opacity-50"
+        >
+          Already a staple
+        </button>
+        <button
+          disabled={isPending}
+          onClick={() =>
+            handle(() =>
               callAction(`/api/proposals/${proposal.id}/reject`)
             )
           }
-          className="text-xs px-3 py-1.5 rounded bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50"
+          className="text-xs px-3 py-1.5 rounded bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-50"
         >
           Reject
         </button>

@@ -56,7 +56,7 @@ export async function classifyAllItems(
 
   // All restock MasterListItems for matching
   const masterItems = await prisma.masterListItem.findMany({
-    select: { id: true, name: true, normalisedName: true },
+    select: { id: true, name: true, type: true, normalisedName: true },
   })
 
   let logged = 0
@@ -93,6 +93,13 @@ export async function classifyAllItems(
 
     // Restock candidate — attempt matching
     const match = await findMatch(rawName, masterItems, prisma, openai)
+
+    // If it matches a known staple in the master list, skip it
+    if (match?.type === 'staple') {
+      skipped++
+      console.log(`  [staple] ${rawName} → ${match.name}`)
+      continue
+    }
 
     const reasoning = match
       ? `${pattern.reasoning}. Match: ${match.name} — ${match.reasoning}`

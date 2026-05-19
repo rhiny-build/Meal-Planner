@@ -8,7 +8,8 @@
     "start": "next start -p 3001",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
-    "agent:run": "npx tsx scripts/runAgent.ts"
+    "agent:run": "npx tsx scripts/runAgent.ts",
+    "db:cleanup2021": "npx tsx scripts/cleanup2021.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
