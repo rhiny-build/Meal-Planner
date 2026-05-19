@@ -45,3 +45,9 @@ next-env.d.ts
 *.db-journal
 
 /generated/prisma
+
+# MCP configuration (personal, not shared)
+.mcp.json
+
+# Playwright MCP logs
+.playwright-mcp/
