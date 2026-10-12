@@ -11,6 +11,17 @@
 - Never overwhelm. If a response requires more than 3 paragraphs, break it down and ask before continuing
 - Never ask more than one question at a time
 
+## Message Format
+
+Every message to Ronen uses this shape:
+
+- **What I need from you:** first line. A yes/no, a choice between numbered options, or "nothing, FYI"
+- **Status:** one line. Designing / waiting for approval / building / testing / done
+- **Details:** at most 5 short bullets, plain language, about what changes for Ronen as a user. No file names or code unless he asks
+- **My recommendation:** when asking him to decide, which option you'd pick and why, in one line
+
+Stop and wait whenever "What I need from you" isn't "nothing".
+
 ## Setup and Infrastructure Decisions
 
 Applies to environments, secrets, CI, deployments and databases.
