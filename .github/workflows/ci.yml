@@ -42,12 +42,5 @@ jobs:
       - name: Unit tests
         run: npm test
 
-      - name: Build (app only, no migrations)
-        run: |
-          set -o pipefail
-          if ! npx next build 2>&1 | tee build.log; then
-            # Surface the end of the log as a single annotation on the PR
-            msg=$(tail -40 build.log | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
-            echo "::error title=next build failed::$msg"
-            exit 1
-          fi
+      # The build is checked by the Vercel preview (which has a database).
+      # Integration tests in CI (Postgres service container) are a later PR.
