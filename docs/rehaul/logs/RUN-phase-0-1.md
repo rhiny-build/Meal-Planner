@@ -19,3 +19,12 @@
 - **S05** merged (unit 449, integration 46 pass on the merged tree). **Conflict resolved:** S04 renamed `components/RecipeForm.tsx` to `components/recipe/RecipeEditor.tsx`; S05 had edited the old file (removed the AI import box, added a plain Recipe URL field). I kept the rename, removed the AI import box, the `/api/recipes/extract` call and its state from `RecipeEditor`, and added the plain "Recipe URL (optional)" field. Real run on the merged app: free-text import ("my schnitzel...") succeeded, recorded as an `AgentRun` with 6 steps, visible on `/agent-runs`.
 - Test-running gotcha: vitest picks up subagent worktrees under `.claude/worktrees/`; always pass `--exclude '.claude/**'`.
 - FYI walkthrough of the S05 loop sent to Ronen (not waiting for a reply).
+- **S07** merged (unit 506, integration 55 pass). Dry-run only, on synthetic local data (78 recipes: enrich 35, quick 16, leave 25, duplicate 2); nothing applied to production. Apply mode is guarded by `--i-have-a-backup` and was rehearsed only on a local copy.
+- **docs-sync** run on the phase branch after the last wave (branch `rehaul_docs_sync_20261012`, merged). Resolved against the code: S03 listed three AgentStep kinds but S05 added `note`; S03 said routes don't call `parseAmount` but S04/S05/S06 do; S04 kept `AIImportSection` but S05 removed it.
+
+## Open points for Ronen
+1. `/api/mcp` has no authentication (was true before; `update_recipe` raises the stakes).
+2. Recipe editing: modal (kept) or move onto the recipe page?
+3. Which database provider takes the backup before the S03 migration and S07 apply (PLAN says Neon).
+4. Set `ANTHROPIC_API_KEY` in Vercel (Preview and Production), with web search enabled.
+5. Try one real recipe-site import on the preview (the sandbox could not reach any).
