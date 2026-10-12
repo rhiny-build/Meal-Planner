@@ -96,7 +96,7 @@ The app is in daily use, and merging to `main` **is** a production deploy. These
 - One short-lived branch per session. Merge within days, not weeks.
 
 ### Testing before merge
-1. **CI check** (GitHub Actions) on every PR: unit tests, type check, build. It must be green.
+1. **CI check** (GitHub Actions) on every PR: type check and unit tests. It must be green. The build itself is checked by the Vercel preview, which has a database. Later PR: integration tests in CI against a throwaway Postgres service container, and Playwright smoke tests against the preview.
 2. **Preview check by Ronen**: open the PR's preview URL on a phone and try the feature against the preview's copy of real data. Each session's walkthrough ends with "what to try on the preview".
 3. Schema PRs: also confirm the preview's Neon branch shows the new tables or columns.
 
@@ -106,19 +106,6 @@ The app is in daily use, and merging to `main` **is** a production deploy. These
 - **Big new screens sit behind a switch** (a `SystemSetting` flag) until they're ready. The old screen keeps working until the new one replaces it.
 - **Don't merge on the day of the weekly shop**, or right before it.
 - **If production breaks:** Vercel → Deployments → previous deployment → *Instant Rollback*. Then fix forward in a new PR.
-
-## Branches, testing and promotion
-
-`main` is production: every merge deploys to the live app, which is used daily.
-
-- **Branches:** `main` changes only through a PR. One short-lived branch per session; merge small and often.
-- **Previews:** every PR gets a Vercel preview with **its own Neon database branch** (`preview/<git-branch>`, a copy of production, deleted with the branch). Try the change on the preview URL, on a phone, before merging.
-- **Checks:** a GitHub Action runs the type check and unit tests on every PR (the build is checked by the Vercel preview). Later PR: run `tests/integration` in CI against a throwaway Postgres service container, and Playwright smoke tests against the preview.
-- **Database changes are additive only.** Add tables/columns; removing or renaming is a separate, later PR once nothing uses the old shape. This keeps Vercel's one-click rollback safe, because old code still works with the new database.
-- **Before merging a schema change:** confirm the preview works on its Neon branch, and note the time (Neon can restore production to a point in time).
-- **Big new screens** (recipe book, cook mode) sit behind a setting until ready; the old screens keep working.
-- **Timing:** don't merge just before the weekly shop.
-- **Build sessions** use a permanent Neon `dev` branch for `prisma migrate dev` and tests — never production.
 
 ## Phases, sessions and waves
 
