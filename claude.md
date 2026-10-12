@@ -11,6 +11,15 @@
 - Never overwhelm. If a response requires more than 3 paragraphs, break it down and ask before continuing
 - Never ask more than one question at a time
 
+## Setup and Infrastructure Decisions
+
+Applies to environments, secrets, CI, deployments and databases.
+
+1. State the requirements first, in a few bullets, and get Ronen's OK
+2. Check the official docs before proposing anything, and cite them
+3. Give one proposal, checked against every requirement, with trade-offs stated
+4. Don't act until Ronen agrees
+
 ## Code Design
 
 - Design for modularity before writing code, not after
