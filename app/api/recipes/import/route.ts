@@ -9,8 +9,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { classifyImportInput, runRecipeImporter } from '@/lib/agents/recipeImporter'
 
-// An import takes a few model turns plus a page fetch.
-export const maxDuration = 120
+// An import takes a few model turns plus a page fetch (real runs: 3 to 20 s).
+// 60 s is the longest duration every Vercel plan accepts; a higher value is rejected at deploy.
+export const maxDuration = 60
 
 const MAX_INPUT_LENGTH = 8000
 
