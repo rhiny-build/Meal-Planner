@@ -8,9 +8,10 @@
  */
 
 import type { ExtractedRecipeData, StructuredIngredientData } from '@/types'
-import { openai, MODEL } from './client'
+import { callForcedTool } from './claude'
 import { AI_CONFIG, EXTRACT_HTML_MAX_LENGTH } from './config'
 import { SYSTEM_PROMPTS, buildExtractIngredientsPrompt } from './prompts'
+import { EXTRACT_RECIPE_SCHEMA } from './schemas'
 
 export async function extractIngredientsFromURL(
   url: string
@@ -31,22 +32,7 @@ export async function extractIngredientsFromURL(
 
     const prompt = buildExtractIngredientsPrompt(html.slice(0, EXTRACT_HTML_MAX_LENGTH))
 
-    const completion = await openai.chat.completions.create({
-      model: MODEL,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPTS.extractIngredients },
-        { role: 'user', content: prompt },
-      ],
-      response_format: { type: 'json_object' },
-      ...AI_CONFIG.extractIngredients,
-    })
-
-    const result = completion.choices[0]?.message?.content
-    if (!result) {
-      throw new Error('No response from AI')
-    }
-
-    const parsed = JSON.parse(result) as {
+    const parsed = await callForcedTool<{
       name?: string
       ingredients?: string
       structuredIngredients?: Array<{
@@ -56,7 +42,15 @@ export async function extractIngredientsFromURL(
         notes?: string | null
         order?: number
       }>
-    }
+    }>({
+      model: AI_CONFIG.extractIngredients.model,
+      maxTokens: AI_CONFIG.extractIngredients.maxTokens,
+      system: SYSTEM_PROMPTS.extractIngredients,
+      prompt,
+      toolName: 'record_recipe',
+      toolDescription: 'Record the recipe name and ingredients extracted from the page.',
+      schema: EXTRACT_RECIPE_SCHEMA,
+    })
 
     // Ensure order is set on structured ingredients
     const structuredIngredients: StructuredIngredientData[] = (

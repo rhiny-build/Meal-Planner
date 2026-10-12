@@ -11,9 +11,10 @@ import type {
   MealPlanModificationRequest,
   MealPlanModificationResult,
 } from '@/types'
-import { openai, MODEL } from './client'
+import { callForcedTool } from './claude'
 import { AI_CONFIG } from './config'
 import { SYSTEM_PROMPTS, buildModifyMealPlanPrompt } from './prompts'
+import { MODIFY_MEAL_PLAN_SCHEMA } from './schemas'
 
 export async function modifyMealPlan(
   request: MealPlanModificationRequest
@@ -49,25 +50,18 @@ export async function modifyMealPlan(
       instruction: request.instruction,
     })
 
-    const completion = await openai.chat.completions.create({
-      model: MODEL,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPTS.modifyMealPlan },
-        { role: 'user', content: prompt },
-      ],
-      response_format: { type: 'json_object' },
-      ...AI_CONFIG.modifyMealPlan,
-    })
-
-    const result = completion.choices[0]?.message?.content
-    if (!result) {
-      throw new Error('No response from AI')
-    }
-
-    const parsed = JSON.parse(result) as {
+    const parsed = await callForcedTool<{
       modifiedPlan: { date: string; lunchRecipeId: string; proteinRecipeId: string; carbRecipeId: string; vegetableRecipeId: string }[]
       explanation: string
-    }
+    }>({
+      model: AI_CONFIG.modifyMealPlan.model,
+      maxTokens: AI_CONFIG.modifyMealPlan.maxTokens,
+      system: SYSTEM_PROMPTS.modifyMealPlan,
+      prompt,
+      toolName: 'submit_meal_plan',
+      toolDescription: 'Submit the complete modified weekly meal plan.',
+      schema: MODIFY_MEAL_PLAN_SCHEMA,
+    })
 
     // Convert date strings back to Date objects
     return {

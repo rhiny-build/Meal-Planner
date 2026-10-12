@@ -3,7 +3,7 @@
  *
  * Handles all AI-powered operations:
  * - Meal plan generation (fills empty slots with AI suggestions)
- * - Recipe discovery (search web for new recipes via Perplexity)
+ * - Recipe discovery (search web for new recipes via Claude web search)
  */
 
 import type { WeekPlan, RecipeFormData } from '@/types'
