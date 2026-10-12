@@ -74,7 +74,7 @@ These exist so parallel Claude Code sessions never fight over shared mutable sta
 4. **Shared docs (`ARCHITECTURE.md`, `BACKLOG.md`, `FEATURES.md`, `README.md`) are not edited by build sessions.** A dedicated **docs-sync** session runs between waves, reads the logs, and updates them in one go. (This overrides the repo's "always update documentation" rule for rehaul sessions only.)
 5. **Do not use `pick-up-context` / `MEMORY.md` for rehaul sessions.** Context comes from this plan, the session prompt, and earlier sessions' logs.
 6. **One schema migration in flight at a time.** Only sessions marked `schema: yes` touch `prisma/schema.prisma`, and no two of them run in the same wave.
-7. **One branch, one worktree, one PR per session.** Branch name `rehaul_<session-id>_<short_name>`. Do not merge to `main` yourself — open a PR and stop; Ronen merges. (This overrides `push-to-prod`'s merge step for rehaul sessions.)
+7. **One branch, one worktree, one PR per session.** Use the PR preview (own Neon branch) to test; see "Branches, testing and promotion". Branch name `rehaul_<session-id>_<short_name>`. Do not merge to `main` yourself — open a PR and stop; Ronen merges. (This overrides `push-to-prod`'s merge step for rehaul sessions.)
 8. **Production data is touched only by explicit apply steps** that Ronen runs after reviewing a dry-run report. Take a DB backup first.
 
 ## Branches, testing and promotion to main
@@ -106,6 +106,19 @@ The app is in daily use, and merging to `main` **is** a production deploy. These
 - **Big new screens sit behind a switch** (a `SystemSetting` flag) until they're ready. The old screen keeps working until the new one replaces it.
 - **Don't merge on the day of the weekly shop**, or right before it.
 - **If production breaks:** Vercel → Deployments → previous deployment → *Instant Rollback*. Then fix forward in a new PR.
+
+## Branches, testing and promotion
+
+`main` is production: every merge deploys to the live app, which is used daily.
+
+- **Branches:** `main` changes only through a PR. One short-lived branch per session; merge small and often.
+- **Previews:** every PR gets a Vercel preview with **its own Neon database branch** (`preview/<git-branch>`, a copy of production, deleted with the branch). Try the change on the preview URL, on a phone, before merging.
+- **Checks:** a GitHub Action runs the unit tests on every PR. It must be green to merge.
+- **Database changes are additive only.** Add tables/columns; removing or renaming is a separate, later PR once nothing uses the old shape. This keeps Vercel's one-click rollback safe, because old code still works with the new database.
+- **Before merging a schema change:** confirm the preview works on its Neon branch, and note the time (Neon can restore production to a point in time).
+- **Big new screens** (recipe book, cook mode) sit behind a setting until ready; the old screens keep working.
+- **Timing:** don't merge just before the weekly shop.
+- **Build sessions** use a permanent Neon `dev` branch for `prisma migrate dev` and tests — never production.
 
 ## Phases, sessions and waves
 
