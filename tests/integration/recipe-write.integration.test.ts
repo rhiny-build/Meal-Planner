@@ -149,4 +149,72 @@ describe('recipeWrite integration', () => {
       updateRecipeFromForm(testPrisma, created.id, { steps: [{ text: 'x', timerSeconds: -5 }] })
     ).rejects.toBeInstanceOf(RecipeValidationError)
   })
+  // Regression (run RUN-phase1-fixes, bug 2): "Update Recipe" with new steps saved nothing on the
+  // hosted preview. The write ran one query per ingredient inside an interactive transaction,
+  // and Prisma cuts those off after 5 s ("Transaction not found"). Against a remote database
+  // every query is a round trip, so a normal recipe went over the limit. This simulates the
+  // round trip with a per-query delay: the old code needed ~19 queries (> 5 s at 300 ms each).
+  it('saves steps on a recipe with many ingredients even when every query is slow', async () => {
+    const created = await createRecipeFromForm(testPrisma, {
+      ...base,
+      structuredIngredients: Array.from({ length: 12 }, (_, i) => ({
+        id: `ing${i}`,
+        name: `ingredient ${i}`,
+        quantity: String(i + 1),
+        unit: 'g',
+        order: i,
+      })),
+    })
+    const slow = testPrisma.$extends({
+      query: {
+        $allOperations: async ({ args, query }) => {
+          await new Promise((r) => setTimeout(r, 300))
+          return query(args)
+        },
+      },
+    })
+    const started = Date.now()
+    const updated = await updateRecipeFromForm(slow as unknown as typeof testPrisma, created.id, {
+      structuredIngredients: created.structuredIngredients.map((i, order) => ({
+        id: i.id,
+        name: i.name,
+        quantity: i.quantity,
+        unit: i.unit,
+        notes: i.notes,
+        order,
+      })),
+      steps: [
+        { text: 'Mix {ing:ing0} and {ing:ing1}', timerSeconds: null },
+        { text: 'Rest', timerSeconds: 300 },
+      ],
+    })
+    expect(Date.now() - started).toBeLessThan(5000)
+    expect(updated.steps.map((s) => [s.text, s.timerSeconds])).toEqual([
+      ['Mix {ing:ing0} and {ing:ing1}', null],
+      ['Rest', 300],
+    ])
+    expect(await testPrisma.recipeStep.count({ where: { recipeId: created.id } })).toBe(2)
+  }, 40_000)
+
+  it('still updates an ingredient that changed and adds a new one in one save', async () => {
+    const created = await createRecipeFromForm(testPrisma, {
+      ...base,
+      structuredIngredients: [
+        { id: 'a', name: 'a', quantity: '1', unit: 'g', order: 0 },
+        { id: 'b', name: 'b', quantity: '2', unit: 'g', order: 1 },
+      ],
+    })
+    const updated = await updateRecipeFromForm(testPrisma, created.id, {
+      structuredIngredients: [
+        { id: 'a', name: 'a', quantity: '1', unit: 'g', order: 0 },
+        { id: 'b', name: 'b', quantity: '5', unit: 'kg', order: 1 },
+        { id: 'c', name: 'c', quantity: '1/2', unit: 'cup', order: 2 },
+      ],
+    })
+    expect(updated.structuredIngredients.map((i) => [i.id, i.quantity, i.unit, i.amount])).toEqual([
+      ['a', '1', 'g', 1],
+      ['b', '5', 'kg', 5],
+      ['c', '1/2', 'cup', 0.5],
+    ])
+  })
 })

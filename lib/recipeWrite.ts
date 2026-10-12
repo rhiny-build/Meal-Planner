@@ -132,6 +132,13 @@ function bookFields(body: Partial<RecipeFormData>): BookFields {
   return data
 }
 
+/**
+ * Prisma's default interactive-transaction limit is 5 s. Against a remote pooled database each
+ * query costs a network round trip (and a cold database adds more), so a recipe with many
+ * ingredients could be cut off with "Transaction not found" and nothing was saved.
+ */
+export const TRANSACTION_OPTIONS = { maxWait: 10_000, timeout: 30_000 }
+
 const include = {
   structuredIngredients: { orderBy: { order: 'asc' } },
   steps: { orderBy: { order: 'asc' } },
@@ -181,8 +188,12 @@ export async function updateRecipeFromForm(
   const book = bookFields(body)
 
   return prisma.$transaction(async (tx) => {
-    const existing = await tx.ingredient.findMany({ where: { recipeId: id }, select: { id: true } })
-    const existingIds = new Set(existing.map((e) => e.id))
+    const existing = await tx.ingredient.findMany({
+      where: { recipeId: id },
+      select: { id: true, name: true, quantity: true, unit: true, amount: true, notes: true, order: true },
+    })
+    const existingById = new Map(existing.map((e) => [e.id, e]))
+    const existingIds = new Set(existingById.keys())
 
     // Steps are validated against the ingredient ids the recipe will have after this save.
     let finalIds = existingIds
@@ -195,16 +206,22 @@ export async function updateRecipeFromForm(
     if (rows) {
       const keepIds = rows.filter((r) => r.id && existingIds.has(r.id)).map((r) => r.id as string)
       await tx.ingredient.deleteMany({ where: { recipeId: id, id: { notIn: keepIds } } })
+      const toCreate: Prisma.IngredientCreateManyInput[] = []
       for (const r of rows) {
         const { id: rid, ...fields } = r
-        if (rid && existingIds.has(rid)) {
-          await tx.ingredient.update({ where: { id: rid }, data: fields })
+        const before = rid ? existingById.get(rid) : undefined
+        if (before) {
+          // Only touch rows that actually changed: each query is a network round trip, and the
+          // whole save must fit in the transaction time limit on a remote database.
+          const changed = (Object.keys(fields) as (keyof typeof fields)[]).some(
+            (k) => before[k] !== fields[k]
+          )
+          if (changed) await tx.ingredient.update({ where: { id: rid }, data: fields })
         } else {
-          await tx.ingredient.create({
-            data: { ...fields, ...(rid ? { id: rid } : {}), recipeId: id },
-          })
+          toCreate.push({ ...fields, ...(rid ? { id: rid } : {}), recipeId: id })
         }
       }
+      if (toCreate.length > 0) await tx.ingredient.createMany({ data: toCreate })
     }
     if (steps) {
       await tx.recipeStep.deleteMany({ where: { recipeId: id } })
@@ -220,5 +237,5 @@ export async function updateRecipeFromForm(
       },
       include,
     })
-  })
+  }, TRANSACTION_OPTIONS)
 }
