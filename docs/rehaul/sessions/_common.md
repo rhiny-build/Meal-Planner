@@ -22,8 +22,13 @@ Do **not** run `pick-up-context` or read `MEMORY.md`. ARCHITECTURE.md is partly 
 - **Do not edit:** `docs/rehaul/PLAN.md`, anything in `docs/rehaul/sessions/`, `ARCHITECTURE.md`, `BACKLOG.md`, `FEATURES.md`, `README.md`, or another session's log.
 - **Do write:** `docs/rehaul/logs/<your-session-id>.md` (create it). It's yours alone.
 - Only touch `prisma/schema.prisma` if your prompt says `Schema: yes`.
-- Follow PLAN.md → "Branches, testing and promotion to main". In particular: **database changes only add** (no renames or drops), and never point anything at the production database. Use the Neon `dev` branch.
+- Follow PLAN.md → "Branches, testing and promotion to main". In particular: **database changes only add** (no renames or drops), and never point anything at the production database. Use the local Postgres in your session VM (see "Session environment").
 - CI must be green on your PR before you hand over.
+
+## Session environment
+- **Database:** `service postgresql start`, create a local database, point `DATABASE_URL` and `DATABASE_URL_UNPOOLED` at it, run migrations and `npm run db:seed`. Integration tests use the same server.
+- **Claude:** `ANTHROPIC_API_KEY` comes from the cloud environment (dev-only, capped). Run the real path at least once before opening the PR and show Ronen the result. Unit tests still mock Claude.
+- **Never ask for production keys or connection strings.** Real-data checks happen on the PR's Vercel preview.
 
 ## AI conventions
 - Claude via the official Anthropic TypeScript SDK. Use the client and model config from `lib/ai/` (set up in S01). Don't hardcode model names elsewhere.

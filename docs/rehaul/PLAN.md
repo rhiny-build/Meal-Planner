@@ -86,7 +86,7 @@ The app is in daily use, and merging to `main` **is** a production deploy. These
 |---|---|---|
 | Production | `main`, auto-deployed by Vercel (`family-meal-planner`) | Neon main branch (live data) |
 | Preview | Each PR branch, auto-deployed by Vercel with its own URL | Its own Neon branch `preview/<git-branch>`, a copy of production made when the preview is built and deleted when the git branch is deleted (Neon–Vercel integration, set up 12 Oct 2026) |
-| Build sessions | Claude Code worktree | A Neon `dev` branch (to be set up before S02) — never production |
+| Build sessions | Claude Code cloud session (own VM) | Local PostgreSQL 16 in the session VM, empty and throwaway. Seeding from a production dump comes later. Never production |
 
 - `DATABASE_URL` is pooled (runtime). `DATABASE_URL_UNPOOLED` is direct (Prisma migrations, via `directUrl`). Both are injected by the integration.
 - The Vercel build runs `prisma migrate deploy`. On a preview, that changes only the preview's own Neon branch.
