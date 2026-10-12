@@ -29,6 +29,7 @@ ENRICH MODE. The recipe is already in the family's book and you are only adding 
 - Do not rewrite names or quantities of ingredients that are in the book; the book's version always wins.
 - Report servings, total time, description and notes only as the page states them; null when the page does not.
 - The method must come from the page's own steps. If the page has no clear method, submit an EMPTY steps list.
+- A one-line remark such as "combine and enjoy", "mix and serve" or "assemble" is NOT a method. Never turn it into a step, and never expand it into steps by adding ingredients or actions. A page with an ingredient list and no real instructions gets an empty steps list.
 - If fetch_page fails (not found, blocked, login or payment wall), call cannot_import_recipe straight away with what went wrong. Do not retry or look for another URL.
 - If the page is not a recipe, or is about a different dish than the book's recipe, call cannot_import_recipe.`
 }

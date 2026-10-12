@@ -13,7 +13,8 @@ const cell = (text: string) => text.replace(/\|/g, '\\|').replace(/\n/g, ' ')
 
 function row(e: ReportEntry): string {
   const run = e.runId ? `\`${e.runId}\`` : ''
-  return `| ${cell(e.name)} | ${cell(e.action === 'leave' ? e.reason : e.summary)} | ${cell(e.action === 'leave' ? '' : e.reason)} | ${run} |`
+  if (e.action === 'leave') return `| ${cell(e.name)} | ${cell(e.reason)} | ${run} |`
+  return `| ${cell(e.name)} | ${cell(e.summary)} | ${cell(e.reason)} | ${run} |`
 }
 
 export function renderMarkdown(report: BackfillReport): string {
@@ -41,7 +42,10 @@ export function renderMarkdown(report: BackfillReport): string {
     const list = report.entries.filter((e) => e.action === s.action)
     if (list.length === 0) continue
     out.push(`## ${s.title} (${list.length})`, '', s.blurb, '')
-    out.push(s.action === 'leave' ? '| Recipe | Why | | Agent run |' : '| Recipe | What would change | Why | Agent run |', '|---|---|---|---|')
+    out.push(
+      s.action === 'leave' ? '| Recipe | Why | Agent run |' : '| Recipe | What would change | Why | Agent run |',
+      s.action === 'leave' ? '|---|---|---|' : '|---|---|---|---|'
+    )
     list.forEach((e) => out.push(row(e)))
     out.push('')
   }

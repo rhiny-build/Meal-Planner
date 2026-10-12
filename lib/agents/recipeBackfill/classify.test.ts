@@ -84,6 +84,12 @@ describe('duplicates', () => {
     expect(w).toMatch(/servings/)
   })
 
+  it('treats a plural ingredient name as the same ingredient', () => {
+    const keeper = recipe({ name: 'X', ingredients: [{ id: 'a', name: 'cucumbers', quantity: null, unit: null, notes: null }] })
+    const dup = recipe({ name: 'X', ingredients: [{ id: 'b', name: 'Cucumber', quantity: null, unit: null, notes: null }] })
+    expect(mergeWarnings(keeper, dup)).toEqual([])
+  })
+
   it('has no warnings when nothing would be lost', () => {
     const keeper = recipe({ name: 'X', servings: 4, ingredients: [{ id: 'a', name: 'Salt', quantity: null, unit: null, notes: null }] })
     const dup = recipe({ name: 'X', ingredients: [{ id: 'b', name: 'salt', quantity: null, unit: null, notes: null }] })

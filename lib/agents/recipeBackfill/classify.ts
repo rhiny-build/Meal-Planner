@@ -93,8 +93,10 @@ export function mergeWarnings(keeper: RecipeSnapshot, duplicate: RecipeSnapshot)
   const warnings: string[] = []
   if (duplicate.stepCount > 0 && keeper.stepCount === 0) warnings.push(`has a ${duplicate.stepCount}-step method the keeper lacks`)
   if (duplicate.recipeUrl && !keeper.recipeUrl) warnings.push('has a source URL the keeper lacks')
-  const keeperNames = new Set(keeper.ingredients.map((i) => normaliseName(i.name)))
-  const extra = duplicate.ingredients.filter((i) => !keeperNames.has(normaliseName(i.name))).map((i) => i.name)
+  // Compare ingredient names ignoring case and a plural "s" ("cucumber" vs "Cucumbers")
+  const ingredientKey = (name: string) => normaliseName(name).replace(/s\b/g, '')
+  const keeperNames = new Set(keeper.ingredients.map((i) => ingredientKey(i.name)))
+  const extra = duplicate.ingredients.filter((i) => !keeperNames.has(ingredientKey(i.name))).map((i) => i.name)
   if (extra.length > 0) warnings.push(`has ingredients the keeper lacks: ${extra.join(', ')}`)
   for (const field of ['servings', 'totalTimeMinutes', 'description', 'notes'] as const) {
     if (duplicate[field] !== null && keeper[field] === null) warnings.push(`has ${field} the keeper lacks`)

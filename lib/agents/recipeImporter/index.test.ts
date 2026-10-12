@@ -63,6 +63,7 @@ describe('runRecipeImporter', () => {
     expect(params.trigger).toBe('batch')
     expect(params.tools.map((t) => t.name)).not.toContain('find_similar_recipes')
     expect(params.system).toMatch(/ENRICH MODE/)
+    expect(params.system).toMatch(/combine and enjoy/)
     expect(params.userMessage).toContain('id ing1: 1 kg beef')
     expect(params.userMessage).toContain('no steps yet')
     expect(params.input).toMatchObject({ url: 'https://example.com/r', mode: 'enrich', recipeId: 'rec1' })
