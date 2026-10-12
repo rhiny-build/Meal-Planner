@@ -15,6 +15,7 @@ import { callForcedTool } from './claude'
 import { AI_CONFIG } from './config'
 import { SYSTEM_PROMPTS, buildModifyMealPlanPrompt } from './prompts'
 import { MODIFY_MEAL_PLAN_SCHEMA } from './schemas'
+import { alignModifiedPlan } from './alignMealPlan'
 
 export async function modifyMealPlan(
   request: MealPlanModificationRequest
@@ -24,7 +25,7 @@ export async function modifyMealPlan(
     const currentPlanText = request.currentPlan
       .map(
         mp =>
-          `${mp.dayOfWeek} (${mp.date.toLocaleDateString()}):
+          `${mp.dayOfWeek} (${mp.date}):
       - Lunch: ${mp.lunchRecipe?.name || 'none'}
       - Protein: ${mp.proteinRecipe?.name || 'none'} (${mp.proteinRecipe?.proteinType}, ${mp.proteinRecipe?.prepTime})
       - Carb: ${mp.carbRecipe?.name || 'none'} (${mp.carbRecipe?.carbType}, ${mp.carbRecipe?.prepTime})
@@ -63,15 +64,14 @@ export async function modifyMealPlan(
       schema: MODIFY_MEAL_PLAN_SCHEMA,
     })
 
-    // Convert date strings back to Date objects
+    // One entry per day we sent, dated as we sent it, with every recipe id checked
+    // (the model's date labels and ids are not trusted as they come).
     return {
-      modifiedPlan: parsed.modifiedPlan.map(mp => ({
-        date: new Date(mp.date),
-        lunchRecipeId: mp.lunchRecipeId || '',
-        proteinRecipeId: mp.proteinRecipeId,
-        carbRecipeId: mp.carbRecipeId,
-        vegetableRecipeId: mp.vegetableRecipeId,
-      })),
+      modifiedPlan: alignModifiedPlan(
+        request.currentPlan,
+        parsed.modifiedPlan ?? [],
+        request.availableRecipes
+      ),
       explanation: parsed.explanation,
     }
   } catch (error) {

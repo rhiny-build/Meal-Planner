@@ -92,7 +92,7 @@ export interface StructuredIngredientData {
 
 // Lightweight plan entry for AI requests (doesn't require full DB fields)
 export interface PlanEntryForAI {
-  date: Date
+  date: string // calendar date as "YYYY-MM-DD" (no time zone)
   dayOfWeek: string
   lunchRecipeId: string | null
   proteinRecipeId: string | null
@@ -126,7 +126,8 @@ export interface MealPlanModificationRequest {
 // Response from AI after modifying the meal plan
 export interface MealPlanModificationResult {
   modifiedPlan: {
-    date: Date
+    date: string // "YYYY-MM-DD", one entry per day of the request, in order
+    dayOfWeek: string
     lunchRecipeId: string
     proteinRecipeId: string
     carbRecipeId: string

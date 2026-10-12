@@ -5,7 +5,7 @@
  */
 
 import type { RecipeWithIngredients, WeekPlan } from '@/types'
-import { parseDateParam } from '@/lib/dateUtils'
+import { parseDateParam, formatDateParam } from '@/lib/dateUtils'
 
 const ALL_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -129,26 +129,39 @@ export function swapRecipesInPlan(
   return newPlan
 }
 
+const YMD_RE = /^\d{4}-\d{2}-\d{2}$/
+
+/**
+ * Does an AI-plan date refer to this day? A plain "YYYY-MM-DD" is compared with the day's own
+ * local calendar date, so the match does not depend on the time zone of the browser or server.
+ * (Comparing full timestamps shifted whole weeks by a day for anyone not on UTC.)
+ */
+function sameCalendarDay(modDate: Date | string, day: Date): boolean {
+  if (typeof modDate === 'string' && YMD_RE.test(modDate)) return modDate === formatDateParam(day)
+  return new Date(modDate).toDateString() === day.toDateString()
+}
+
 /**
  * Merge an AI-generated plan into the current week plan.
  * Only days present in modifiedPlan are updated; others are left unchanged.
+ * With `keepFilled`, a slot that already has a recipe is never overwritten (locked meals).
  */
 export function applyGeneratedPlanToWeek(
   weekPlan: WeekPlan[],
-  modifiedPlan: { date: Date | string; lunchRecipeId?: string; proteinRecipeId: string; carbRecipeId: string; vegetableRecipeId: string }[]
+  modifiedPlan: { date: Date | string; lunchRecipeId?: string; proteinRecipeId: string; carbRecipeId: string; vegetableRecipeId: string }[],
+  options: { keepFilled?: boolean } = {}
 ): WeekPlan[] {
+  const pick = (existing: string, generated: string | undefined) =>
+    options.keepFilled && existing ? existing : generated || ''
   return weekPlan.map(day => {
-    const modification = modifiedPlan.find(m => {
-      const modDate = new Date(m.date)
-      return modDate.toDateString() === day.date.toDateString()
-    })
+    const modification = modifiedPlan.find(m => sameCalendarDay(m.date, day.date))
     if (modification) {
       return {
         ...day,
-        lunchRecipeId: modification.lunchRecipeId || '',
-        proteinRecipeId: modification.proteinRecipeId || '',
-        carbRecipeId: modification.carbRecipeId || '',
-        vegetableRecipeId: modification.vegetableRecipeId || '',
+        lunchRecipeId: pick(day.lunchRecipeId, modification.lunchRecipeId),
+        proteinRecipeId: pick(day.proteinRecipeId, modification.proteinRecipeId),
+        carbRecipeId: pick(day.carbRecipeId, modification.carbRecipeId),
+        vegetableRecipeId: pick(day.vegetableRecipeId, modification.vegetableRecipeId),
       }
     }
     return day

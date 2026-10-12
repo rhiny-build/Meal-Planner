@@ -17,7 +17,7 @@ export const MODIFY_MEAL_PLAN_SCHEMA: Schema = {
       items: {
         type: 'object',
         properties: {
-          date: { type: 'string', description: 'ISO date string' },
+          date: { type: 'string', description: 'The YYYY-MM-DD date of the day, exactly as written in the current plan' },
           lunchRecipeId: { type: 'string' },
           proteinRecipeId: { type: 'string' },
           carbRecipeId: { type: 'string' },

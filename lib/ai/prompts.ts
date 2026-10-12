@@ -49,7 +49,7 @@ For each recipe:
  *
  * Expected JSON response shape:
  * {
- *   modifiedPlan: { date: string, lunchRecipeId: string, proteinRecipeId: string, carbRecipeId: string, vegetableRecipeId: string }[]
+ *   modifiedPlan: { date: string (YYYY-MM-DD, as given), lunchRecipeId: string, proteinRecipeId: string, carbRecipeId: string, vegetableRecipeId: string }[]
  *   explanation: string
  * }
  */
@@ -112,7 +112,7 @@ User instruction: "${params.instruction}"
 
 
 Submit with the tool:
-- "modifiedPlan": array of {date: ISO date string, lunchRecipeId, proteinRecipeId, carbRecipeId, vegetableRecipeId} for ALL days in the plan
+- "modifiedPlan": array of {date: the YYYY-MM-DD date exactly as written in the current plan, lunchRecipeId, proteinRecipeId, carbRecipeId, vegetableRecipeId} for ALL days in the plan
 - "explanation": explain briefly how you ensured all slots were filled and locked meals preserved.
 
 CRITICAL:

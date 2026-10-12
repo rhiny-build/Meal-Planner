@@ -13,7 +13,7 @@
 
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { getWeekStart } from '@/lib/dateUtils'
+import { getWeekStart, formatDateParam } from '@/lib/dateUtils'
 import { useMealPlan } from '@/lib/hooks/useMealPlan'
 import MealPlanHeader from './MealPlanHeader'
 import MealPlanGrid from './MealPlanGrid'
@@ -78,7 +78,9 @@ export default function MealPlanClient({ weekStartDay }: MealPlanClientProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           instruction: DEFAULT_PROMPT,
-          currentPlan: weekPlan,
+          // Dates as plain local calendar days ("2026-10-12"), not timestamps: a timestamp
+          // is a different day on the server and in the model's answer outside UTC.
+          currentPlan: weekPlan.map((d) => ({ ...d, date: formatDateParam(d.date) })),
         }),
       })
 
@@ -88,7 +90,7 @@ export default function MealPlanClient({ weekStartDay }: MealPlanClientProps) {
       }
 
       const result = await response.json()
-      applyGeneratedPlan(result.modifiedPlan)
+      applyGeneratedPlan(result.modifiedPlan, { keepFilled: true })
       toast.success(result.explanation, { duration: 5000 })
     } catch (error) {
       console.error('Error generating meal plan:', error)
