@@ -17,7 +17,12 @@ function toStoredDate(dateStr: string): Date {
   if (!DATE_PATTERN.test(dateStr)) {
     throw new Error(`Invalid date: ${dateStr}`)
   }
-  return new Date(`${dateStr}T00:00:00.000Z`)
+  const stored = new Date(`${dateStr}T00:00:00.000Z`)
+  // Reject impossible days like 2026-02-31 (JS would silently roll them into March)
+  if (Number.isNaN(stored.getTime()) || fromStoredDate(stored) !== dateStr) {
+    throw new Error(`Invalid date: ${dateStr}`)
+  }
+  return stored
 }
 
 /** Stored UTC-midnight Date -> 'YYYY-MM-DD'. */

@@ -5,6 +5,8 @@ const { getDayNotesForWeek, saveDayNote } = vi.hoisted(() => ({
   getDayNotesForWeek: vi.fn(),
   saveDayNote: vi.fn(),
 }))
+const { toastError } = vi.hoisted(() => ({ toastError: vi.fn() }))
+vi.mock('sonner', () => ({ toast: { error: toastError } }))
 vi.mock('@/app/meal-plan/dayNoteActions', () => ({ getDayNotesForWeek, saveDayNote }))
 
 const localStorageMock = (() => {
@@ -30,6 +32,7 @@ describe('useDayNotes', () => {
   beforeEach(() => {
     localStorageMock.clear()
     getDayNotesForWeek.mockReset().mockResolvedValue({})
+    toastError.mockReset()
     saveDayNote.mockReset().mockResolvedValue(undefined)
   })
   afterEach(() => vi.useRealTimers())
@@ -75,5 +78,41 @@ describe('useDayNotes', () => {
     expect(localStorage.getItem('mealPlanNotes_2026-10-12')).toBeNull()
     expect(localStorage.getItem('mealPlanNotes_2026-10-19')).toBeNull()
     expect(localStorage.getItem('mealPlanNotes_2026-10-05')).not.toBeNull()
+  })
+
+  it('migrates a key saved with the old UTC date (day before the local week start)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 9, 14))
+    localStorage.setItem('mealPlanNotes_2026-10-11', JSON.stringify({ Monday: 'bst note' }))
+    renderHook(() => useDayNotes(monday, days))
+    await waitFor(() => expect(saveDayNote).toHaveBeenCalledWith('2026-10-12', 'bst note'))
+    expect(localStorage.getItem('mealPlanNotes_2026-10-11')).toBeNull()
+  })
+
+  it('migration does not overwrite a note already in the DB', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 9, 14))
+    getDayNotesForWeek.mockResolvedValue({ '2026-10-13': 'from phone' })
+    localStorage.setItem('mealPlanNotes_2026-10-12', JSON.stringify({ Tuesday: 'stale', Wednesday: 'keep' }))
+    renderHook(() => useDayNotes(monday, days))
+    await waitFor(() => expect(saveDayNote).toHaveBeenCalledWith('2026-10-14', 'keep'))
+    expect(saveDayNote).toHaveBeenCalledTimes(1)
+  })
+
+  it('saves a pending note immediately on unmount', async () => {
+    const { result, unmount } = renderHook(() => useDayNotes(monday, days))
+    await waitFor(() => expect(getDayNotesForWeek).toHaveBeenCalled())
+    act(() => { result.current.handleNoteChange('Friday', 'late') })
+    unmount()
+    expect(saveDayNote).toHaveBeenCalledWith('2026-10-16', 'late')
+  })
+
+  it('shows an error toast when a save fails', async () => {
+    saveDayNote.mockRejectedValue(new Error('offline'))
+    const { result, unmount } = renderHook(() => useDayNotes(monday, days))
+    await waitFor(() => expect(getDayNotesForWeek).toHaveBeenCalled())
+    act(() => { result.current.handleNoteChange('Friday', 'x') })
+    unmount()
+    await waitFor(() => expect(toastError).toHaveBeenCalled())
   })
 })

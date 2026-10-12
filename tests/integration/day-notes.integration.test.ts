@@ -32,4 +32,13 @@ describe('Day Note Integration Tests', () => {
     expect((await getDayNotesForWeek('2026-10-12'))['2026-10-12']).toBeUndefined()
     expect(await testPrisma.dayNote.count()).toBe(2)
   })
+
+  it('rejects impossible dates', async () => {
+    await expect(saveDayNote('2026-02-31', 'x')).rejects.toThrow('Invalid date')
+  })
+
+  it('keeps past-week notes', async () => {
+    await saveDayNote('2020-01-06', 'ancient')
+    expect(await getDayNotesForWeek('2020-01-06')).toEqual({ '2020-01-06': 'ancient' })
+  })
 })
