@@ -24,5 +24,5 @@ Any agent use of notes. Note UI redesign.
 ## Done when
 A note typed on the laptop shows up on the phone. Last week's notes are still there next week. Tests pass.
 
-## Walkthrough focus
+## Focus for "How it works" in your log
 The migration (what changed in the DB), and how server actions replaced localStorage in the hook.

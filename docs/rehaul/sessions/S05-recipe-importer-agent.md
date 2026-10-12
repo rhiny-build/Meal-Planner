@@ -10,7 +10,7 @@ The first real agent in the app, and the one Ronen learns the pattern from. Give
 ## This session is about readability (D7)
 Write the tool loop by hand. Do **not** use the SDK's tool runner or any agent framework. Ronen will read `lib/agents/loop.ts` top to bottom, so it should be short, linear and commented. It should be obvious where the model is called, where tools run, and when the loop stops: a max-iterations guard, a stop reason, and a final structured answer.
 
-## Design to propose (then wait for go-ahead)
+## Design (decide yourself; record it in your log)
 - `lib/agents/runLog.ts`: start a run, record steps, finish or fail it (AgentRun/AgentStep from S03). The loop calls it for every model turn, tool call and tool result.
 - `lib/agents/loop.ts`: a generic loop taking `{ system, tools, input, maxTurns }`, where each tool has a name, JSON schema and handler. Returns the final output plus the run id.
 - `lib/agents/recipeImporter/`: prompt file plus tools:
@@ -30,5 +30,5 @@ Batch backfill (S07). Cook mode. Discovery.
 - Old `extract` route and `extractIngredientsFromURL` removed. The P1 bug "URL extraction returning wrong recipe" is noted in your log as superseded.
 - Unit tests for the loop (with a mocked Claude client: stops on `submit_recipe`, respects `maxTurns`, records steps) and for each tool. Tests pass.
 
-## Walkthrough focus
+## Focus for "How it works" in your log
 This is the most important walkthrough of the rehaul. Trace one real import step by step on `/agent-runs` alongside `loop.ts`: what the model saw, what it asked for, what the tool returned, and why it stopped. Then explain what the SDK tool runner will do for us later (S11), and which part of `loop.ts` it replaces.

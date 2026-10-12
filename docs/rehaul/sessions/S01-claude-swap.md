@@ -26,8 +26,8 @@ Any change to embeddings or matching thresholds. Agents, tool loops and new feat
 
 ## Done when
 - `grep -r "chat.completions" lib app` returns nothing.
-- URL import, meal-plan modify, ingredient normalisation and Inspire Me each work once against real Claude (show Ronen one example of each).
+- URL import, meal-plan modify, ingredient normalisation and Inspire Me each work once against real Claude (record one example of each in your log).
 - Tests pass.
 
-## Walkthrough focus
+## Focus for "How it works" in your log
 How a Claude call with a forced tool returns structured data. Compare it with the old JSON-from-text approach.
