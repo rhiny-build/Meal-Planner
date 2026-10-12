@@ -57,7 +57,7 @@ Model choice lives in one config file. Default: `claude-sonnet-5-5` for agents, 
 
 ### Recipe data model (direction, finalised in S03)
 
-- `Recipe` gains: `kind` (`full` | `quick`), `servings`, `description`, `totalTimeMinutes`, `notes`, `sourceUrl` (rename of `recipeUrl`, or kept — S03 decides).
+- `Recipe` gains: `kind` (`full` | `quick`), `servings`, `description`, `totalTimeMinutes`, `notes`. `recipeUrl` stays as it is (no renames).
 - `RecipeStep` (new): `recipeId`, `order`, `text`, `timerSeconds?`. Step text may reference ingredients by id (e.g. `{ing:abc123}`) so cook mode can show **scaled amounts inline**.
 - `Ingredient` gains a numeric `amount` (alongside the existing free-text `quantity`) so servings scaling works. Free text stays as the fallback when the amount can't be parsed.
 - Legacy `Recipe.ingredients` text column: keep for now, drop in a later clean-up once nothing reads it.
@@ -76,6 +76,36 @@ These exist so parallel Claude Code sessions never fight over shared mutable sta
 6. **One schema migration in flight at a time.** Only sessions marked `schema: yes` touch `prisma/schema.prisma`, and no two of them run in the same wave.
 7. **One branch, one worktree, one PR per session.** Branch name `rehaul_<session-id>_<short_name>`. Do not merge to `main` yourself — open a PR and stop; Ronen merges. (This overrides `push-to-prod`'s merge step for rehaul sessions.)
 8. **Production data is touched only by explicit apply steps** that Ronen runs after reviewing a dry-run report. Take a DB backup first.
+
+## Branches, testing and promotion to main
+
+The app is in daily use, and merging to `main` **is** a production deploy. These rules apply to every rehaul PR.
+
+### Environments
+| Environment | Code | Database |
+|---|---|---|
+| Production | `main`, auto-deployed by Vercel (`family-meal-planner`) | Neon main branch (live data) |
+| Preview | Each PR branch, auto-deployed by Vercel with its own URL | Its own Neon branch `preview/<git-branch>`, a copy of production made when the preview is built and deleted when the git branch is deleted (Neon–Vercel integration, set up 12 Oct 2026) |
+| Build sessions | Claude Code worktree | A Neon `dev` branch (to be set up before S02) — never production |
+
+- `DATABASE_URL` is pooled (runtime). `DATABASE_URL_UNPOOLED` is direct (Prisma migrations, via `directUrl`). Both are injected by the integration.
+- The Vercel build runs `prisma migrate deploy`. On a preview, that changes only the preview's own Neon branch.
+
+### Branches
+- `main` only changes through a PR. Nothing is pushed straight to it.
+- One short-lived branch per session. Merge within days, not weeks.
+
+### Testing before merge
+1. **CI check** (GitHub Actions) on every PR: unit tests, type check, build. It must be green.
+2. **Preview check by Ronen**: open the PR's preview URL on a phone and try the feature against the preview's copy of real data. Each session's walkthrough ends with "what to try on the preview".
+3. Schema PRs: also confirm the preview's Neon branch shows the new tables or columns.
+
+### Promotion to main
+- **Database changes only add** (new tables, new nullable columns, new columns with defaults). Renames and drops go in a separate, later PR, once nothing reads the old shape. That keeps a code rollback safe: Vercel's instant rollback restores old code, and the database still works with it.
+- **Neon backup before merging any schema PR**: create a branch from main called `backup/<YYYYMMDD>-<session-id>` in the Neon console. It takes seconds.
+- **Big new screens sit behind a switch** (a `SystemSetting` flag) until they're ready. The old screen keeps working until the new one replaces it.
+- **Don't merge on the day of the weekly shop**, or right before it.
+- **If production breaks:** Vercel → Deployments → previous deployment → *Instant Rollback*. Then fix forward in a new PR.
 
 ## Phases, sessions and waves
 

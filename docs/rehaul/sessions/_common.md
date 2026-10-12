@@ -22,6 +22,8 @@ Do **not** run `pick-up-context` or read `MEMORY.md`. ARCHITECTURE.md is partly 
 - **Do not edit:** `docs/rehaul/PLAN.md`, anything in `docs/rehaul/sessions/`, `ARCHITECTURE.md`, `BACKLOG.md`, `FEATURES.md`, `README.md`, or another session's log.
 - **Do write:** `docs/rehaul/logs/<your-session-id>.md` (create it). It's yours alone.
 - Only touch `prisma/schema.prisma` if your prompt says `Schema: yes`.
+- Follow PLAN.md → "Branches, testing and promotion to main". In particular: **database changes only add** (no renames or drops), and never point anything at the production database. Use the Neon `dev` branch.
+- CI must be green on your PR before you hand over.
 
 ## AI conventions
 - Claude via the official Anthropic TypeScript SDK. Use the client and model config from `lib/ai/` (set up in S01). Don't hardcode model names elsewhere.
@@ -31,7 +33,7 @@ Do **not** run `pick-up-context` or read `MEMORY.md`. ARCHITECTURE.md is partly 
 - Prompts live next to the agent in their own file, not inline in route handlers.
 
 ## Finish with
-1. **Walkthrough for Ronen** (in the chat, not a file): what was built, design first; then the 3–5 pieces of code that matter, with file and line references; for agents, where the loop is, what each tool does, and one real run traced end to end. Then ask if anything is unclear.
+1. **Walkthrough for Ronen** (in the chat, not a file): what was built, design first; then the 3–5 pieces of code that matter, with file and line references; for agents, where the loop is, what each tool does, and one real run traced end to end. Then **what to try on the preview URL**: 3–5 concrete things to tap on a phone, and what Ronen should see. Then ask if anything is unclear.
 2. **Your log file**, with these sections:
    - `## Built` — outcome in a few lines
    - `## Decisions` — anything decided during the session, and why

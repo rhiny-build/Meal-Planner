@@ -9,7 +9,7 @@ One migration that sets up everything Phase 1 needs. That way S04, S05 and S06 c
 
 ## Design to propose (then wait for Ronen's go-ahead)
 Start from PLAN.md, section "Recipe data model". Decide and justify:
-1. **`Recipe`**: add `kind` (`full` | `quick`, default `full`), `servings Int?`, `description String?`, `totalTimeMinutes Int?`, `notes String?`. Existing `prepTime` (quick/medium/long) and `tier` stay. Decide whether to rename `recipeUrl` → `sourceUrl`. Default to no rename unless it's cheap: it's referenced in many places.
+1. **`Recipe`**: add `kind` (`full` | `quick`, default `full`), `servings Int?`, `description String?`, `totalTimeMinutes Int?`, `notes String?`. Existing `prepTime` (quick/medium/long) and `tier` stay. Keep `recipeUrl` as it is. No renames: database changes only add (PLAN.md, "Promotion to main").
 2. **`RecipeStep`** (new): `recipeId`, `order`, `text`, `timerSeconds Int?`. Method is optional (D3): a recipe with zero steps is normal.
 3. **Inline ingredient references in step text**, so cook mode can show scaled amounts. Propose a token format (e.g. `{ing:<ingredientId>}`) plus one helper to render it and one to validate it. Unknown or deleted ids must render as plain text, never crash.
 4. **`Ingredient`**: add `amount Float?` and keep `quantity`/`unit` as the free-text fallback. Write a pure function that parses existing `quantity` strings ("1 1/2 pounds", "1/4 cup", "500g") into amount + unit where it's unambiguous, and leaves them null otherwise. Backfill `amount` with it in this migration's data step, or a script. Report how many parsed.
