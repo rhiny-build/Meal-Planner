@@ -44,8 +44,9 @@ export interface DuplicateGroup {
 function richness(r: RecipeSnapshot): number[] {
   const filled = [r.servings, r.totalTimeMinutes, r.description, r.notes, r.prepTime].filter((v) => v !== null && v !== '').length
   const slots = r.mealPlanRefs.lunch + r.mealPlanRefs.protein + r.mealPlanRefs.carb + r.mealPlanRefs.vegetable
-  // Higher is better, compared left to right: method, filled fields, a source link, plan history, ingredients
-  return [r.stepCount > 0 ? 1 : 0, filled, r.recipeUrl ? 1 : 0, slots, r.ingredients.length]
+  // Higher is better, compared left to right: method, filled fields, a source link, ingredients, plan history.
+  // Plan history comes last on purpose: meal-plan rows get re-pointed in a merge, so they never decide who stays.
+  return [r.stepCount > 0 ? 1 : 0, filled, r.recipeUrl ? 1 : 0, r.ingredients.length, slots]
 }
 
 /** Keeper = the copy with the most data; ties go to the older recipe (and then the id, for a stable answer). */
