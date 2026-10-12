@@ -113,7 +113,7 @@ The app is in daily use, and merging to `main` **is** a production deploy. These
 
 - **Branches:** `main` changes only through a PR. One short-lived branch per session; merge small and often.
 - **Previews:** every PR gets a Vercel preview with **its own Neon database branch** (`preview/<git-branch>`, a copy of production, deleted with the branch). Try the change on the preview URL, on a phone, before merging.
-- **Checks:** a GitHub Action runs the unit tests on every PR. It must be green to merge.
+- **Checks:** a GitHub Action runs the type check and unit tests on every PR (the build is checked by the Vercel preview). Later PR: run `tests/integration` in CI against a throwaway Postgres service container, and Playwright smoke tests against the preview.
 - **Database changes are additive only.** Add tables/columns; removing or renaming is a separate, later PR once nothing uses the old shape. This keeps Vercel's one-click rollback safe, because old code still works with the new database.
 - **Before merging a schema change:** confirm the preview works on its Neon branch, and note the time (Neon can restore production to a point in time).
 - **Big new screens** (recipe book, cook mode) sit behind a setting until ready; the old screens keep working.
