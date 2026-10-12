@@ -10,8 +10,8 @@
  *   - redirects are followed by hand (max 5) and each hop goes through the same checks
  *   - 15 second timeout, 2 MB body cap, HTML/text content types only
  *
- * Dev/test escape hatch: with ALLOW_PRIVATE_FETCH=1 private addresses are allowed so tests
- * and local fixtures on localhost work. The flag is IGNORED when NODE_ENV is "production"
+ * Dev/test escape hatch: with ALLOW_PRIVATE_FETCH=1 loopback and private addresses are allowed so
+ * tests and local fixtures on localhost work (link-local/metadata stays blocked). The flag is IGNORED when NODE_ENV is "production"
  * (which is what Vercel production AND preview builds run with), so it cannot weaken
  * deployed environments even if it is set there by mistake.
  *
@@ -76,6 +76,12 @@ export function isPrivateAddress(address: string): boolean {
   return true // not an IP at all: refuse
 }
 
+/** 169.254.0.0/16 (incl. the cloud metadata address) and fe80::/10. */
+function isLinkLocalAddress(address: string): boolean {
+  const ip = address.toLowerCase()
+  return /^169\.254\./.test(ip) || /^fe[89ab]/.test(ip) || /^::ffff:169\.254\./.test(ip)
+}
+
 /** Throw UnsafeUrlError unless this URL is allowed to be fetched. */
 export async function assertSafeUrl(rawUrl: string): Promise<URL> {
   let url: URL
@@ -87,7 +93,6 @@ export async function assertSafeUrl(rawUrl: string): Promise<URL> {
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {
     throw new UnsafeUrlError('Only http and https URLs can be fetched')
   }
-  if (privateFetchAllowed()) return url
 
   // URL.hostname keeps brackets around IPv6 literals
   const host = url.hostname.replace(/^\[|\]$/g, '')
@@ -96,7 +101,10 @@ export async function assertSafeUrl(rawUrl: string): Promise<URL> {
     : (await lookup(host, { all: true }).catch(() => [])).map((a) => a.address)
 
   if (addresses.length === 0) throw new UnsafeUrlError(`Could not resolve ${host}`)
-  if (addresses.some(isPrivateAddress)) {
+  // The dev flag opens loopback and private networks (local fixtures), but never the
+  // link-local range, which is where cloud metadata services live.
+  const blocked = privateFetchAllowed() ? addresses.some(isLinkLocalAddress) : addresses.some(isPrivateAddress)
+  if (blocked) {
     throw new UnsafeUrlError('That address is not on the public internet, so it will not be fetched')
   }
   return url
@@ -127,6 +135,10 @@ export async function safeFetchHtml(rawUrl: string): Promise<{ finalUrl: string;
       redirect: 'manual',
       signal: AbortSignal.timeout(TIMEOUT_MS),
       headers: { 'User-Agent': USER_AGENT, Accept: 'text/html,application/xhtml+xml,text/plain' },
+    }).catch((error) => {
+      // Node's fetch only says "fetch failed"; the useful part (ENOTFOUND, ECONNREFUSED, timeout) is the cause.
+      const cause = error?.cause?.code ?? error?.cause?.message ?? error?.name ?? 'unknown error'
+      throw new Error(`Could not reach ${url.hostname} (${cause})`)
     })
 
     if (response.status >= 300 && response.status < 400) {

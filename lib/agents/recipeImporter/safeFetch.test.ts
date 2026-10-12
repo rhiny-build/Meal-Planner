@@ -77,6 +77,13 @@ describe('the dev flag', () => {
     await expect(assertSafeUrl('http://localhost:4000/recipe')).resolves.toBeInstanceOf(URL)
   })
 
+  it('still blocks link-local and metadata addresses', async () => {
+    vi.stubEnv('ALLOW_PRIVATE_FETCH', '1')
+    vi.stubEnv('NODE_ENV', 'development')
+    await expect(assertSafeUrl('http://169.254.169.254/latest/meta-data')).rejects.toThrow('public internet')
+    await expect(assertSafeUrl('http://[fe80::1]/')).rejects.toThrow('public internet')
+  })
+
   it('is ignored in production, even when set', async () => {
     vi.stubEnv('ALLOW_PRIVATE_FETCH', '1')
     vi.stubEnv('NODE_ENV', 'production')
@@ -127,6 +134,11 @@ describe('safeFetchHtml', () => {
     await expect(safeFetchHtml('https://example.com/a')).rejects.toThrow('HTTP 403')
     mockFetch.mockResolvedValueOnce(new Response('%PDF', { status: 200, headers: { 'content-type': 'application/pdf' } }))
     await expect(safeFetchHtml('https://example.com/b')).rejects.toThrow('Not a web page')
+  })
+
+  it('turns a network failure into a readable message', async () => {
+    mockFetch.mockRejectedValue(Object.assign(new TypeError('fetch failed'), { cause: { code: 'ENOTFOUND' } }))
+    await expect(safeFetchHtml('https://example.com/a')).rejects.toThrow('Could not reach example.com (ENOTFOUND)')
   })
 
   it('caps the body size', async () => {
