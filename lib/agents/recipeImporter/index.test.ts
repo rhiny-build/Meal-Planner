@@ -29,12 +29,17 @@ describe('classifyImportInput', () => {
 })
 
 describe('runRecipeImporter', () => {
-  it('runs the loop with the three tools, the dish types in the prompt and a turn limit', async () => {
+  it('runs the loop with its tools, the dish types in the prompt and a turn limit', async () => {
     await runRecipeImporter({ url: 'https://example.com/r' })
     const params = vi.mocked(runAgent).mock.calls[0][0]
     expect(params.agent).toBe('recipe-importer')
     expect(params.trigger).toBe('manual')
-    expect(params.tools.map((t) => t.name)).toEqual(['fetch_page', 'find_similar_recipes', 'submit_recipe'])
+    expect(params.tools.map((t) => t.name)).toEqual([
+      'fetch_page',
+      'find_similar_recipes',
+      'cannot_import_recipe',
+      'submit_recipe',
+    ])
     expect(params.system).toContain('chicken')
     expect(params.system).toContain('rice')
     expect(params.userMessage).toContain('https://example.com/r')

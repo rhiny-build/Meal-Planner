@@ -1,8 +1,9 @@
 /**
- * The recipe importer's three tools.
+ * The recipe importer's four tools.
  *
  *   fetch_page            read a web page (JSON-LD recipe first, else visible text)
  *   find_similar_recipes  look for duplicates already in the book
+ *   cannot_import_recipe  the honest way out: no recipe to import (page unreachable, no recipe on it)
  *   submit_recipe         the final answer. It checks the recipe and returns the draft.
  *                         It does NOT save anything; that happens after Ronen reviews it.
  *
@@ -140,7 +141,7 @@ export async function buildDraft(raw: any, sourceUrl: string | null): Promise<Re
   if (raw.kind !== 'full' && raw.kind !== 'quick') throw new Error('kind must be "full" or "quick"')
 
   const rawIngredients: any[] = Array.isArray(raw.ingredients) ? raw.ingredients : []
-  if (rawIngredients.length === 0) throw new Error('A recipe needs at least one ingredient')
+  if (rawIngredients.length === 0) throw new Error('A recipe needs at least one ingredient. If there is no recipe to import, call cannot_import_recipe instead')
 
   const ingredients: DraftIngredient[] = rawIngredients.map((ing) => {
     const ingredientName = textOrNull(ing?.name)
@@ -235,6 +236,19 @@ export function createImporterTools(options: { sourceUrl: string | null }) {
         result.matches.forEach((m) => similar.set(m.id, m))
         return result
       },
+    },
+    {
+      name: 'cannot_import_recipe',
+      description:
+        'Call this INSTEAD of submit_recipe when there is no recipe to import: the page could not be fetched, ' +
+        'the page has no recipe on it, or the description is not a recipe. Never submit a placeholder or a guessed recipe.',
+      inputSchema: {
+        type: 'object',
+        properties: { reason: { type: 'string', description: 'One plain sentence for the user explaining why' } },
+        required: ['reason'],
+      },
+      handler: async (input) => ({ reason: textOrNull(input?.reason) ?? 'No recipe found' }),
+      givesUp: true,
     },
     {
       name: 'submit_recipe',

@@ -47,7 +47,9 @@ const reply = (content: unknown[], stop_reason = 'tool_use') => ({ content, stop
 const lookup = vi.fn(async (input: { q: string }) => ({ found: input.q }))
 const submit = vi.fn(async (input: { answer: string }) => ({ final: input.answer }))
 
+const giveUp = vi.fn(async (input: { reason: string }) => ({ reason: input.reason }))
 const tools: AgentTool[] = [
+  { name: 'give_up', description: 'give up', inputSchema: { type: 'object' }, handler: giveUp, givesUp: true },
   { name: 'lookup', description: 'look', inputSchema: { type: 'object' }, handler: lookup },
   { name: 'submit', description: 'submit', inputSchema: { type: 'object' }, handler: submit, endsRun: true },
 ]
@@ -153,6 +155,23 @@ describe('runAgent', () => {
 
     expect(result.ok).toBe(true)
     expect(log.steps[2].payload.isError).toBe(true)
+  })
+
+  it('fails the run with the agent\'s own reason when it gives up', async () => {
+    mockAnthropic.messages.create.mockResolvedValueOnce(
+      reply([toolUse('t1', 'give_up', { reason: 'the page has no recipe' })])
+    )
+
+    const result = await runAgent(params)
+
+    expect(result).toEqual({
+      runId: 'run_1',
+      ok: false,
+      error: 'The agent gave up: the page has no recipe',
+      gaveUpReason: 'the page has no recipe',
+    })
+    expect(log.failed).toBe('The agent gave up: the page has no recipe')
+    expect(mockAnthropic.messages.create).toHaveBeenCalledTimes(1)
   })
 
   it('nudges once when the model ends its turn with no tool call, then succeeds', async () => {

@@ -9,6 +9,7 @@
  *   4. Tool calls? We run each tool, and send the results back as the next user message.
  *   5. Go to 1. The loop ends when:
  *        - a tool marked `endsRun` succeeds (its return value is the final answer), or
+ *        - a tool marked `givesUp` is called (the agent reports it cannot do the task), or
  *        - Claude fails to finish properly, or
  *        - we hit `maxTurns` (the guard against a run that never ends).
  *
@@ -29,6 +30,8 @@ export interface AgentTool {
   handler: (input: any) => Promise<unknown>
   /** If true, a successful call ends the run and the handler's return value is the answer. */
   endsRun?: boolean
+  /** If true, calling this tool fails the run on purpose. The handler returns { reason: string }. */
+  givesUp?: boolean
 }
 
 export interface RunAgentParams {
@@ -53,6 +56,8 @@ export interface AgentResult<T> {
   output?: T
   /** Why the run failed (set when not ok) */
   error?: string
+  /** Set when the agent itself chose to give up, with its own explanation (safe to show to the user) */
+  gaveUpReason?: string
 }
 
 export async function runAgent<T>(params: RunAgentParams): Promise<AgentResult<T>> {
@@ -121,6 +126,7 @@ export async function runAgent<T>(params: RunAgentParams): Promise<AgentResult<T
       const results: Anthropic.ToolResultBlockParam[] = []
       let answer: unknown
       let finished = false
+      let gaveUpReason: string | undefined
 
       for (const call of toolCalls) {
         await run.step('tool_call', { id: call.id, input: call.input }, { toolName: call.name })
@@ -135,6 +141,7 @@ export async function runAgent<T>(params: RunAgentParams): Promise<AgentResult<T
             finished = true
             answer = output
           }
+          if (tool.givesUp) gaveUpReason = String((output as { reason?: unknown })?.reason ?? 'no reason given')
         } catch (error) {
           // A failing tool is not a failing run: tell Claude, it can fix its input or try another way.
           isError = true
@@ -150,7 +157,13 @@ export async function runAgent<T>(params: RunAgentParams): Promise<AgentResult<T
         })
       }
 
-      // 4. Done? The final tool succeeded, so its output is the answer.
+      // 4. Did the agent give up? Fail the run with its own explanation.
+      if (gaveUpReason !== undefined) {
+        await run.fail(`The agent gave up: ${gaveUpReason}`)
+        return { runId: run.id, ok: false, error: `The agent gave up: ${gaveUpReason}`, gaveUpReason }
+      }
+
+      // 5. Done? The final tool succeeded, so its output is the answer.
       if (finished) {
         await run.finish(answer)
         return { runId: run.id, ok: true, output: answer as T }

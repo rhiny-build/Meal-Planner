@@ -150,12 +150,22 @@ describe('submit_recipe (buildDraft)', () => {
   })
 })
 
+describe('cannot_import_recipe', () => {
+  it('returns the reason, with a fallback', async () => {
+    const tool = createImporterTools({ sourceUrl: null }).find((t) => t.name === 'cannot_import_recipe')!
+    expect(await tool.handler({ reason: ' The page could not be fetched ' })).toEqual({ reason: 'The page could not be fetched' })
+    expect(await tool.handler({})).toEqual({ reason: 'No recipe found' })
+  })
+})
+
 describe('createImporterTools', () => {
-  it('offers the three tools and only submit_recipe ends the run', () => {
+  it('offers the four tools; submit_recipe ends the run and cannot_import_recipe gives up', () => {
     const tools = createImporterTools({ sourceUrl: null })
+    expect(tools.find((t) => t.name === 'cannot_import_recipe')!.givesUp).toBe(true)
     expect(tools.map((t) => [t.name, !!t.endsRun])).toEqual([
       ['fetch_page', false],
       ['find_similar_recipes', false],
+      ['cannot_import_recipe', false],
       ['submit_recipe', true],
     ])
   })

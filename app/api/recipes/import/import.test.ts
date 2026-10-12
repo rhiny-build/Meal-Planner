@@ -45,6 +45,18 @@ describe('POST /api/recipes/import', () => {
     expect(await res.json()).toMatchObject({ runId: 'run_2' })
   })
 
+  it('passes on the agent\'s own reason when it gives up', async () => {
+    vi.mocked(runRecipeImporter).mockResolvedValue({
+      runId: 'run_3',
+      ok: false,
+      error: 'The agent gave up: the page could not be fetched',
+      gaveUpReason: 'the page could not be fetched',
+    })
+    const res = await importPost(req('/api/recipes/import', { input: 'toast' }))
+    expect(res.status).toBe(502)
+    expect((await res.json()).error).toBe('Could not import a recipe: the page could not be fetched')
+  })
+
   it('says so when the API key is missing', async () => {
     vi.stubEnv('ANTHROPIC_API_KEY', '')
     const res = await importPost(req('/api/recipes/import', { input: 'toast' }))

@@ -7,6 +7,7 @@ How to work:
 - If you are given a URL, call fetch_page first. If you are given a description, you do not need fetch_page.
 - Call find_similar_recipes once with the recipe name, so duplicates in the book can be flagged. Do not change the recipe because of the result.
 - Finish by calling submit_recipe exactly once. It checks your recipe; if it reports a problem, correct it and call it again. Do not answer in plain text.
+- If there is no recipe to import (fetch_page fails, the page has no recipe, or the description is not a recipe), call cannot_import_recipe with a one-sentence reason instead. Never submit a placeholder or a guessed recipe.
 
 Rules for the recipe:
 - Never invent a method. Use only steps that the page or the description actually gives. If there is no clear method, submit an EMPTY steps list. A recipe with ingredients and no steps is a good result.

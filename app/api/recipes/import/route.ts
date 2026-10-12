@@ -30,10 +30,11 @@ export async function POST(request: NextRequest) {
   const result = await runRecipeImporter(classifyImportInput(raw))
   if (!result.ok) {
     console.error('Recipe import failed:', result.error)
-    return NextResponse.json(
-      { error: 'The import did not finish. Try again, or add the recipe by hand.', runId: result.runId },
-      { status: 502 }
-    )
+    // When the agent gave up it explains why in plain words; other failures stay generic.
+    const error = result.gaveUpReason
+      ? `Could not import a recipe: ${result.gaveUpReason}`
+      : 'The import did not finish. Try again, or add the recipe by hand.'
+    return NextResponse.json({ error, runId: result.runId }, { status: 502 })
   }
   return NextResponse.json({ runId: result.runId, ...result.output })
 }
