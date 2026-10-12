@@ -391,7 +391,10 @@ export default function RecipeEditor({
       )}
 
       {/* Form Actions */}
-      <div className="flex gap-3">
+      <div
+        className="sticky bottom-0 -mx-4 flex gap-3 border-t bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-900 sm:-mx-6 sm:px-6"
+        data-testid="editor-actions"
+      >
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Saving...' : recipe ? 'Update Recipe' : 'Create Recipe'}
         </Button>
