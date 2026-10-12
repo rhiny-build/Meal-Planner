@@ -12,7 +12,8 @@ This project is designed to be both a functional meal planning tool and a learni
 - **TypeScript** - Type-safe JavaScript
 - **Tailwind CSS** - Utility-first CSS framework
 - **Prisma 5** - Database ORM (using PostgreSQL)
-- **OpenAI API** - AI-powered features (abstracted for easy switching to Claude)
+- **Claude (Anthropic API)** - all AI features (import agent, meal-plan changes, discovery, ingredient normalisation)
+- **OpenAI API** - embeddings only (ingredient matching)
 
 ## Features
 
@@ -20,7 +21,9 @@ This project is designed to be both a functional meal planning tool and a learni
 
 #### Recipe Management
 - ✅ Manual recipe entry with full details
-- ✅ AI-powered recipe import from text
+- ✅ Import from a URL or a description: a Claude agent drafts the recipe, you review it before saving (method only if the source has one)
+- ✅ Recipe book: full and quick recipes, a recipe page with method steps, servings and timers
+- ✅ Save and edit recipes from Claude.ai through the MCP endpoint
 - ✅ Recipe library with filtering by:
   - Tier (Favorite/Non-Regular/New)
   - Protein type (Chicken/Fish/Red Meat/Vegetarian)
@@ -39,7 +42,7 @@ This project is designed to be both a functional meal planning tool and a learni
   - Example: "swap Tuesday for something faster"
   - Example: "replace chicken with fish on Wednesday"
 - ✅ Navigate between weeks
-- ✅ Persistent meal plans
+- ✅ Persistent meal plans, with day notes stored in the database (synced across devices)
 
 #### Shopping List
 - ✅ Generate shopping list from weekly meal plan
@@ -55,9 +58,12 @@ This project is designed to be both a functional meal planning tool and a learni
 - ✅ Add manual items
 - ✅ Export to clipboard as text
 
+#### Agent runs
+- ✅ `/agent-runs` page: every agent run, replayable step by step
+
 ### Phase 2 (Structure in place, not implemented)
 - Photo-based recipe import
-- Recipe discovery via natural language
+- In-app recipe discovery chat (Inspire Me and Claude.ai already cover discovery)
 - Staples management (exclude common pantry items)
 - Pantry monitoring
 
@@ -65,37 +71,24 @@ This project is designed to be both a functional meal planning tool and a learni
 
 ```
 /app
-  /api              # API routes (Next.js route handlers)
-    /recipes        # Recipe CRUD operations
-    /meal-plan      # Meal plan operations
-    /shopping-list  # Shopping list operations
-  /recipes          # Recipe library page
-  /meal-plan        # Weekly meal plan page
-  /shopping-list    # Shopping list page
-  globals.css       # Global styles
-  layout.tsx        # Root layout component
-  page.tsx          # Home page
-
-/components         # Reusable UI components
-  Button.tsx        # Styled button component
-  RecipeCard.tsx    # Recipe display card
-  RecipeForm.tsx    # Recipe add/edit form
-
-/lib                # Business logic and utilities
-  /ai               # AI abstraction layer (modular)
-    extractIngredientsFromURL.ts
-    modifyMealPlan.ts
-  ingredientParser.ts  # Parse ingredient strings
-  dateUtils.ts      # Date manipulation helpers
-  prisma.ts         # Prisma client singleton
-
-/prisma             # Database configuration
-  schema.prisma     # Database schema
-  seed.ts           # Seed data script
-
-/types              # TypeScript type definitions
-  index.ts          # Shared types
+  /(modules)        # shopping-list, settings, purchase-history (page + server actions)
+  /api              # Route handlers: recipes (incl. import, discover), meal-plan, mcp
+  /recipes          # Recipe book, plus /recipes/[id] recipe page
+  /meal-plan        # Weekly meal plan page (day notes actions here)
+  /agent-runs       # Agent runs page
+/components         # Shared UI; /components/recipe has the recipe editor
+/lib
+  /ai               # Claude client, config (models), schemas, discovery, embeddings
+  /agents           # Generic agent loop, run log, recipe importer, backfill
+  /mcp              # MCP server and recipe tools
+  /shopping-list    # Matching and normalisation helpers
+/prisma             # schema.prisma, migrations, seed.ts, build-time data scripts
+/scripts            # Maintenance scripts (shopping-list, purchase-history, rehaul)
+/tests/integration  # Real-Postgres tests
+/types              # Shared types
 ```
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full tree.
 
 ## Getting Started
 
@@ -103,7 +96,8 @@ This project is designed to be both a functional meal planning tool and a learni
 
 - Node.js 18+ installed
 - npm (comes with Node.js)
-- An OpenAI API key ([Get one here](https://platform.openai.com/api-keys))
+- An Anthropic API key ([Get one here](https://console.anthropic.com/settings/keys)) with web search enabled (used by Inspire Me)
+- An OpenAI API key ([Get one here](https://platform.openai.com/api-keys)), used for embeddings only
 
 ### Installation
 
@@ -114,15 +108,18 @@ This project is designed to be both a functional meal planning tool and a learni
 
 2. **Set up your environment variables:**
 
-   Copy the example file and add your OpenAI API key:
+   Copy the example file and add your API keys:
    ```bash
    cp .env.example .env
    ```
 
-   Then edit `.env` and replace `your-openai-api-key-here` with your actual API key:
+   Then edit `.env` and replace the placeholders with your actual keys:
    ```
-   OPENAI_API_KEY="sk-..."
+   ANTHROPIC_API_KEY="..."   # all generative AI
+   OPENAI_API_KEY="..."      # embeddings only
    ```
+
+   `ALLOW_PRIVATE_FETCH=1` is for local fixture testing of the recipe importer only; it is ignored in production.
 
 3. **Set up the database:**
    ```bash
@@ -159,30 +156,25 @@ This project is designed to be both a functional meal planning tool and a learni
 
 ## Understanding the Code
 
-### AI Abstraction Layer (`lib/ai/`)
+### AI Layer (`lib/ai/`, `lib/agents/`)
 
-The AI layer is modular with separate files for each function:
-- `extractIngredientsFromURL.ts` - Extract recipe data from URLs
-- `modifyMealPlan.ts` - Natural language meal plan modifications
+All generative AI runs on Claude through the official Anthropic SDK:
+- `lib/ai/config.ts` - the model names and token limits (the only place models are named)
+- `lib/ai/claude.ts` - lazy client, and `callForcedTool` for one-shot structured output via a tool
+- `lib/ai/modifyMealPlan.ts`, `discoverRecipes.ts` - meal-plan changes, Inspire Me (Claude web search)
+- `lib/agents/loop.ts` - a hand-written agent loop, written to be read top to bottom; `recipeImporter/` is the first agent built on it
+- `lib/ai/openaiEmbeddings.ts` - OpenAI embeddings, the only OpenAI use
 
-Each file demonstrates how to:
-- Integrate with the OpenAI API
-- Structure code for easy provider switching
-- Handle AI responses and errors
-
-**To switch to Claude API:**
-1. Install the Anthropic SDK: `npm install @anthropic-ai/sdk`
-2. Update the imports and client initialization in each `lib/ai/*.ts` file
-3. Update each function to use Claude's API format
-4. Add `ANTHROPIC_API_KEY` to your `.env` file
-
-The function signatures remain the same, so the rest of your app won't need changes!
+Function signatures are provider-independent, so the rest of the app does not depend on the model.
 
 ### Database with Prisma (`prisma/schema.prisma`)
 
 The schema defines these main models:
 - `Recipe` - Stores recipe information
-- `Ingredient` - Structured ingredients for each recipe (quantity, unit, name, notes)
+- `Ingredient` - Structured ingredients for each recipe (quantity, unit, numeric amount, name, notes)
+- `RecipeStep` - Optional method steps, with optional timers
+- `DayNote` - A note for one calendar day on the meal-plan grid
+- `AgentRun` / `AgentStep` - Recorded agent runs, shown on `/agent-runs`
 - `MealPlan` - Stores which recipe is planned for which date
 - `ShoppingList` - Weekly shopping list
 - `ShoppingListItem` - Individual items with canonical name, master item link, and match confidence
@@ -198,7 +190,8 @@ Note: `npm run db:push` is fine for initial setup or prototyping, but use migrat
 ### API Routes (`app/api/`)
 
 Next.js App Router uses file-based routing for APIs:
-- `app/api/recipes/route.ts` - GET and POST for recipes
+- `app/api/recipes/route.ts` - GET for recipes (steps included; `?kind=`)
+- `app/api/recipes/import/route.ts` - run the import agent
 - `app/api/recipes/[id]/route.ts` - GET, PATCH, DELETE for a specific recipe
 - `app/api/meal-plan/route.ts` - Meal plan operations
 
@@ -221,7 +214,7 @@ If you're new to these technologies, here's a suggested learning order:
 3. **Study the Recipe Card** (`components/RecipeCard.tsx`) - Understand how data flows through props
 4. **Explore the Recipe API** (`app/api/recipes/route.ts`) - Learn about API routes and database queries
 5. **Dive into the Recipes page** (`app/recipes/page.tsx`) - See state management and data fetching
-6. **Understand the AI layer** (`lib/ai.ts`) - Learn how to integrate AI APIs
+6. **Understand the AI layer** (`lib/ai/claude.ts`, then `lib/agents/loop.ts`) - Learn how to integrate AI APIs and how a tool loop works
 7. **Study the Meal Plan page** (`app/meal-plan/page.tsx`) - Complex state and multiple API calls
 
 ## Common Modifications
@@ -246,16 +239,13 @@ If you're new to these technologies, here's a suggested learning order:
    }
    ```
 
-4. Add the field to `RecipeForm.tsx` (the form component)
+4. Add the field to `components/recipe/RecipeEditor.tsx` (the form component)
 
 5. Update `RecipeCard.tsx` to display the new field
 
 ### Changing the AI Model
 
-Open `.env` and change the model:
-```
-OPENAI_MODEL="gpt-4"  # Use GPT-4 instead of gpt-4o-mini
-```
+Edit `CLAUDE_MODELS` in `lib/ai/config.ts`. Model names are not set in `.env`.
 
 ### Adding More Seed Recipes
 
@@ -269,8 +259,8 @@ Edit `prisma/seed.ts` and add recipes to the array, then run `npm run db:seed`.
 - For Vercel deployment, check Vercel Postgres connection settings
 
 ### AI features not working
-- Check that your `OPENAI_API_KEY` is set correctly in `.env`
-- Make sure you have API credits in your OpenAI account
+- Check that `ANTHROPIC_API_KEY` is set correctly in `.env` (and `OPENAI_API_KEY` for embedding-based matching)
+- Make sure you have API credits in your Anthropic account, and that web search is enabled for Inspire Me
 - Check the browser console and terminal for error messages
 
 ### Changes not appearing
@@ -294,7 +284,8 @@ Once you're comfortable with the codebase, try:
 - [TypeScript Handbook](https://www.typescriptlang.org/docs/)
 - [Tailwind CSS Docs](https://tailwindcss.com/docs)
 - [Prisma Docs](https://www.prisma.io/docs)
-- [OpenAI API Reference](https://platform.openai.com/docs/api-reference)
+- [Anthropic API Docs](https://docs.anthropic.com)
+- [OpenAI Embeddings Guide](https://platform.openai.com/docs/guides/embeddings)
 
 ## License
 
