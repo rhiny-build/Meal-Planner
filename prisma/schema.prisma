@@ -7,7 +7,8 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url       = env("DATABASE_URL")          // pooled — used by the app at runtime
+  directUrl = env("DATABASE_URL_UNPOOLED") // direct — used by Prisma CLI (migrations)
 }
 
 // Recipe model stores all recipe information
