@@ -12,7 +12,7 @@ Do **not** run `pick-up-context` or read `MEMORY.md`. ARCHITECTURE.md is partly 
 
 ## Working with Ronen
 - Ronen reads React/Next/TypeScript and reviews design, but doesn't write code. You write it.
-- Before writing code, show a short design (data flow, files you'll create or change, anything surprising) and wait for a go-ahead. Keep it to one screen.
+- Before writing code, show the design in **at most 5 bullets**: what changes for Ronen as a user, the approach, any decision he needs to make, and risks. **No file names, no code, no field-by-field detail.** Then wait for a go-ahead. Ronen will ask for more detail if he wants it.
 - Ask one question at a time. Never more than three paragraphs without checking in.
 - For local toolchain problems (Node, npm, Homebrew), just fix them or give the exact command. Don't turn them into a lesson.
 
