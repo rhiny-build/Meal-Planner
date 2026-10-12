@@ -1,0 +1,46 @@
+# Runs on every PR (and on main) so nothing reaches production untested.
+# No database here: unit tests are mocked, and the build uses placeholder
+# env values. Integration tests (tests/integration) are not run in CI yet.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      DATABASE_URL_UNPOOLED: postgresql://ci:ci@localhost:5432/ci
+      OPENAI_API_KEY: ci-placeholder
+      ANTHROPIC_API_KEY: ci-placeholder
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npm test
+
+      # The build is checked by the Vercel preview (which has a database).
+      # Integration tests in CI (Postgres service container) are a later PR.

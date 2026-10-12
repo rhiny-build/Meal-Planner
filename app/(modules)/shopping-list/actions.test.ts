@@ -471,7 +471,7 @@ describe('Shopping List Server Actions', () => {
       expect(mockPrisma.ingredientMapping.upsert).toHaveBeenCalledTimes(2)
 
       // Should return empty suggestions (all were above auto threshold)
-      expect(result.suggestions).toEqual([])
+      expect(result?.suggestions).toEqual([])
     })
 
     it('should surface medium-confidence matches as pending suggestions', async () => {
@@ -521,7 +521,7 @@ describe('Shopping List Server Actions', () => {
       expect(mockPrisma.ingredientMapping.upsert).toHaveBeenCalledTimes(1)
 
       // Should return garlic as a suggestion
-      expect(result.suggestions).toEqual([
+      expect(result?.suggestions).toEqual([
         expect.objectContaining({
           ingredientName: 'garlic',
           suggestedMasterItemId: 'm1',
@@ -572,7 +572,7 @@ describe('Shopping List Server Actions', () => {
           expect.objectContaining({ name: 'garlic', matchConfidence: 'unmatched' }),
         ],
       })
-      expect(result.suggestions).toEqual([])
+      expect(result?.suggestions).toEqual([])
     })
 
     it('should include all items when embedding matching fails', async () => {
