@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
       proteinType: (searchParams.get('proteinType') as any) || undefined,
       carbType: (searchParams.get('carbType') as any) || undefined,
       prepTime: (searchParams.get('prepTime') as any) || undefined,
+      kind: (searchParams.get('kind') as any) || undefined,
       isLunchAppropriate: lunchParam === 'true' ? true : lunchParam === 'false' ? false : undefined,
     }
 
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest) {
     if (filters.proteinType) where.proteinType = filters.proteinType
     if (filters.carbType) where.carbType = filters.carbType
     if (filters.prepTime) where.prepTime = filters.prepTime
+    if (filters.kind) where.kind = filters.kind
     if (filters.isLunchAppropriate !== undefined) where.isLunchAppropriate = filters.isLunchAppropriate
 
     // Fetch recipes from database with structured ingredients
@@ -39,6 +41,7 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         structuredIngredients: { orderBy: { order: 'asc' } },
+        steps: { orderBy: { order: 'asc' } },
       },
       orderBy: [
         { tier: 'asc' }, // Favorites first

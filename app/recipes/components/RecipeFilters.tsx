@@ -18,7 +18,7 @@ export default function RecipeFilters({ filters, onFilterChange, proteinOptions,
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
       <h2 className="text-lg font-semibold mb-3">Filters</h2>
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {/* Tier Filter */}
         <div>
           <label className="block text-sm font-medium mb-1">Tier</label>
@@ -31,6 +31,21 @@ export default function RecipeFilters({ filters, onFilterChange, proteinOptions,
             <option value="favorite">Favorite</option>
             <option value="non-regular">Non-Regular</option>
             <option value="new">New</option>
+          </select>
+        </div>
+
+        {/* Kind Filter */}
+        <div>
+          <label htmlFor="filter-kind" className="block text-sm font-medium mb-1">Type</label>
+          <select
+            id="filter-kind"
+            value={filters.kind || 'all'}
+            onChange={e => onFilterChange('kind', e.target.value)}
+            className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600"
+          >
+            <option value="all">All</option>
+            <option value="full">Full recipes</option>
+            <option value="quick">Quick</option>
           </select>
         </div>
 
