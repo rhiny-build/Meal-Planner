@@ -9,6 +9,7 @@ import { AI_CONFIG } from '@/lib/ai/config'
 import { prisma } from '@/lib/prisma'
 import { runAgent } from '../loop'
 import type { RunTrigger } from '../runLog'
+import { buildEnrichSystemAddition, buildEnrichUserMessage, type EnrichContext } from './enrichPrompt'
 import { buildSystemPrompt, buildUserMessage } from './prompt'
 import { createImporterTools } from './tools'
 import type { ImportResult } from './types'
@@ -23,22 +24,37 @@ export function classifyImportInput(raw: string): ImporterInput {
   return /^https?:\/\/\S+$/i.test(trimmed) ? { url: trimmed } : { text: trimmed }
 }
 
-export async function runRecipeImporter(input: ImporterInput, trigger: RunTrigger = 'manual') {
+export interface ImporterOptions {
+  /**
+   * Enrich mode (S07 backfill): the recipe already exists. The input must be a URL; the model gets
+   * the book's copy and is told to reuse its ingredient ids. The run still only produces a draft.
+   */
+  enrich?: EnrichContext
+}
+
+export async function runRecipeImporter(
+  input: ImporterInput,
+  trigger: RunTrigger = 'manual',
+  options: ImporterOptions = {}
+) {
+  const enrich = options.enrich
+  if (enrich && !('url' in input)) throw new Error('Enrich mode needs a URL')
   const dishTypes = await prisma.dishType.findMany({ orderBy: { order: 'asc' } })
   const config = AI_CONFIG.recipeImporter
 
   return runAgent<ImportResult>({
     agent: RECIPE_IMPORTER_AGENT,
     trigger,
-    input,
+    input: enrich ? { ...input, mode: 'enrich', recipeId: enrich.recipeId } : input,
     model: config.model,
     maxTokens: config.maxTokens,
     maxTurns: config.maxTurns,
-    system: buildSystemPrompt({
-      proteins: dishTypes.filter((d) => d.category === 'protein').map((d) => d.value),
-      carbs: dishTypes.filter((d) => d.category === 'carb').map((d) => d.value),
-    }),
-    userMessage: buildUserMessage(input),
-    tools: createImporterTools({ sourceUrl: 'url' in input ? input.url : null }),
+    system:
+      buildSystemPrompt({
+        proteins: dishTypes.filter((d) => d.category === 'protein').map((d) => d.value),
+        carbs: dishTypes.filter((d) => d.category === 'carb').map((d) => d.value),
+      }) + (enrich ? buildEnrichSystemAddition() : ''),
+    userMessage: enrich && 'url' in input ? buildEnrichUserMessage(input.url, enrich) : buildUserMessage(input),
+    tools: createImporterTools({ sourceUrl: 'url' in input ? input.url : null, enrich: !!enrich }),
   })
 }

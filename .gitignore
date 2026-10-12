@@ -51,3 +51,8 @@ next-env.d.ts
 
 # Playwright MCP logs
 .playwright-mcp/
+
+# S07 backfill output (generated, may contain personal data)
+backfill-report.md
+backfill-report.json
+backfill-report*/
