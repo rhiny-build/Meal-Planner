@@ -206,7 +206,7 @@ export async function buildDraft(raw: any, sourceUrl: string | null): Promise<Re
 
 // ---- the tool list -----------------------------------------------------------------------
 
-export function createImporterTools(options: { sourceUrl: string | null }) {
+export function createImporterTools(options: { sourceUrl: string | null; enrich?: boolean }) {
   /** Duplicates the model looked up, remembered so the review screen can warn about them. */
   const similar = new Map<string, SimilarRecipe>()
 
@@ -264,5 +264,6 @@ export function createImporterTools(options: { sourceUrl: string | null }) {
     },
   ]
 
-  return tools
+  // Enrich mode: the recipe is already in the book, so a duplicate check would only find itself.
+  return options.enrich ? tools.filter((t) => t.name !== 'find_similar_recipes') : tools
 }

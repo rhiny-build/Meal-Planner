@@ -46,6 +46,41 @@ describe('runRecipeImporter', () => {
     expect(params.maxTurns).toBeGreaterThan(0)
   })
 
+  it('enrich mode: batch trigger, book copy in the message, no duplicate check, record of the recipe in the run input', async () => {
+    await runRecipeImporter({ url: 'https://example.com/r' }, 'batch', {
+      enrich: {
+        recipeId: 'rec1',
+        name: 'Goulash',
+        servings: null,
+        totalTimeMinutes: null,
+        description: null,
+        notes: null,
+        hasSteps: false,
+        ingredients: [{ id: 'ing1', name: 'beef', quantity: '1', unit: 'kg', notes: null }],
+      },
+    })
+    const params = vi.mocked(runAgent).mock.calls[0][0]
+    expect(params.trigger).toBe('batch')
+    expect(params.tools.map((t) => t.name)).not.toContain('find_similar_recipes')
+    expect(params.system).toMatch(/ENRICH MODE/)
+    expect(params.userMessage).toContain('id ing1: 1 kg beef')
+    expect(params.userMessage).toContain('no steps yet')
+    expect(params.input).toMatchObject({ url: 'https://example.com/r', mode: 'enrich', recipeId: 'rec1' })
+  })
+
+  it('enrich mode needs a URL', async () => {
+    await expect(
+      runRecipeImporter({ text: 'x' }, 'batch', {
+        enrich: { recipeId: 'r', name: 'n', servings: null, totalTimeMinutes: null, description: null, notes: null, hasSteps: false, ingredients: [] },
+      })
+    ).rejects.toThrow(/needs a URL/)
+  })
+
+  it('normal mode is unchanged by enrich support (no enrich text in the prompt)', async () => {
+    await runRecipeImporter({ url: 'https://example.com/r' })
+    expect(vi.mocked(runAgent).mock.calls[0][0].system).not.toMatch(/ENRICH MODE/)
+  })
+
   it('tells the model never to invent a method', async () => {
     await runRecipeImporter({ text: 'toast' })
     const params = vi.mocked(runAgent).mock.calls[0][0]
