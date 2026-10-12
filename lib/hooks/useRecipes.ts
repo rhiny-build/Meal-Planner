@@ -137,6 +137,7 @@ export function useRecipes() {
     filteredRecipes,
     filters,
     isLoading,
+    refresh: fetchRecipes,
     handleFilterChange,
     handleCreate,
     handleUpdate,
