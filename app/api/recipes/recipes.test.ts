@@ -114,6 +114,7 @@ describe('GET /api/recipes', () => {
         structuredIngredients: {
           orderBy: { order: 'asc' },
         },
+        steps: { orderBy: { order: 'asc' } },
       },
     })
   })

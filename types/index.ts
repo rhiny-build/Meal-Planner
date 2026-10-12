@@ -5,14 +5,15 @@
  * Keeping types in one place makes them easy to update and maintain.
  */
 
-import { Recipe, MealPlan, Ingredient, ShoppingList, ShoppingListItem } from '@prisma/client'
+import { Recipe, RecipeStep, MealPlan, Ingredient, ShoppingList, ShoppingListItem } from '@prisma/client'
 
 // Re-export Prisma types for convenience
-export type { Recipe, MealPlan, Ingredient, ShoppingList, ShoppingListItem }
+export type { Recipe, RecipeStep, MealPlan, Ingredient, ShoppingList, ShoppingListItem }
 
 // Type for a recipe with its structured ingredients included
 export type RecipeWithIngredients = Recipe & {
   structuredIngredients: Ingredient[]
+  steps?: RecipeStep[] // Method (optional; absent or empty means no method)
 }
 
 // Type for a meal plan with the recipe details included
@@ -51,11 +52,26 @@ export interface RecipeFormData {
   isLunchAppropriate?: boolean // Whether this recipe is suitable for lunch
   prepTime: PrepTime
   tier: RecipeTier
+  kind?: RecipeKind // 'full' (default) or 'quick'
+  servings?: number | null
+  description?: string | null
+  totalTimeMinutes?: number | null
+  notes?: string | null
+  steps?: RecipeStepData[] // Method; undefined leaves the existing method untouched on update
+}
+
+export type RecipeKind = 'full' | 'quick'
+
+// One method step as sent by the editor. Text may contain {ing:<ingredientId>} tokens.
+export interface RecipeStepData {
+  text: string
+  timerSeconds?: number | null
 }
 
 // Filter options for the recipe library
 export interface RecipeFilters {
   tier?: RecipeTier
+  kind?: RecipeKind
   proteinType?: ProteinType
   carbType?: CarbType
   prepTime?: PrepTime
@@ -66,6 +82,7 @@ export interface RecipeFilters {
 
 // Structured ingredient data for creating/updating ingredients
 export interface StructuredIngredientData {
+  id?: string // Existing id (kept so step tokens survive edits) or a client-made id for a new row
   name: string
   quantity?: string | null
   unit?: string | null

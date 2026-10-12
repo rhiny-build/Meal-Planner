@@ -32,6 +32,9 @@ export function useRecipes() {
     if (filters.tier) {
       filtered = filtered.filter(r => r.tier === filters.tier)
     }
+    if (filters.kind) {
+      filtered = filtered.filter(r => r.kind === filters.kind)
+    }
     if (filters.proteinType) {
       filtered = filtered.filter(r => r.proteinType === filters.proteinType)
     }
@@ -106,6 +109,8 @@ export function useRecipes() {
         await fetchRecipes()
         return true
       }
+      const body = await response.json().catch(() => ({}))
+      toast.error(body.error || 'Failed to update recipe')
       return false
     } catch (error) {
       console.error('Error updating recipe:', error)
