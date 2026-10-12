@@ -9,29 +9,6 @@ import type Anthropic from '@anthropic-ai/sdk'
 
 type Schema = Anthropic.Tool.InputSchema
 
-export const EXTRACT_RECIPE_SCHEMA: Schema = {
-  type: 'object',
-  properties: {
-    name: { type: 'string', description: 'The recipe name' },
-    ingredients: { type: 'string', description: 'One ingredient per line' },
-    structuredIngredients: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          name: { type: 'string' },
-          quantity: { type: ['string', 'null'] },
-          unit: { type: ['string', 'null'] },
-          notes: { type: ['string', 'null'] },
-          order: { type: 'integer' },
-        },
-        required: ['name'],
-      },
-    },
-  },
-  required: ['name', 'ingredients', 'structuredIngredients'],
-}
-
 export const MODIFY_MEAL_PLAN_SCHEMA: Schema = {
   type: 'object',
   properties: {

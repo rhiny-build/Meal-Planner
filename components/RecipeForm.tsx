@@ -2,7 +2,7 @@
  * Recipe Form Component
  *
  * Form for creating or editing recipes.
- * Supports both manual entry and AI-assisted import from URL.
+ * Manual entry only. AI import lives in RecipeImportModal (app/recipes/components).
  */
 
 'use client'
@@ -11,7 +11,6 @@ import { useState } from 'react'
 import type { RecipeWithIngredients, RecipeFormData } from '@/types'
 import Button from './Button'
 import Select from './Select'
-import AIImportSection from './AIImportSection'
 import type { DishTypeOption } from '@/lib/dishTypeConfig'
 import { formatIngredient } from '@/lib/ingredientHelpers'
 import { PREP_TIME_OPTIONS, TIER_OPTIONS } from '@/lib/recipeFormConfig'
@@ -53,10 +52,6 @@ export default function RecipeForm({
     tier: (recipe?.tier as any) || 'favorite',
   })
 
-  // AI import state
-  const [isImporting, setIsImporting] = useState(false)
-  const [importError, setImportError] = useState('')
-
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -68,47 +63,6 @@ export default function RecipeForm({
       ...formData,
       [e.target.name]: e.target.value,
     })
-  }
-
-  // Handle AI import from URL
-  const handleImport = async () => {
-    if (!formData.recipeUrl?.trim()) {
-      setImportError('Please enter a recipe URL')
-      return
-    }
-
-    setIsImporting(true)
-    setImportError('')
-
-    try {
-      const response = await fetch('/api/recipes/extract', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: formData.recipeUrl }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to extract recipe')
-      }
-
-      const data = await response.json()
-
-      // Update form with extracted data
-      setFormData({
-        ...formData,
-        ingredients: data.ingredients || formData.ingredients,
-        structuredIngredients: data.structuredIngredients || undefined,
-        name: data.name || formData.name,
-      })
-
-     
-    } catch (error) {
-      setImportError(
-        error instanceof Error ? error.message : 'Failed to import recipe'
-      )
-    } finally {
-      setIsImporting(false)
-    }
   }
 
   // Handle form submission
@@ -125,15 +79,6 @@ export default function RecipeForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* AI Import Section */}
-      <AIImportSection
-        recipeUrl={formData.recipeUrl || ''}
-        onUrlChange={handleChange}
-        onImport={handleImport}
-        isImporting={isImporting}
-        importError={importError}
-      />
-
       {/* Recipe Name */}
       <div>
         <label className="block text-sm font-medium mb-1">
@@ -145,6 +90,19 @@ export default function RecipeForm({
           value={formData.name}
           onChange={handleChange}
           required
+          className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
+        />
+      </div>
+
+      {/* Source URL (the old AI import box was also where this was typed) */}
+      <div>
+        <label className="block text-sm font-medium mb-1">Recipe URL (optional)</label>
+        <input
+          type="url"
+          name="recipeUrl"
+          value={formData.recipeUrl || ''}
+          onChange={handleChange}
+          placeholder="https://..."
           className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
         />
       </div>

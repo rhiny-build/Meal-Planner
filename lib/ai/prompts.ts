@@ -38,8 +38,6 @@ For each recipe:
 - carbType: One of rice, pasta, couscous, fries, other (null if not applicable)
 - prepTime: quick (<30min), medium (30-60min) or long (>60min)
 - tier: always "new"`,
-  extractIngredients:
-    'You are a helpful assistant that extracts recipe information from HTML. Submit your answer using the provided tool.',
 } as const
 
 // ---------------------------------------------------------------------------
@@ -150,32 +148,4 @@ Examples: "tomatoes (tinned)", "garlic (fresh)", "cumin (ground)", "salmon (smok
 If no specific form applies, canonicalName equals baseIngredient.
 
 Submit one entry per item with the tool (id, baseIngredient, canonicalName).`
-}
-
-/**
- * Build the prompt for extracting ingredients from recipe page HTML.
- *
- * Expected JSON response shape:
- * { name: string, ingredients: string, structuredIngredients: { name, quantity, unit, notes, order }[] }
- */
-export function buildExtractIngredientsPrompt(html: string): string {
-  return `Extract the recipe name and ingredients from this webpage HTML.
-
-For each ingredient, parse it into structured format:
-- name: the ingredient name only (e.g., "chicken breast", "olive oil") - do NOT include quantities or units in the name
-- quantity: the amount as a string (e.g., "2", "1/2", "500") - null if not specified
-- unit: the unit of measurement in METRIC units (convert imperial to metric):
-  - Use "g" or "kg" for weight (not lb, oz)
-  - Use "ml" or "L" for liquids (not cups, fl oz)
-  - Keep tbsp/tsp for small amounts
-  - Keep countable units (cloves, bunches, etc.)
-- notes: preparation notes (e.g., "diced", "optional", "for garnish") - null if none
-
-Submit with the tool:
-- "name": the recipe name
-- "ingredients": string with one ingredient per line (for backwards compatibility)
-- "structuredIngredients": array of {name, quantity, unit, notes, order} objects
-
-HTML content:
-${html}`
 }

@@ -73,13 +73,6 @@ export interface StructuredIngredientData {
   order: number
 }
 
-// Response from AI when extracting ingredients from a URL
-export interface ExtractedRecipeData {
-  ingredients: string // Legacy: ingredients as text
-  structuredIngredients?: StructuredIngredientData[] // New: parsed ingredients
-  name?: string // AI might extract the recipe name too
-}
-
 // Lightweight plan entry for AI requests (doesn't require full DB fields)
 export interface PlanEntryForAI {
   date: Date
