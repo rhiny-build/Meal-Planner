@@ -6,15 +6,15 @@
  * 2. Responses can vary (non-deterministic)
  * 3. Tests shouldn't depend on external services
  *
- * SOLUTION: Mock the OpenAI client entirely
+ * SOLUTION: Mock the Claude client entirely
  *
- * We mock the `openai` export from './client' to return predictable responses.
+ * We mock the `anthropic` export from './claude' to return predictable responses.
  * This lets us test that our code:
  * - Formats prompts correctly
  * - Parses responses correctly
  * - Handles errors gracefully
  *
- * WITHOUT actually calling OpenAI's API!
+ * WITHOUT actually calling Claude's API!
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -24,22 +24,24 @@ const mockFetch = vi.fn()
 global.fetch = mockFetch
 
 /**
- * Mock the OpenAI client module
+ * Mock the Anthropic SDK so callForcedTool (the real helper) talks to a stub
  */
-vi.mock('@/lib/ai/client', () => ({
-  MODEL: 'gpt-4o-mini-test',
-  openai: {
-    chat: {
-      completions: {
-        create: vi.fn(),
-      },
-    },
+const mockAnthropic = vi.hoisted(() => ({ messages: { create: vi.fn() } }))
+
+vi.mock('@anthropic-ai/sdk', () => ({
+  default: class {
+    messages = mockAnthropic.messages
   },
 }))
 
 // Import after mocking so we get the mocked version
 import { extractIngredientsFromURL } from '@/lib/ai/extractIngredientsFromURL'
-import { openai } from '@/lib/ai/client'
+const anthropic = mockAnthropic
+
+/** Build a Claude response containing a forced tool_use block */
+const toolUse = (name: string, input: unknown) => ({
+  content: [{ type: 'tool_use', id: 'tu_1', name, input }],
+})
 
 describe('extractIngredientsFromURL', () => {
   beforeEach(() => {
@@ -59,23 +61,15 @@ describe('extractIngredientsFromURL', () => {
     })
 
     // Mock OpenAI to return a successful response
-    const mockResponse = {
-      choices: [
-        {
-          message: {
-            content: JSON.stringify({
-              name: 'Simple Flour Recipe',
-              ingredients: '2 cups flour',
-              structuredIngredients: [
-                { name: 'flour', quantity: '2', unit: 'cups', notes: null, order: 0 },
-              ],
-            }),
-          },
-        },
+    const mockResponse = toolUse('record_recipe', {
+      name: 'Simple Flour Recipe',
+      ingredients: '2 cups flour',
+      structuredIngredients: [
+        { name: 'flour', quantity: '2', unit: 'cups', notes: null, order: 0 },
       ],
-    }
+    })
 
-    vi.mocked(openai.chat.completions.create).mockResolvedValue(
+    vi.mocked(anthropic.messages.create).mockResolvedValue(
       mockResponse as any
     )
 
@@ -95,8 +89,11 @@ describe('extractIngredientsFromURL', () => {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MealPlannerBot/1.0)' },
     })
 
-    // Verify OpenAI was called
-    expect(openai.chat.completions.create).toHaveBeenCalledTimes(1)
+    // Verify Claude was called with a forced tool
+    expect(anthropic.messages.create).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(anthropic.messages.create).mock.calls[0][0]).toMatchObject({
+      tool_choice: { type: 'tool', name: 'record_recipe' },
+    })
   })
 
   /**
@@ -118,7 +115,7 @@ describe('extractIngredientsFromURL', () => {
   /**
    * Test 3: Handle API errors
    */
-  it('should throw user-friendly error when OpenAI API fails', async () => {
+  it('should throw user-friendly error when Claude API fails', async () => {
     // Arrange: Mock successful fetch
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -126,7 +123,7 @@ describe('extractIngredientsFromURL', () => {
     })
 
     // Simulate API failure
-    vi.mocked(openai.chat.completions.create).mockRejectedValue(
+    vi.mocked(anthropic.messages.create).mockRejectedValue(
       new Error('API rate limit exceeded')
     )
 
@@ -139,15 +136,15 @@ describe('extractIngredientsFromURL', () => {
   /**
    * Test 4: Handle empty AI response
    */
-  it('should throw error when AI returns no content', async () => {
+  it('should throw error when Claude returns no tool call', async () => {
     // Arrange
     mockFetch.mockResolvedValueOnce({
       ok: true,
       text: () => Promise.resolve('<html><body>Recipe</body></html>'),
     })
 
-    vi.mocked(openai.chat.completions.create).mockResolvedValue({
-      choices: [{ message: { content: null } }],
+    vi.mocked(anthropic.messages.create).mockResolvedValue({
+      content: [{ type: 'text', text: 'Sorry, no tool call' }],
     } as any)
 
     // Act & Assert
@@ -167,23 +164,15 @@ describe('extractIngredientsFromURL', () => {
     })
 
     // Response without ingredients text, only structured
-    const mockResponse = {
-      choices: [
-        {
-          message: {
-            content: JSON.stringify({
-              name: 'Test Recipe',
-              structuredIngredients: [
-                { name: 'chicken', quantity: '2', unit: 'lbs', notes: 'diced' },
-                { name: 'salt', quantity: null, unit: null, notes: 'to taste' },
-              ],
-            }),
-          },
-        },
+    const mockResponse = toolUse('record_recipe', {
+      name: 'Test Recipe',
+      structuredIngredients: [
+        { name: 'chicken', quantity: '2', unit: 'lbs', notes: 'diced' },
+        { name: 'salt', quantity: null, unit: null, notes: 'to taste' },
       ],
-    }
+    })
 
-    vi.mocked(openai.chat.completions.create).mockResolvedValue(
+    vi.mocked(anthropic.messages.create).mockResolvedValue(
       mockResponse as any
     )
 

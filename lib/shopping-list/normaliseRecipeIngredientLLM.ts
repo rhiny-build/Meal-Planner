@@ -1,48 +1,40 @@
 /**
  * LLM-based ingredient normalisation fallback.
  *
- * Calls OpenAI to normalise ingredient names that the deterministic
- * normaliser couldn't handle confidently (synonyms, regional names, etc.).
+ * Calls Claude (cheap model, forced tool) to normalise ingredient names that
+ * the deterministic normaliser couldn't handle confidently (synonyms,
+ * regional names, etc.).
  */
 
-import { openai, MODEL } from '../ai/client'
+import { callForcedTool } from '../ai/claude'
+import { AI_CONFIG } from '../ai/config'
 import { SYSTEM_PROMPTS } from '../ai/prompts'
+import { NORMALISE_SINGLE_SCHEMA } from '../ai/schemas'
 import type { NormalisedResult } from './normaliseRecipeIngredient'
 
 export async function llmNormalise(raw: string): Promise<NormalisedResult> {
-  const response = await openai.chat.completions.create({
-    model: MODEL,
-    temperature: 0,
-    messages: [
-      { role: 'system', content: SYSTEM_PROMPTS.normaliseIngredientSingle },
-      { role: 'user', content: raw },
-    ],
-  })
-
-  let content = response.choices[0]?.message?.content?.trim()
-  if (!content) {
-    throw new Error(`LLM returned empty response for "${raw}"`)
-  }
-
-  // Strip markdown fences if the LLM wraps the JSON in ```json ... ```
-  content = content.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/,'')
-
-  // Extract first JSON object — LLM sometimes returns extra text or multiple objects
-  const jsonMatch = content.match(/\{[\s\S]*?\}/)
-  if (!jsonMatch) {
-    throw new Error(`LLM returned non-JSON for "${raw}": ${content.slice(0, 100)}`)
-  }
-
-  const parsed = JSON.parse(jsonMatch[0]) as {
+  const parsed = await callForcedTool<{
     canonical: string
     base: string
     form: string | null
+  }>({
+    model: AI_CONFIG.normaliseIngredientSingle.model,
+    maxTokens: AI_CONFIG.normaliseIngredientSingle.maxTokens,
+    system: SYSTEM_PROMPTS.normaliseIngredientSingle,
+    prompt: raw,
+    toolName: 'record_normalised_ingredient',
+    toolDescription: 'Record the canonical, base and form of the ingredient.',
+    schema: NORMALISE_SINGLE_SCHEMA,
+  })
+
+  if (!parsed.canonical || !parsed.base) {
+    throw new Error(`LLM returned incomplete result for "${raw}"`)
   }
 
   return {
     canonical: parsed.canonical,
     base: parsed.base,
-    form: parsed.form,
+    form: parsed.form ?? null,
     confident: true,
   }
 }

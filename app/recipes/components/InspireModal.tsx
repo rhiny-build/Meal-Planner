@@ -2,7 +2,7 @@
  * Inspire Modal Component
  *
  * Modal for AI-powered recipe discovery.
- * User enters a prompt, Perplexity finds recipes, user can accept/reject each.
+ * User enters a prompt, Claude finds recipes, user can accept/reject each.
  */
 
 'use client'
