@@ -1,7 +1,7 @@
 /**
  * Claude client and structured-output helper.
  *
- * Structured output works by forcing the model to call ONE tool whose
+ * Structured output works by giving the model ONE tool (and telling it to call it) whose
  * input_schema is the JSON shape we want. The API then returns a `tool_use`
  * block whose `input` is already a parsed object, so there is no JSON-in-text
  * parsing, no markdown fences, and no "return ONLY JSON" prompt pleading.
@@ -31,14 +31,14 @@ export interface ForcedToolCall {
 }
 
 /**
- * Call Claude with a single forced tool and return the tool's input.
+ * Call Claude with a single result tool and return the tool's input.
  * Throws if the model does not return a tool_use block.
  */
 export async function callForcedTool<T>(params: ForcedToolCall): Promise<T> {
   const message = await getAnthropic().messages.create({
     model: params.model,
     max_tokens: params.maxTokens,
-    system: params.system,
+    system: `${params.system}\n\nRespond only by calling the ${params.toolName} tool.`,
     messages: [{ role: 'user', content: params.prompt }],
     tools: [
       {
@@ -47,7 +47,9 @@ export async function callForcedTool<T>(params: ForcedToolCall): Promise<T> {
         input_schema: params.schema,
       },
     ],
-    tool_choice: { type: 'tool', name: params.toolName },
+    // tool_choice stays "auto": claude-sonnet-5-5 rejects type "tool"/"any".
+    // With one tool and the instruction below, the model reliably calls it.
+    tool_choice: { type: 'auto' },
   })
 
   const block = message.content.find(

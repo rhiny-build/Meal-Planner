@@ -92,7 +92,8 @@ describe('extractIngredientsFromURL', () => {
     // Verify Claude was called with a forced tool
     expect(anthropic.messages.create).toHaveBeenCalledTimes(1)
     expect(vi.mocked(anthropic.messages.create).mock.calls[0][0]).toMatchObject({
-      tool_choice: { type: 'tool', name: 'record_recipe' },
+      tool_choice: { type: 'auto' },
+      tools: [expect.objectContaining({ name: 'record_recipe' })],
     })
   })
 
