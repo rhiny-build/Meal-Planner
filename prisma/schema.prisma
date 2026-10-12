@@ -23,6 +23,11 @@ model Recipe {
   prepTime           String?  // quick, medium, long
   tier               String   // favorite, non-regular, new
   isLunchAppropriate Boolean  @default(false) // Whether this recipe is suitable for lunch
+  kind               String   @default("full") // full | quick (quick = quick side/main such as Simple Fries)
+  servings           Int?     // How many people the ingredient amounts serve (for scaling)
+  description        String?  // Short blurb shown in the recipe book / cook mode
+  totalTimeMinutes   Int?     // Start-to-table time; prepTime (quick/medium/long) stays as the coarse bucket
+  notes              String?  // Free-form recipe notes (tips, variations)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -34,6 +39,25 @@ model Recipe {
 
   // Relationship: A recipe has many structured ingredients
   structuredIngredients Ingredient[]
+
+  // Relationship: A recipe has an optional method (zero steps is normal)
+  steps RecipeStep[]
+}
+
+// RecipeStep stores one step of a recipe's method. Method is optional: a recipe may have no steps.
+// Step text may reference ingredients with {ing:<ingredientId>} tokens (see lib/recipeStepTokens.ts).
+model RecipeStep {
+  id           String   @id @default(cuid())
+  recipeId     String
+  order        Int      // Display order (0-based, ascending)
+  text         String   // Instruction text, may contain {ing:<id>} tokens
+  timerSeconds Int?     // Optional timer for cook mode
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([recipeId, order])
 }
 
 // Ingredient model stores structured ingredient data for recipes
@@ -43,6 +67,7 @@ model Ingredient {
   name      String   // The ingredient name (e.g., "chicken breast", "olive oil")
   quantity  String?  // The amount (e.g., "2", "1/2", "500")
   unit      String?  // The unit of measurement (e.g., "cups", "grams", "tablespoons")
+  amount    Float?   // Numeric amount parsed from quantity (for servings scaling); null when not parseable, quantity/unit stay as the free-text fallback
   notes     String?  // Additional notes (e.g., "diced", "optional", "for garnish")
   order     Int      // Display order in the recipe
   createdAt DateTime @default(now())
@@ -236,4 +261,43 @@ model DayNote {
   text      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// AgentRun stores one execution of an agent (restock, meal-plan drafting, discovery, ...)
+model AgentRun {
+  id                  String    @id @default(cuid())
+  agent               String    // Agent name, e.g. "restock"
+  trigger             String    // manual | batch | schedule | mcp
+  input               Json      // What the agent was asked to do
+  status              String    @default("running") // running | succeeded | failed
+  output              Json?     // Final result when succeeded
+  error               String?   // Error message when failed
+  startedAt           DateTime  @default(now())
+  finishedAt          DateTime?
+  inputTokens         Int       @default(0) // Totals across all model steps
+  outputTokens        Int       @default(0)
+  cacheReadTokens     Int       @default(0)
+  cacheCreationTokens Int       @default(0)
+
+  steps AgentStep[]
+
+  @@index([agent, startedAt])
+  @@index([status])
+}
+
+// AgentStep stores one step inside an AgentRun: a model turn, a tool call, or a tool result
+model AgentStep {
+  id           String   @id @default(cuid())
+  runId        String
+  order        Int      // Position within the run (0-based, ascending)
+  kind         String   // model | tool_call | tool_result
+  toolName     String?  // Set for tool_call / tool_result
+  payload      Json     // model: response content; tool_call: input; tool_result: output
+  createdAt    DateTime @default(now())
+  inputTokens  Int?     // Token usage, set on model steps
+  outputTokens Int?
+
+  run AgentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId, order])
 }
