@@ -13,6 +13,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Button from '@/components/Button'
+import AiProgress from '@/components/AiProgress'
 import { renderStepText } from '@/lib/recipeStepTokens'
 import type { ImportResult } from '@/lib/agents/recipeImporter/types'
 
@@ -150,10 +151,9 @@ export default function RecipeImportModal({
                 <Button onClick={() => handleImport()} disabled={isImporting}>
                   {isImporting ? 'Reading the recipe...' : 'Import'}
                 </Button>
-                {isImporting && (
-                  <span className="text-sm text-gray-500">This can take up to a minute.</span>
-                )}
               </div>
+              {/* The importer reads the page and writes the recipe: measured 4-16 s */}
+              <AiProgress active={isImporting} label="Reading the recipe" estimate={[5, 20]} />
             </div>
           )}
 

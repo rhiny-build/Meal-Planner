@@ -91,6 +91,36 @@ describe('Inspire Me: accepting a suggestion', () => {
     expect(calls.filter((c) => c.url === '/api/recipes/import/save')).toHaveLength(1)
   })
 
+  it('shows progress with an estimate while searching and while importing', async () => {
+    let finishSearch: (v: Response) => void = () => {}
+    let finishImport: (v: Response) => void = () => {}
+    const base = mockFetch.getMockImplementation()!
+    mockFetch.mockImplementation((url: string, init?: RequestInit) => {
+      if (url === '/api/recipes/discover') return new Promise<Response>((r) => (finishSearch = r))
+      if (url === '/api/recipes/import') return new Promise<Response>((r) => (finishImport = r))
+      return base(url, init)
+    })
+    const user = userEvent.setup()
+    render(
+      <RecipesClient proteinOptions={[]} carbOptions={[]} proteinFilterOptions={[]} carbFilterOptions={[]} />
+    )
+    await user.click(await screen.findByRole('button', { name: 'Inspire Me' }))
+    await user.type(screen.getByPlaceholderText(/quick chicken/), 'chicken')
+    await user.click(screen.getByRole('button', { name: 'Search' }))
+    expect(await screen.findByTestId('ai-progress')).toHaveTextContent('Searching the web for recipes')
+    expect(screen.getByTestId('ai-progress-note')).toHaveTextContent('Usually takes 8-30 seconds.')
+
+    finishSearch(await json({ recipes: [suggestion] }))
+    await waitFor(() => expect(screen.queryByTestId('ai-progress')).not.toBeInTheDocument())
+    await user.click(await screen.findByRole('button', { name: 'Accept' }))
+    expect(await screen.findByTestId('ai-progress')).toHaveTextContent('Reading the recipe')
+
+    finishImport(await json({ runId: 'run_1', draft, similarRecipes: [] }))
+    await screen.findByRole('heading', { name: 'Review imported recipe' })
+    expect(screen.queryByTestId('ai-progress')).not.toBeInTheDocument()
+    mockFetch.mockImplementation(base)
+  })
+
   it('does not mark the suggestion as added when the review is discarded', async () => {
     const user = await openInspireAndSearch()
     await user.click(screen.getByRole('button', { name: 'Accept' }))

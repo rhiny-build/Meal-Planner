@@ -9,6 +9,7 @@
 
 import { useState } from 'react'
 import Button from '@/components/Button'
+import AiProgress from '@/components/AiProgress'
 import { discoverRecipes, type RecipeSuggestion } from '@/lib/aiService'
 
 interface InspireModalProps {
@@ -99,6 +100,13 @@ export default function InspireModal({ onAccept, onClose }: InspireModalProps) {
               </Button>
             </div>
             {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
+            {/* Searching the web with Claude: measured 6-8 s in the sandbox, 15-60 s in S01 */}
+            <AiProgress
+              active={isSearching}
+              label="Searching the web for recipes"
+              estimate={[8, 30]}
+              className="mt-3"
+            />
           </div>
 
           {/* Results */}

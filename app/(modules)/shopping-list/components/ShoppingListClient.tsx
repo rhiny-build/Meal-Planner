@@ -13,6 +13,7 @@ import type { Recipe } from '@/types'
 import { formatDateParam } from '@/lib/dateUtils'
 import type { ShoppingList, ShoppingListItem, Category, MasterListItem } from '@prisma/client'
 import Button from '@/components/Button'
+import AiProgress from '@/components/AiProgress'
 import TabNavigation from './TabNavigation'
 import ShoppingListHeader from './ShoppingListHeader'
 import ShoppingListItems from './ShoppingListItems'
@@ -78,6 +79,14 @@ export default function ShoppingListClient({
       <h1 className="text-3xl font-bold mb-6">Shopping List</h1>
 
       <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* Matching ingredients to your staples (embeddings plus Claude): estimate, not measured */}
+      <AiProgress
+        active={isGenerating}
+        label="Building your shopping list"
+        estimate={[5, 20]}
+        className="mb-4"
+      />
 
       {/* This Week's Meals Tab */}
       {activeTab === 'meals' && (

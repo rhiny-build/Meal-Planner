@@ -17,6 +17,7 @@ import { getWeekStart, formatDateParam } from '@/lib/dateUtils'
 import { useMealPlan } from '@/lib/hooks/useMealPlan'
 import MealPlanHeader from './MealPlanHeader'
 import MealPlanGrid from './MealPlanGrid'
+import AiProgress from '@/components/AiProgress'
 
 const DEFAULT_PROMPT = 'Generate a balanced meal plan for the week following the rules. Do not change existing meals that are already set.'
 
@@ -123,6 +124,14 @@ export default function MealPlanClient({ weekStartDay }: MealPlanClientProps) {
         onGenerate={handleGenerate}
         onSave={handleSave}
         onClear={handleClear}
+      />
+
+      {/* Filling the empty slots with Claude: measured 9-13 s */}
+      <AiProgress
+        active={isGenerating}
+        label="Filling in your meal plan"
+        estimate={[10, 20]}
+        className="mb-4"
       />
 
       <MealPlanGrid
