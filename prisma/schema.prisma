@@ -228,3 +228,12 @@ model DishType {
   @@unique([category, value])
   @@index([category])
 }
+
+// DayNote stores a free-text note for one calendar day on the meal-plan grid
+model DayNote {
+  id        String   @id @default(cuid())
+  date      DateTime @unique @db.Date // Calendar day (no time component)
+  text      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
