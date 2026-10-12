@@ -12,7 +12,8 @@ import Button from '@/components/Button'
 import { discoverRecipes, type RecipeSuggestion } from '@/lib/aiService'
 
 interface InspireModalProps {
-  onAccept: (recipe: RecipeSuggestion) => Promise<void>
+  /** Resolves true once the recipe is in the book, false if the person backed out. */
+  onAccept: (recipe: RecipeSuggestion) => Promise<boolean>
   onClose: () => void
 }
 
@@ -53,8 +54,8 @@ export default function InspireModal({ onAccept, onClose }: InspireModalProps) {
 
   const handleAccept = async (recipe: RecipeSuggestion, index: number) => {
     try {
-      await onAccept(recipe)
-      setAcceptedIds(prev => new Set(prev).add(index))
+      const saved = await onAccept(recipe)
+      if (saved) setAcceptedIds(prev => new Set(prev).add(index))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save recipe')
     }

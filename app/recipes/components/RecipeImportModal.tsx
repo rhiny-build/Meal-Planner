@@ -10,7 +10,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Button from '@/components/Button'
 import { renderStepText } from '@/lib/recipeStepTokens'
@@ -21,18 +21,27 @@ type ImportResponse = ImportResult & { runId: string }
 interface RecipeImportModalProps {
   onSaved: () => void | Promise<void>
   onClose: () => void
+  /** Pre-fill the box (e.g. the URL of an accepted Inspire Me suggestion). */
+  initialInput?: string
+  /** Start importing `initialInput` as soon as the modal opens. */
+  autoStart?: boolean
 }
 
-export default function RecipeImportModal({ onSaved, onClose }: RecipeImportModalProps) {
-  const [input, setInput] = useState('')
+export default function RecipeImportModal({
+  onSaved,
+  onClose,
+  initialInput = '',
+  autoStart = false,
+}: RecipeImportModalProps) {
+  const [input, setInput] = useState(initialInput)
   const [isImporting, setIsImporting] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<ImportResponse | null>(null)
   const [failedRunId, setFailedRunId] = useState<string | null>(null)
 
-  const handleImport = async () => {
-    if (!input.trim()) {
+  const handleImport = async (text: string = input) => {
+    if (!text.trim()) {
       setError('Paste a recipe URL, or describe the recipe')
       return
     }
@@ -43,7 +52,7 @@ export default function RecipeImportModal({ onSaved, onClose }: RecipeImportModa
       const response = await fetch('/api/recipes/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input }),
+        body: JSON.stringify({ input: text }),
       })
       const data = await response.json()
       if (!response.ok) {
@@ -57,6 +66,16 @@ export default function RecipeImportModal({ onSaved, onClose }: RecipeImportModa
       setIsImporting(false)
     }
   }
+
+  // Run once on open; the ref stops React strict mode (dev) from starting a second paid run.
+  const autoStarted = useRef(false)
+  useEffect(() => {
+    if (autoStart && initialInput.trim() && !autoStarted.current) {
+      autoStarted.current = true
+      void handleImport(initialInput)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleSave = async () => {
     if (!result) return
@@ -128,7 +147,7 @@ export default function RecipeImportModal({ onSaved, onClose }: RecipeImportModa
                 </p>
               )}
               <div className="flex items-center gap-3">
-                <Button onClick={handleImport} disabled={isImporting}>
+                <Button onClick={() => handleImport()} disabled={isImporting}>
                   {isImporting ? 'Reading the recipe...' : 'Import'}
                 </Button>
                 {isImporting && (
