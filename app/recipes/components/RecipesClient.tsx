@@ -21,6 +21,7 @@ import Button from '@/components/Button'
 import RecipeFilters from './RecipeFilters'
 import RecipeModal from './RecipeModal'
 import InspireModal from './InspireModal'
+import RecipeImportModal from './RecipeImportModal'
 import type { RecipeSuggestion } from '@/lib/aiService'
 
 interface RecipesClientProps {
@@ -41,6 +42,7 @@ export default function RecipesClient({
     filteredRecipes,
     filters,
     isLoading,
+    refresh,
     handleFilterChange,
     handleCreate,
     handleUpdate,
@@ -53,6 +55,9 @@ export default function RecipesClient({
 
   // State for inspire modal
   const [showInspire, setShowInspire] = useState(false)
+
+  // State for URL/description import modal
+  const [showImport, setShowImport] = useState(false)
 
   const onSubmit = async (data: RecipeFormData): Promise<void> => {
     const success = editingRecipe
@@ -98,6 +103,9 @@ export default function RecipesClient({
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Recipe Library</h1>
         <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => setShowImport(true)}>
+            Import
+          </Button>
           <Button variant="secondary" onClick={() => setShowInspire(true)}>
             Inspire Me
           </Button>
@@ -113,6 +121,10 @@ export default function RecipesClient({
           proteinOptions={proteinOptions}
           carbOptions={carbOptions}
         />
+      )}
+
+      {showImport && (
+        <RecipeImportModal onSaved={refresh} onClose={() => setShowImport(false)} />
       )}
 
       {showInspire && (

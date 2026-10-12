@@ -5,7 +5,7 @@
  * ingredients, method steps (optional timer per step), notes. It owns its form
  * state and only talks to the outside through `onSubmit` / `onCancel`, so it
  * can be dropped into a modal (today) or a page (later) without changes.
- * Also keeps the optional "extract from URL" helper (replaced by the S05 importer).
+ * AI import lives in RecipeImportModal (app/recipes/components); this is manual entry only.
  */
 
 'use client'
@@ -14,7 +14,6 @@ import { useState } from 'react'
 import type { RecipeWithIngredients, RecipeFormData, RecipeKind } from '@/types'
 import Button from '@/components/Button'
 import Select from '@/components/Select'
-import AIImportSection from '@/components/AIImportSection'
 import type { DishTypeOption } from '@/lib/dishTypeConfig'
 import { PREP_TIME_OPTIONS, TIER_OPTIONS } from '@/lib/recipeFormConfig'
 import { parseIngredientLine } from '@/lib/ingredientParser'
@@ -93,10 +92,6 @@ export default function RecipeEditor({
     notes: recipe?.notes || '',
   })
 
-  // AI import state
-  const [isImporting, setIsImporting] = useState(false)
-  const [importError, setImportError] = useState('')
-
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -116,59 +111,6 @@ export default function RecipeEditor({
 
   const handlePasteLines = (text: string) => {
     setIngredientRows((prev) => [...prev.filter((r) => r.name.trim()), ...rowsFromLines(text)])
-  }
-
-  // Handle AI import from URL
-  const handleImport = async () => {
-    if (!formData.recipeUrl?.trim()) {
-      setImportError('Please enter a recipe URL')
-      return
-    }
-
-    setIsImporting(true)
-    setImportError('')
-
-    try {
-      const response = await fetch('/api/recipes/extract', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: formData.recipeUrl }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to extract recipe')
-      }
-
-      const data = await response.json()
-
-      let imported: IngredientRow[] | null = null
-      if (data.structuredIngredients?.length) {
-        imported = data.structuredIngredients.map((i: any) => ({
-          id: newId(),
-          name: i.name || '',
-          quantity: i.quantity || '',
-          unit: i.unit || '',
-          notes: i.notes || '',
-        }))
-      } else if (data.ingredients) {
-        imported = rowsFromLines(data.ingredients)
-      }
-      if (imported) {
-        // Imported rows replace the current ones; steps keep their words, not tokens.
-        setSteps((prev) =>
-          prev.map((s) => ({
-            ...s,
-            text: ingredientRows.reduce((t, r) => replaceTokenWithName(t, r.id, r.name), s.text),
-          }))
-        )
-        setIngredientRows(imported)
-      }
-      if (data.name) setFormData((f) => ({ ...f, name: data.name }))
-    } catch (err) {
-      setImportError(err instanceof Error ? err.message : 'Failed to import recipe')
-    } finally {
-      setIsImporting(false)
-    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -224,14 +166,6 @@ export default function RecipeEditor({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6" data-testid="recipe-editor">
-      <AIImportSection
-        recipeUrl={formData.recipeUrl || ''}
-        onUrlChange={handleChange}
-        onImport={handleImport}
-        isImporting={isImporting}
-        importError={importError}
-      />
-
       {/* Recipe Name */}
       <div>
         <label htmlFor="recipe-name" className="block text-sm font-medium mb-1">
@@ -244,6 +178,22 @@ export default function RecipeEditor({
           value={formData.name}
           onChange={handleChange}
           required
+          className={inputClass}
+        />
+      </div>
+
+      {/* Source URL */}
+      <div>
+        <label htmlFor="recipe-url" className="block text-sm font-medium mb-1">
+          Recipe URL (optional)
+        </label>
+        <input
+          id="recipe-url"
+          type="url"
+          name="recipeUrl"
+          value={formData.recipeUrl || ''}
+          onChange={handleChange}
+          placeholder="https://..."
           className={inputClass}
         />
       </div>
