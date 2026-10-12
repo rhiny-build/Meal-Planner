@@ -1,34 +1,45 @@
 # Common rules for every rehaul session
 
-Read this before starting any session in `docs/rehaul/sessions/`.
+These rules apply to every rehaul build session, and to every subagent a phase run starts.
 
 ## Context to read
-1. `docs/rehaul/PLAN.md` — decisions D1–D13 and the parallel-safe rules. Treat the decisions as settled. If the code makes one of them impractical, stop and ask; don't work around it.
+1. `docs/rehaul/PLAN.md`: decisions D1–D13, environments, and the database rules. Treat the decisions as settled.
 2. Your session prompt.
 3. The log of every session your prompt lists under "Depends on" (`docs/rehaul/logs/<id>.md`).
 4. `claude.md` and the repo skills `coding-conventions`, `naming-convention`, `db-migrations` (if your session is schema: yes), `generate-tests`, `ui` (if you touch UI).
 
-Do **not** run `pick-up-context` or read `MEMORY.md`. ARCHITECTURE.md is partly stale; the code is the source of truth.
+Do **not** run `pick-up-context` or read `MEMORY.md`. Do **not** follow `push-to-prod` or the merge step in `git-discipline`; this file replaces them. ARCHITECTURE.md is partly stale; the code is the source of truth.
 
-## Working with Ronen
-- Ronen reads React/Next/TypeScript and reviews design, but doesn't write code. You write it.
-- Before writing code, show the design in **at most 5 bullets**: what changes for Ronen as a user, the approach, any decision he needs to make, and risks. **No file names, no code, no field-by-field detail.** Then wait for a go-ahead. Ronen will ask for more detail if he wants it.
-- Ask one question at a time. Never more than three paragraphs without checking in.
-- For local toolchain problems (Node, npm, Homebrew), just fix them or give the exact command. Don't turn them into a lesson.
+## Work unsupervised
+Ronen does not review each change. Build, test and decide on your own. Interrupt him **only** for:
+- **UX changes**: anything that changes how a screen looks or behaves beyond what the session prompt describes.
+- **Blockers**: e.g. the Anthropic API cap is hit, a service is unreachable, or a required secret is missing.
+- **Real trade-offs**: two reasonable options with different consequences for him as a user.
 
-## Git and files
-- Branch: `rehaul_<session-id>_<short_name>` in its own worktree. Commit per discrete change. `npm test` must pass before each commit.
-- Open a PR when done. **Do not merge to main** and do not run `push-to-prod`.
+Anything else, decide it yourself, pick the conventional option, and record it under `## Decisions` in your log. Never interrupt to ask "shall I continue?", "shall I open the PR?" or "is this branch name OK?".
+
+When you do interrupt, use the message format in `claude.md` and stop until he answers.
+
+## Branches (strict)
+- Ignore any default branch name the environment gives you. Work on, and push to, exactly the branch your prompt names.
+- If you cannot push to that name, say so in your **first** message, and don't rename it quietly.
+- Commit per discrete change. `npm test` must pass before each commit.
+- Never push to `main`.
+
+## Files
 - **Do not edit:** `docs/rehaul/PLAN.md`, anything in `docs/rehaul/sessions/`, `ARCHITECTURE.md`, `BACKLOG.md`, `FEATURES.md`, `README.md`, or another session's log.
-- **Do write:** `docs/rehaul/logs/<your-session-id>.md` (create it). It's yours alone.
-- Only touch `prisma/schema.prisma` if your prompt says `Schema: yes`.
-- Follow PLAN.md → "Branches, testing and promotion to main". In particular: **database changes only add** (no renames or drops), and never point anything at the production database. Use the local Postgres in your session VM (see "Session environment").
-- CI must be green on your PR before you hand over.
+- **Do write:** `docs/rehaul/logs/<your-session-id>.md`. It's yours alone.
+- Only touch `prisma/schema.prisma` if your prompt says `Schema: yes`. Database changes only **add** (no renames or drops).
 
 ## Session environment
-- **Database:** `service postgresql start`, create a local database, point `DATABASE_URL` and `DATABASE_URL_UNPOOLED` at it, run migrations and `npm run db:seed`. Integration tests use the same server.
-- **Claude:** `ANTHROPIC_API_KEY` comes from the cloud environment (dev-only, capped). Run the real path at least once before opening the PR and show Ronen the result. Unit tests still mock Claude.
-- **Never ask for production keys or connection strings.** Real-data checks happen on the PR's Vercel preview.
+- **Database:** `service postgresql start`, create a local database, point `DATABASE_URL` and `DATABASE_URL_UNPOOLED` at it, then run migrations and `npm run db:seed`. Integration tests use the same server. Never production.
+- **Claude:** `ANTHROPIC_API_KEY` comes from the cloud environment (dev-only, capped). Unit tests mock Claude, but run the real path yourself at least once.
+- **Never ask for production keys or connection strings.**
+
+## Test it yourself before calling it done
+- Unit tests and integration tests pass.
+- Run the app against local Postgres and exercise the feature the way a user would (Playwright, per the `ui` skill). For AI features, use real Claude at least once.
+- "I haven't tried it in the running app" is never an acceptable hand-over.
 
 ## AI conventions
 - Claude via the official Anthropic TypeScript SDK. Use the client and model config from `lib/ai/` (set up in S01). Don't hardcode model names elsewhere.
@@ -37,11 +48,11 @@ Do **not** run `pick-up-context` or read `MEMORY.md`. ARCHITECTURE.md is partly 
 - Agents record every run through `lib/agents/runLog.ts` (from S05 on).
 - Prompts live next to the agent in their own file, not inline in route handlers.
 
-## Finish with
-1. **Walkthrough for Ronen** (in the chat, not a file): what was built, design first; then the 3–5 pieces of code that matter, with file and line references; for agents, where the loop is, what each tool does, and one real run traced end to end. Then **what to try on the preview URL**: 3–5 concrete things to tap on a phone, and what Ronen should see. Then ask if anything is unclear.
-2. **Your log file**, with these sections:
-   - `## Built` — outcome in a few lines
-   - `## Decisions` — anything decided during the session, and why
-   - `## Handoff` — what later sessions need to know (names, gotchas, follow-ups)
-   - `## Proposed doc updates` — concrete edits for ARCHITECTURE/BACKLOG/FEATURES, for docs-sync to apply
-3. Open the PR and stop.
+## Finish with your log file
+`docs/rehaul/logs/<id>.md`, with these sections:
+- `## Built`: the outcome for Ronen as a user, in a few lines.
+- `## Decisions`: what you decided without asking, and why.
+- `## How it works`: a short plain-language explanation for Ronen's learning. Design first, then the 2–3 pieces of code that matter. For agents: where the loop is, what each tool does, and one real run traced.
+- `## Try on the preview`: 3–5 concrete things to tap on a phone, and what Ronen should see.
+- `## Handoff`: what later sessions need to know.
+- `## Proposed doc updates`: edits for ARCHITECTURE/BACKLOG/FEATURES.

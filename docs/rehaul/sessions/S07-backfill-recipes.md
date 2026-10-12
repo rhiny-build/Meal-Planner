@@ -25,7 +25,7 @@ Bring the existing 78 recipes into the new book without guessing anything (D3, D
 Capturing family recipes. Merging duplicates automatically: propose only, apply only if Ronen approves.
 
 ## Done when
-A dry-run report against prod data is in front of Ronen, with a summary of counts by action. **Stop there.** Applying it is Ronen's call, and can happen after the PR merges.
+A dry-run report exists (against local data in the phase run), with a summary of counts by action. **Do not apply anything to production.** Applying it is Ronen's call, after the phase merges.
 
-## Walkthrough focus
+## Focus for "How it works" in your log
 How the same importer agent is reused in batch, what enrich mode changes in the prompt, and how the dry-run/apply split protects production data.

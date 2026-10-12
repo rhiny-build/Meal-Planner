@@ -7,7 +7,7 @@ Read `docs/rehaul/sessions/_common.md`, the repo skill `db-migrations`, and the 
 ## Goal
 One migration that sets up everything Phase 1 needs. That way S04, S05 and S06 can run in parallel without touching the schema. Existing data must stay intact, and the app must work unchanged afterwards.
 
-## Design to propose (then wait for Ronen's go-ahead)
+## Design (decide yourself; record it in your log)
 Start from PLAN.md, section "Recipe data model". Decide and justify:
 1. **`Recipe`**: add `kind` (`full` | `quick`, default `full`), `servings Int?`, `description String?`, `totalTimeMinutes Int?`, `notes String?`. Existing `prepTime` (quick/medium/long) and `tier` stay. Keep `recipeUrl` as it is. No renames: database changes only add (PLAN.md, "Promotion to main").
 2. **`RecipeStep`** (new): `recipeId`, `order`, `text`, `timerSeconds Int?`. Method is optional (D3): a recipe with zero steps is normal.
@@ -23,5 +23,5 @@ Schema plus migration, the quantity parser with unit tests, the step-token helpe
 ## Done when
 `prisma migrate dev` applies cleanly. The app runs as before. All 78 existing recipes have `kind = full`. The parse report is in your log. Tests pass.
 
-## Walkthrough focus
+## Focus for "How it works" in your log
 The data model as a diagram (ASCII is fine), why steps reference ingredients by id, and what the agent-run tables will hold for one example run.

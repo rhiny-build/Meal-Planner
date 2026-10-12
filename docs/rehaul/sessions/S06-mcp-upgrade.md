@@ -24,5 +24,5 @@ Meal-plan tools (S13). In-app discovery (S10).
 ## Done when
 After deploy, from Claude.ai: ask for a recipe, save it, see it in the app with steps and servings. Then describe a family recipe (e.g. one of the Shini's dishes) and have Claude add its method via `update_recipe`. Ronen does this end-to-end check after merge, so leave him the exact test script in your log.
 
-## Walkthrough focus
+## Focus for "How it works" in your log
 How an MCP tool description shapes when Claude calls it, and the step-reference conversion.
