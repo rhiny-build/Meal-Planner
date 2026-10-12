@@ -47,7 +47,7 @@ export async function setupTestDatabase() {
     }
 
     // Run migrations on the test database
-    execSync(`DATABASE_URL="${TEST_DATABASE_URL}" npx prisma migrate deploy`, {
+    execSync(`DATABASE_URL="${TEST_DATABASE_URL}" DATABASE_URL_UNPOOLED="${TEST_DATABASE_URL}" npx prisma migrate deploy`, {
       stdio: 'pipe',
     })
     console.log('Migrations applied to test database')
