@@ -8,6 +8,15 @@
 
 import OpenAI from 'openai'
 
-export const openaiEmbeddingsClient = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+let client: OpenAI | null = null
+
+/**
+ * Created on first use, so importing this module never needs a key
+ * (the Next build imports every route and fails on a missing key otherwise).
+ */
+export function getOpenAIEmbeddingsClient(): OpenAI {
+  if (!client) {
+    client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  }
+  return client
+}

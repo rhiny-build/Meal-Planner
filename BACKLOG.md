@@ -8,7 +8,7 @@ Living document for tracking features, bugs, and improvements.
 ### Priority 1.8: P1 Bugs (2026-02-09)
 
 - [x] **URL extraction returning wrong recipe** — Superseded: the old `/api/recipes/extract` route, `extractIngredientsFromURL` and `AIImportSection` were removed. The Import agent (S05) reads the page's own recipe data (JSON-LD) or its visible text and validates the draft; the user reviews it before saving. (2026-10-12)
-- [ ] **`/api/mcp` has no authentication (P1, security)** — anyone with the production URL can read recipes, meal plans and shopping history, create recipes, and (since `update_recipe`) overwrite or wipe the method and ingredients of any recipe. Decide on a minimum: a long random token in the path or a header check from an env var (e.g. `MCP_SECRET`), or OAuth (claude.ai custom connectors support both). Decision for Ronen.
+- [x] **`/api/mcp` authentication (P1, security)** — done: shared secret in `MCP_AUTH_TOKEN`, sent as a bearer header or `?token=` on the connector URL; production and previews reject everything if it is unset. Set it in Vercel (Preview and Production) and update the Claude.ai connector URL. OAuth is a possible later upgrade.
 - [x] **Meal plan completion overwrites user selections** — Fixed: grouped available recipes by slot type in the prompt so the AI can only pick valid recipes per column (lunch/protein/carb/vegetable). (2026-02-11)
 
 ---

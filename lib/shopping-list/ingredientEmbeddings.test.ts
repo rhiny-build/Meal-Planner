@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 
 // Mock the OpenAI client so it doesn't require an API key at import time
 vi.mock('../ai/openaiEmbeddings', () => ({
-  openaiEmbeddingsClient: { embeddings: { create: vi.fn() } },
+  getOpenAIEmbeddingsClient: () => ({ embeddings: { create: vi.fn() } }),
 }))
 
 import { cosineSimilarity, findBestMatches } from './ingredientEmbeddings'

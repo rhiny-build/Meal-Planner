@@ -1,7 +1,7 @@
 # Meal Planner MCP — Specification
 
 **Version:** 0.2  
-**Status:** Implemented (tools 4.1 to 4.6); authentication still open (OQ-5)  
+**Status:** Implemented (tools 4.1 to 4.6); authentication via `MCP_AUTH_TOKEN` (OQ-5)  
 **Scope:** Read queries + recipe write operations (create, edit) via Claude chat
 
 ---
@@ -319,7 +319,7 @@ Claude:  [calls get_recipes]
 | OQ-2 | ~~What is the actual data shape for a recipe in the DB?~~ | **Dropped:** Output contract defined in spec; DB shape is an implementation detail. |
 | OQ-3 | ~~Is there a "week" entity in the DB?~~ | **Resolved:** No week entity. Week is derived from dates; `week_start_date` on shopping lists is the closest anchor. |
 | OQ-4 | Should `create_recipe` also optionally add the recipe to the current week's plan? | Parked. |
-| OQ-5 | **Authentication.** `/api/mcp` has no authentication: anyone with the URL can read recipes, meal plans and shopping history, create recipes, and overwrite or wipe any recipe's method and ingredients via `update_recipe`. | Open. Options: a long random token in the path or a header check from an env var, or OAuth (claude.ai custom connectors support both). Tracked in BACKLOG. |
+| OQ-5 | **Authentication.** Resolved: `/api/mcp` requires the shared secret in `MCP_AUTH_TOKEN`, sent as `Authorization: Bearer <token>` or `?token=<token>` on the connector URL. Production and previews reject every request if the variable is unset; local development allows requests without it. OAuth remains a possible later upgrade. | Resolved |
 
 ---
 
