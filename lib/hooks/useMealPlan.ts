@@ -29,7 +29,7 @@ export function useMealPlan(startDate: Date, weekStartDay: number = 1) {
   const [isSaving, setIsSaving] = useState(false)
 
   const days = getOrderedDays(weekStartDay)
-  const { dayNotes, handleNoteChange } = useDayNotes(startDate)
+  const { dayNotes, handleNoteChange } = useDayNotes(startDate, days)
 
   const fetchData = useCallback(async () => {
     setIsLoading(true)

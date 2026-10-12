@@ -22,6 +22,12 @@ vi.mock('@/lib/shopping-list/ingredientEmbeddings', () => ({
   computeEmbeddings: vi.fn(),
 }))
 
+// Day notes are stored via server actions (tested in useDayNotes.test.ts)
+vi.mock('@/app/meal-plan/dayNoteActions', () => ({
+  getDayNotesForWeek: vi.fn().mockResolvedValue({}),
+  saveDayNote: vi.fn().mockResolvedValue(undefined),
+}))
+
 // Mock window.confirm for clear confirmation
 vi.stubGlobal('confirm', vi.fn(() => true))
 
@@ -361,67 +367,6 @@ describe('useMealPlan', () => {
       expect(result.current.dayNotes['Monday']).toBe('Soccer practice at 6pm')
     })
 
-    it('should persist notes to localStorage', async () => {
-      const { result } = renderHook(() => useMealPlan(startDate, weekStartDay))
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false)
-      })
-
-      act(() => {
-        result.current.handleNoteChange('Tuesday', 'Date night')
-      })
-
-      // Check localStorage directly
-      const storageKey = `mealPlanNotes_${startDate.toISOString().split('T')[0]}`
-      const stored = localStorage.getItem(storageKey)
-      expect(stored).toBeTruthy()
-      expect(JSON.parse(stored!)).toEqual({ Tuesday: 'Date night' })
-    })
-
-    it('should load notes from localStorage on mount', async () => {
-      // Pre-populate localStorage
-      const storageKey = `mealPlanNotes_${startDate.toISOString().split('T')[0]}`
-      localStorage.setItem(storageKey, JSON.stringify({ Wednesday: 'Work late' }))
-
-      const { result } = renderHook(() => useMealPlan(startDate, weekStartDay))
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false)
-      })
-
-      expect(result.current.dayNotes['Wednesday']).toBe('Work late')
-    })
-
-    it('should use different storage keys for different weeks', async () => {
-      // Use current week and next week (not past weeks which get cleared)
-      const week1 = getWeekStart(new Date(), weekStartDay)
-      const week2 = new Date(week1)
-      week2.setDate(week2.getDate() + 7) // Next week
-
-      // Set notes for week 1
-      const storageKey1 = `mealPlanNotes_${week1.toISOString().split('T')[0]}`
-      localStorage.setItem(storageKey1, JSON.stringify({ Monday: 'Week 1 note' }))
-
-      // Set notes for week 2
-      const storageKey2 = `mealPlanNotes_${week2.toISOString().split('T')[0]}`
-      localStorage.setItem(storageKey2, JSON.stringify({ Monday: 'Week 2 note' }))
-
-      // Render hook for week 1
-      const { result: result1 } = renderHook(() => useMealPlan(week1, weekStartDay))
-      await waitFor(() => {
-        expect(result1.current.isLoading).toBe(false)
-      })
-      expect(result1.current.dayNotes['Monday']).toBe('Week 1 note')
-
-      // Render hook for week 2
-      const { result: result2 } = renderHook(() => useMealPlan(week2, weekStartDay))
-      await waitFor(() => {
-        expect(result2.current.isLoading).toBe(false)
-      })
-      expect(result2.current.dayNotes['Monday']).toBe('Week 2 note')
-    })
-
     it('should handle multiple notes across days', async () => {
       const { result } = renderHook(() => useMealPlan(startDate, weekStartDay))
 
@@ -449,25 +394,5 @@ describe('useMealPlan', () => {
       })
     })
 
-    it('should auto-clear notes for past weeks', async () => {
-      // Use a date from 2 weeks ago
-      const pastWeek = new Date(startDate)
-      pastWeek.setDate(pastWeek.getDate() - 14)
-
-      // Pre-populate localStorage with notes for past week
-      const storageKey = `mealPlanNotes_${pastWeek.toISOString().split('T')[0]}`
-      localStorage.setItem(storageKey, JSON.stringify({ Monday: 'Old note' }))
-
-      const { result } = renderHook(() => useMealPlan(pastWeek, weekStartDay))
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false)
-      })
-
-      // Notes should be cleared for past weeks
-      expect(result.current.dayNotes).toEqual({})
-      // localStorage should also be cleared
-      expect(localStorage.getItem(storageKey)).toBeNull()
-    })
   })
 })
