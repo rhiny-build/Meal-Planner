@@ -22,7 +22,7 @@ export default function CookNoMethod({ recipe, servings, scale }: CookNoMethodPr
         <h2 className="text-3xl font-bold mb-4">Ingredients</h2>
         <CookIngredientList ingredients={recipe.ingredients} scale={scale} />
         <p
-          className="mt-8 text-gray-600 dark:text-neutral-400"
+          className="mt-8 text-ink-soft"
           data-testid="no-method-note"
         >
           There&apos;s no method for this recipe yet.

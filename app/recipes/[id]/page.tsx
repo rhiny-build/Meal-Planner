@@ -1,26 +1,21 @@
 /**
  * Recipe Page (Server Component)
  *
- * One recipe in the book: description, servings, time, ingredients,
- * method (only when there is one), notes and source link.
+ * One recipe in the book as three flippable pages (Overview, Ingredients,
+ * Method). Loads the recipe and hands plain data to the client pages; Edit
+ * stays in the header.
  */
 
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { getProteinOptions, getCarbOptions } from '@/lib/dishTypeConfig'
-import { formatIngredient } from '@/lib/ingredientHelpers'
-import RecipeMethod from './RecipeMethod'
+import { getCookIngredients } from '@/lib/cook/getCookIngredients'
+import RecipePages from './RecipePages'
 import RecipeActions from './RecipeActions'
+import { getRecipeOverview } from './recipeOverview'
 
 export const dynamic = 'force-dynamic'
-
-function formatTotalTime(minutes: number): string {
-  if (minutes < 60) return `${minutes} min`
-  const h = Math.floor(minutes / 60)
-  const m = minutes % 60
-  return m ? `${h} h ${m} min` : `${h} h`
-}
 
 export default async function RecipePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -38,36 +33,21 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
     getCarbOptions(),
   ])
 
-  const meta = [
-    recipe.servings ? `Serves ${recipe.servings}` : null,
-    recipe.totalTimeMinutes ? formatTotalTime(recipe.totalTimeMinutes) : null,
-  ].filter(Boolean)
-
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
-      <Link href="/recipes" className="text-sm text-blue-600 dark:text-fuchsia-400 hover:underline">
-        &larr; Recipe book
-      </Link>
-
-      <header className="mt-3 mb-6">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-3xl font-bold" data-testid="recipe-title">
-            {recipe.name}
-          </h1>
-          {recipe.kind === 'quick' && (
-            <span className="px-2 py-0.5 text-xs font-medium rounded bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
-              Quick
-            </span>
-          )}
-        </div>
-        {recipe.description && (
-          <p className="mt-2 text-gray-700 dark:text-gray-300">{recipe.description}</p>
-        )}
-        {meta.length > 0 && (
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400" data-testid="recipe-meta">
-            {meta.join(' · ')}
-          </p>
-        )}
+    <div className="max-w-xl md:max-w-2xl mx-auto px-4 pt-5 pb-4">
+      <header className="flex items-center gap-3 pb-3">
+        <Link
+          href="/recipes"
+          aria-label="Back to recipes"
+          className="w-11 h-11 flex-none rounded-card bg-surface text-ink flex items-center justify-center"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+        </Link>
+        <h1 className="font-display text-xl font-bold leading-tight flex-1" data-testid="recipe-title">
+          {recipe.name}
+        </h1>
         <RecipeActions
           recipe={recipe}
           proteinOptions={proteinOptions}
@@ -75,45 +55,22 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
         />
       </header>
 
-      <section className="mb-8" aria-labelledby="ingredients-heading">
-        <h2 id="ingredients-heading" className="text-xl font-semibold mb-2">
-          Ingredients
-        </h2>
-        {recipe.structuredIngredients.length > 0 ? (
-          <ul className="list-disc list-inside space-y-1" data-testid="ingredient-list">
-            {recipe.structuredIngredients.map((ing) => (
-              <li key={ing.id}>{formatIngredient(ing)}</li>
-            ))}
-          </ul>
-        ) : (
-          <p className="whitespace-pre-line">{recipe.ingredients}</p>
-        )}
-      </section>
-
-      <RecipeMethod steps={recipe.steps} ingredients={recipe.structuredIngredients} />
-
-      {recipe.notes && (
-        <section className="mb-8" aria-labelledby="notes-heading">
-          <h2 id="notes-heading" className="text-xl font-semibold mb-2">
-            Notes
-          </h2>
-          <p className="whitespace-pre-line text-gray-800 dark:text-gray-200">{recipe.notes}</p>
-        </section>
-      )}
-
-      {recipe.recipeUrl && (
-        <p className="text-sm">
-          Source:{' '}
-          <a
-            href={recipe.recipeUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 dark:text-fuchsia-400 hover:underline break-all"
-          >
-            {recipe.recipeUrl}
-          </a>
-        </p>
-      )}
+      <RecipePages
+        recipe={{
+          id: recipe.id,
+          name: recipe.name,
+          kind: recipe.kind,
+          servings: recipe.servings,
+          ingredients: getCookIngredients(recipe),
+          steps: recipe.steps.map((step) => ({
+            id: step.id,
+            order: step.order,
+            text: step.text,
+            timerSeconds: step.timerSeconds,
+          })),
+        }}
+        overview={getRecipeOverview(recipe)}
+      />
     </div>
   )
 }

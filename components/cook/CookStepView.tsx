@@ -12,6 +12,8 @@ import type { CookTimer } from '@/lib/cook/cookTimers'
 
 interface CookStepViewProps {
   step: CookStepData
+  /** Smaller type when shown inside the recipe page's Method tab. */
+  isEmbedded?: boolean
   stepNumber: number
   stepCount: number
   ingredients: CookIngredientData[]
@@ -25,6 +27,7 @@ interface CookStepViewProps {
 
 export default function CookStepView({
   step,
+  isEmbedded = false,
   stepNumber,
   stepCount,
   ingredients,
@@ -36,15 +39,23 @@ export default function CookStepView({
   onResetTimer,
 }: CookStepViewProps) {
   return (
-    <section className="flex-1 overflow-y-auto px-5 py-6 md:px-10" data-testid="cook-step">
+    <section
+      className={`flex-1 overflow-y-auto ${isEmbedded ? 'px-1 py-3' : 'px-5 py-6 md:px-10'}`}
+      data-testid="cook-step"
+    >
       <div className="max-w-4xl mx-auto">
         <p
-          className="mb-4 text-lg font-bold uppercase tracking-wide text-blue-700 dark:text-fuchsia-300"
+          className="mb-4 text-lg font-bold uppercase tracking-wide text-primary"
           data-testid="step-counter"
         >
           Step {stepNumber} of {stepCount}
         </p>
-        <p className="text-3xl sm:text-4xl md:text-5xl leading-snug font-medium" data-testid="step-text">
+        <p
+          className={`leading-snug font-medium ${
+            isEmbedded ? 'text-2xl' : 'text-3xl sm:text-4xl md:text-5xl'
+          }`}
+          data-testid="step-text"
+        >
           <StepText text={step.text} ingredients={ingredients} scale={scale} />
         </p>
         {step.timerSeconds ? (

@@ -12,11 +12,11 @@ interface ServingsControlProps {
 }
 
 const buttonClass =
-  'w-11 h-11 rounded-full bg-gray-200 dark:bg-neutral-700 text-2xl leading-none font-semibold disabled:opacity-40'
+  'w-11 h-11 rounded-card bg-surface text-2xl leading-none font-semibold disabled:opacity-40'
 
 export default function ServingsControl({ servings, onChange }: ServingsControlProps) {
   return (
-    <div className="flex items-center gap-2" data-testid="servings-control">
+    <div className="flex items-center gap-1.5 bg-ground rounded-card p-1" data-testid="servings-control">
       <button
         type="button"
         className={buttonClass}
@@ -30,7 +30,7 @@ export default function ServingsControl({ servings, onChange }: ServingsControlP
         <span className="block text-xl font-bold" data-testid="servings-value">
           {servings}
         </span>
-        <span className="block text-xs text-gray-600 dark:text-neutral-400">servings</span>
+        <span className="block text-xs text-ink-soft">servings</span>
       </span>
       <button
         type="button"

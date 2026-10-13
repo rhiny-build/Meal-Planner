@@ -33,7 +33,7 @@ export default function ActiveTimersBar({
 
   return (
     <div
-      className="flex gap-2 overflow-x-auto px-4 py-2 bg-gray-100 dark:bg-neutral-800"
+      className="flex gap-2 overflow-x-auto px-4 py-2 bg-sunken"
       data-testid="active-timers"
       role="status"
     >
@@ -46,10 +46,10 @@ export default function ActiveTimersBar({
               timer.status === 'paused' ? ' (paused)' : ''
             }`
         const colour = isFinished
-          ? `bg-red-600 text-white ${isAlerting ? 'animate-pulse' : ''}`
+          ? `bg-danger text-white ${isAlerting ? 'animate-pulse' : ''}`
           : timer.status === 'paused'
-            ? 'bg-gray-300 dark:bg-neutral-600'
-            : 'bg-green-600 text-white'
+            ? 'bg-sunken '
+            : 'bg-primary text-white'
         return (
           <button
             key={step.id}

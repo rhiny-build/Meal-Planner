@@ -34,7 +34,7 @@ export default function StepTimer({
   const remainingMs = getRemainingMs(timer, durationSeconds, now)
   const clockClass = isCompact ? 'text-2xl' : 'text-5xl sm:text-6xl'
   const buttonSize = isCompact ? 'min-h-11 px-4 text-base' : 'min-h-14 px-6 text-xl'
-  const baseButton = `${buttonSize} rounded-xl font-semibold`
+  const baseButton = `${buttonSize} rounded-card font-semibold`
 
   return (
     <div
@@ -44,7 +44,7 @@ export default function StepTimer({
     >
       <span
         className={`${clockClass} font-bold tabular-nums ${
-          status === 'done' ? 'text-red-600 dark:text-red-400' : ''
+          status === 'done' ? 'text-danger ' : ''
         }`}
         data-testid="timer-clock"
       >
@@ -53,7 +53,7 @@ export default function StepTimer({
       {status === 'running' ? (
         <button
           type="button"
-          className={`${baseButton} bg-amber-500 text-white`}
+          className={`${baseButton} bg-accent text-ink`}
           onClick={() => onPause(stepId)}
         >
           Pause
@@ -61,7 +61,7 @@ export default function StepTimer({
       ) : (
         <button
           type="button"
-          className={`${baseButton} bg-green-600 text-white`}
+          className={`${baseButton} bg-primary text-white`}
           onClick={() => onStart(stepId, durationSeconds)}
         >
           {status === 'paused' ? 'Resume' : status === 'done' ? 'Restart' : 'Start timer'}
@@ -70,7 +70,7 @@ export default function StepTimer({
       {status && (
         <button
           type="button"
-          className={`${baseButton} bg-gray-200 dark:bg-neutral-700`}
+          className={`${baseButton} bg-sunken`}
           onClick={() => onReset(stepId)}
         >
           Reset

@@ -16,10 +16,11 @@ interface WakeLockSentinelLike {
   addEventListener: (type: 'release', listener: () => void) => void
 }
 
-export function useScreenWakeLock(): boolean {
+export function useScreenWakeLock(isEnabled: boolean = true): boolean {
   const [isHeld, setIsHeld] = useState(false)
 
   useEffect(() => {
+    if (!isEnabled) return
     const wakeLock = (navigator as unknown as {
       wakeLock?: { request: (type: 'screen') => Promise<WakeLockSentinelLike> }
     }).wakeLock
@@ -54,7 +55,7 @@ export function useScreenWakeLock(): boolean {
       document.removeEventListener('visibilitychange', onVisibilityChange)
       void sentinel?.release().catch(() => {})
     }
-  }, [])
+  }, [isEnabled])
 
-  return isHeld
+  return isEnabled && isHeld
 }

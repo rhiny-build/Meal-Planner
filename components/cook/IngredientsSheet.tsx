@@ -30,7 +30,7 @@ export default function IngredientsSheet({
       <div
         role="dialog"
         aria-label="Ingredients"
-        className="w-full md:max-w-lg max-h-[80vh] overflow-y-auto rounded-t-2xl md:rounded-2xl bg-white dark:bg-neutral-900 p-5 shadow-xl"
+        className="w-full md:max-w-lg max-h-[80vh] overflow-y-auto rounded-t-2xl md:rounded-panel bg-white p-5 shadow-xl"
         onClick={(event) => event.stopPropagation()}
         data-testid="ingredients-sheet"
       >
@@ -38,7 +38,7 @@ export default function IngredientsSheet({
           <h2 className="text-2xl font-bold">Ingredients · {servings} servings</h2>
           <button
             type="button"
-            className="min-h-11 px-4 rounded-xl bg-gray-200 dark:bg-neutral-700 font-semibold"
+            className="min-h-11 px-4 rounded-card bg-sunken font-semibold"
             onClick={onClose}
           >
             Close
@@ -47,7 +47,7 @@ export default function IngredientsSheet({
         {ingredients.length > 0 ? (
           <CookIngredientList ingredients={ingredients} scale={scale} />
         ) : (
-          <p className="text-gray-600 dark:text-neutral-400">No ingredients listed.</p>
+          <p className="text-ink-soft">No ingredients listed.</p>
         )}
       </div>
     </div>

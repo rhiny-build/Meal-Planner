@@ -1,14 +1,12 @@
 /**
  * RecipeActions
  *
- * Buttons on the recipe page: Edit (opens the same modal editor as the book)
- * and Cook (opens the full-screen cook mode).
+ * The Edit button on the recipe page (opens the same modal editor as the book).
  */
 
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import Button from '@/components/Button'
@@ -42,14 +40,7 @@ export default function RecipeActions({ recipe, proteinOptions, carbOptions }: R
   }
 
   return (
-    <div className="mt-4 flex flex-wrap gap-2">
-      <Link
-        href={`/recipes/${recipe.id}/cook`}
-        className="inline-block px-4 py-2 text-base font-medium rounded bg-blue-600 dark:bg-fuchsia-600 text-white hover:bg-blue-700 dark:hover:bg-fuchsia-500"
-        data-testid="cook-button"
-      >
-        Cook
-      </Link>
+    <>
       <Button type="button" variant="secondary" onClick={() => setEditing(true)}>
         Edit
       </Button>
@@ -63,6 +54,6 @@ export default function RecipeActions({ recipe, proteinOptions, carbOptions }: R
           carbOptions={carbOptions}
         />
       )}
-    </div>
+    </>
   )
 }
