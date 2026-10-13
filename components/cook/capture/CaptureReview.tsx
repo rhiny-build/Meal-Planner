@@ -37,7 +37,7 @@ export default function CaptureReview({ steps, ingredients, error, isSaving, onC
     <div className="mt-8 border-t border-gray-200 dark:border-neutral-700 pt-6" data-testid="capture-review">
       <h2 className="text-2xl font-bold mb-1">Check the method</h2>
       <p className="text-gray-600 dark:text-neutral-400 mb-4">
-        Written from your notes only. Fix anything, reorder or delete, then save. Nothing is saved until you do.
+        Written from your notes only. Fix anything, reorder or delete, then save. A name in {'{braces}'} is an ingredient of this recipe. Nothing is saved until you do.
       </p>
       <ol className="space-y-4">
         {steps.map((step, index) => (
