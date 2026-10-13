@@ -137,7 +137,7 @@ Detailed prompts exist for Waves 1–4. Prompts for later waves are written when
 |---------|---------|
 | S08 Cook mode | Step-by-step view, timers on steps, servings scaling inline in step text, works on a phone propped on the counter. |
 | S09 Capture as you cook | For a recipe without a method, optionally narrate as you cook; agent structures it into steps; you approve; saved. |
-| S10 In-app discovery chat | Chat agent with web search, search-my-book and save tools; streaming UI. (Discovery Phase B.) |
+| ~~S10 In-app discovery chat~~ **Dropped (13 Oct):** discovery stays in Claude.ai via the MCP server (no API cost). | Chat agent with web search, search-my-book and save tools; streaming UI. (Discovery Phase B.) |
 
 ### Phase 3 — Meal-plan agent
 
