@@ -7,6 +7,7 @@
  * Manages tab navigation and renders tab content.
  */
 
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { Category, MasterListItem, DishType } from '@prisma/client'
 import MasterListsTab from './MasterListsTab'
@@ -95,6 +96,13 @@ export default function SettingsClient({
       {activeTab === 'preferences' && (
         <PreferencesTab weekStartDay={weekStartDay} />
       )}
+
+      <p className="mt-10 text-sm text-gray-500 dark:text-gray-400">
+        Admin:{' '}
+        <Link href="/admin/backfill" className="underline">
+          Recipe backfill
+        </Link>
+      </p>
     </div>
   )
 }
