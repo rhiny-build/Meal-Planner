@@ -71,7 +71,7 @@ To switch: change `recipeImporter.model` in `lib/ai/config.ts` to `CLAUDE_MODELS
 - Haiku with caching: ≈ $0.0025 per import.
 
 ## Real Claude tokens spent
-10 import runs: 102,200 input tokens (of which 55,000 were cache reads/writes) + 16,595 output = **118,795** (budget 150,000). Plus the proof run above (it is case 1). Total spend $0.093.
+10 import runs: 102,200 input tokens (of which 102,132 were cache reads/writes) + 16,595 output = **118,795** (budget 150,000). The proof run is case 1. Total spend $0.095.
 (No other real-Claude calls.)
 
 ## Try on the preview
