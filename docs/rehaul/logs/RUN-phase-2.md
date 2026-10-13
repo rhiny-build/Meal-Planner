@@ -21,8 +21,8 @@ None. The merges of `main` into each branch were clean. The deletions of `lib/mc
 ## Real Claude spend (phase budget 300,000)
 - S08: 0 (no AI).
 - S09: 58,219 tokens (15 sample runs plus 2 end-to-end runs), per its log.
-- Orchestrator check of the merged branch: one method-capture run (5k tokens including cache, 677 output).
-- Total: about 63,000 of 300,000. Nothing close to a full batch.
+- Orchestrator check of the merged branch: one method-capture run (2,246 tokens including cache, 677 output).
+- Total: about 60,500 of 300,000. Nothing close to a full batch.
 
 ## Not verified here
 Real audio, real vibration and the screen wake lock on a physical phone (vibration does nothing on iOS Safari); the preview itself. The Agent Runs page was checked through the database rather than in the browser.
