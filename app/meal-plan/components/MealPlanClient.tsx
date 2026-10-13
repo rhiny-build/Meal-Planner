@@ -2,9 +2,9 @@
  * Meal Plan Client Component
  *
  * Features:
- * - 7 days × 4 columns (lunch, protein, carb, vegetable)
+ * - The week as one row per day, each with a swap button
  * - Generate new meal plan with AI
- * - Manual recipe selection via dropdowns
+ * - Changing a day's meals and note in a sheet (dropdowns per slot)
  * - Save/load from database
  * - Navigate between weeks
  */
@@ -15,8 +15,10 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { getWeekStart, formatDateParam } from '@/lib/dateUtils'
 import { useMealPlan } from '@/lib/hooks/useMealPlan'
-import MealPlanHeader from './MealPlanHeader'
-import MealPlanGrid from './MealPlanGrid'
+import PageHeader from '@/components/PageHeader'
+import WeekToolbar from './WeekToolbar'
+import WeekList from './WeekList'
+import { formatWeekRange, getWeekTitle } from '../helpers/weekLabels'
 import AiProgress from '@/components/AiProgress'
 
 const DEFAULT_PROMPT = 'Generate a balanced meal plan for the week following the rules. Do not change existing meals that are already set.'
@@ -44,14 +46,12 @@ export default function MealPlanClient({ weekStartDay }: MealPlanClientProps) {
     proteinRecipes,
     carbRecipes,
     vegetableRecipes,
-    selectedCount,
     isLoading,
     isSaving,
     handleRecipeChange,
     handleNoteChange,
     handleSave,
     handleClear,
-    handleSwapRecipes,
     applyGeneratedPlan,
   } = useMealPlan(startDate, weekStartDay)
 
@@ -105,18 +105,19 @@ export default function MealPlanClient({ weekStartDay }: MealPlanClientProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-gray-500 dark:text-neutral-400 text-lg">Loading meal plan...</div>
+        <div className="text-ink-soft text-lg">Loading meal plan...</div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-7xl mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Weekly Meal Plan</h1>
+    <div className="max-w-xl md:max-w-3xl mx-auto px-4">
+      <PageHeader
+        title={getWeekTitle(startDate, getWeekStart(new Date(), weekStartDay))}
+        eyebrow={formatWeekRange(startDate)}
+      />
 
-      <MealPlanHeader
-        startDate={startDate}
-        selectedCount={selectedCount}
+      <WeekToolbar
         isGenerating={isGenerating}
         isSaving={isSaving}
         onPreviousWeek={handlePreviousWeek}
@@ -134,7 +135,7 @@ export default function MealPlanClient({ weekStartDay }: MealPlanClientProps) {
         className="mb-4"
       />
 
-      <MealPlanGrid
+      <WeekList
         weekPlan={weekPlan}
         dayNotes={dayNotes}
         lunchRecipes={lunchRecipes}
@@ -143,7 +144,6 @@ export default function MealPlanClient({ weekStartDay }: MealPlanClientProps) {
         vegetableRecipes={vegetableRecipes}
         onRecipeChange={handleRecipeChange}
         onNoteChange={handleNoteChange}
-        onSwapRecipes={handleSwapRecipes}
       />
     </div>
   )

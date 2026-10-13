@@ -5,7 +5,6 @@
 import { describe, it, expect } from 'vitest'
 import {
   getOrderedDays,
-  swapRecipesInPlan,
   applyGeneratedPlanToWeek,
   createEmptyWeekPlan,
   validateWeekStart,
@@ -90,54 +89,6 @@ describe('parseStartDate', () => {
   it('should return current week start for Sunday when startDay=0', () => {
     const result = parseStartDate(null, 0)
     expect(result.getDay()).toBe(0) // Should be a Sunday
-  })
-})
-
-describe('swapRecipesInPlan', () => {
-  it('should swap protein recipes between two days', () => {
-    const plan = makeWeekPlan([
-      { proteinRecipeId: 'chicken' },
-      { proteinRecipeId: 'beef' },
-    ])
-
-    const result = swapRecipesInPlan(plan, 'protein', 0, 1)
-
-    expect(result[0].proteinRecipeId).toBe('beef')
-    expect(result[1].proteinRecipeId).toBe('chicken')
-  })
-
-  it('should swap carb recipes without affecting other columns', () => {
-    const plan = makeWeekPlan([
-      { proteinRecipeId: 'chicken', carbRecipeId: 'rice' },
-      { proteinRecipeId: 'beef', carbRecipeId: 'pasta' },
-    ])
-
-    const result = swapRecipesInPlan(plan, 'carb', 0, 1)
-
-    expect(result[0].carbRecipeId).toBe('pasta')
-    expect(result[1].carbRecipeId).toBe('rice')
-    // Protein should be untouched
-    expect(result[0].proteinRecipeId).toBe('chicken')
-    expect(result[1].proteinRecipeId).toBe('beef')
-  })
-
-  it('should handle swapping with an empty slot', () => {
-    const plan = makeWeekPlan([
-      { vegetableRecipeId: 'salad' },
-      {}, // empty
-    ])
-
-    const result = swapRecipesInPlan(plan, 'vegetable', 0, 1)
-
-    expect(result[0].vegetableRecipeId).toBe('')
-    expect(result[1].vegetableRecipeId).toBe('salad')
-  })
-
-  it('should not mutate the original plan', () => {
-    const plan = makeWeekPlan([{ proteinRecipeId: 'chicken' }])
-    swapRecipesInPlan(plan, 'protein', 0, 1)
-
-    expect(plan[0].proteinRecipeId).toBe('chicken')
   })
 })
 
