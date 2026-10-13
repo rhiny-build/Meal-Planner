@@ -88,20 +88,20 @@ export default function DishTypesTab({ proteinTypes, carbTypes }: DishTypesTabPr
       <div className="flex gap-2">
         <button
           onClick={() => setActiveCategory('protein')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`px-4 py-2 rounded-card text-sm font-medium transition-colors ${
             activeCategory === 'protein'
-              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
+              ? 'bg-primary-soft text-primary  '
+              : 'bg-sunken text-ink-soft hover:bg-sunken   '
           }`}
         >
           Protein Types
         </button>
         <button
           onClick={() => setActiveCategory('carb')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`px-4 py-2 rounded-card text-sm font-medium transition-colors ${
             activeCategory === 'carb'
-              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
+              ? 'bg-primary-soft text-primary  '
+              : 'bg-sunken text-ink-soft hover:bg-sunken   '
           }`}
         >
           Carb Types
@@ -109,27 +109,27 @@ export default function DishTypesTab({ proteinTypes, carbTypes }: DishTypesTabPr
       </div>
 
       {/* Description */}
-      <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+      <div className="p-4 bg-ground rounded-card">
+        <p className="text-sm text-ink-soft">
           {activeCategory === 'protein'
             ? 'Protein types categorize your main dishes (e.g., Chicken, Fish, Vegetarian).'
             : 'Carb types categorize your side dishes (e.g., Rice, Pasta, Fries).'}
         </p>
-        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+        <p className="text-xs text-ink-soft mt-1">
           {currentTypes.length} {currentTypes.length === 1 ? 'type' : 'types'}
         </p>
       </div>
 
       {/* Types List */}
       {currentTypes.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
-          <p className="text-gray-600 dark:text-gray-400">
+        <div className="text-center py-12 bg-ground rounded-card">
+          <p className="text-ink-soft">
             No {activeCategory} types yet. Add one below.
           </p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow overflow-hidden">
-          <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+        <div className="bg-white rounded-card shadow overflow-hidden">
+          <ul className="divide-y divide-line">
             {currentTypes.map(type => (
               <EditableListItem
                 key={type.id}
@@ -144,10 +144,10 @@ export default function DishTypesTab({ proteinTypes, carbTypes }: DishTypesTabPr
                 onDelete={() => handleDelete(type)}
               >
                 <div className="flex-1">
-                  <span className="text-gray-900 dark:text-gray-100">
+                  <span className="text-ink">
                     {type.label}
                   </span>
-                  <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">
+                  <span className="ml-2 text-xs text-ink-soft">
                     ({type.value})
                   </span>
                 </div>
@@ -158,8 +158,8 @@ export default function DishTypesTab({ proteinTypes, carbTypes }: DishTypesTabPr
       )}
 
       {/* Add Type Form */}
-      <div className="p-4 bg-white dark:bg-gray-900 rounded-lg shadow">
-        <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">
+      <div className="p-4 bg-white rounded-card shadow">
+        <h3 className="font-medium text-ink mb-3">
           Add New {activeCategory === 'protein' ? 'Protein' : 'Carb'} Type
         </h3>
         <div className="flex flex-col sm:flex-row gap-3">
@@ -168,7 +168,7 @@ export default function DishTypesTab({ proteinTypes, carbTypes }: DishTypesTabPr
             value={newTypeName}
             onChange={e => setNewTypeName(e.target.value)}
             placeholder={`Type name (e.g., ${activeCategory === 'protein' ? 'Tofu' : 'Quinoa'})`}
-            className="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+            className="flex-1 px-3 py-2 border rounded-card"
             onKeyDown={e => {
               if (e.key === 'Enter' && newTypeName.trim()) {
                 handleAddType()

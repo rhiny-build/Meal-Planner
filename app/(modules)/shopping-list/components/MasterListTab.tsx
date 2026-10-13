@@ -81,17 +81,17 @@ export default function MasterListTab({
   return (
     <div className="space-y-4">
       {/* Description */}
-      <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-        <p className="text-sm text-gray-600 dark:text-gray-400">{description}</p>
-        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+      <div className="p-4 bg-ground rounded-card">
+        <p className="text-sm text-ink-soft">{description}</p>
+        <p className="text-xs text-ink-soft mt-1">
           {includedCount} of {totalItems} items included this week
         </p>
       </div>
 
       {/* Grouped Items */}
       {categories.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
-          <p className="text-gray-600 dark:text-gray-400">
+        <div className="text-center py-12 bg-ground rounded-card">
+          <p className="text-ink-soft">
             No {type === 'staple' ? 'staples' : 'restock items'} yet.
           </p>
         </div>
@@ -106,25 +106,25 @@ export default function MasterListTab({
             return (
               <div
                 key={category.id}
-                className="bg-white dark:bg-gray-900 rounded-lg shadow overflow-hidden"
+                className="bg-white rounded-card shadow overflow-hidden"
               >
                 {/* Category Header - Clickable to expand/collapse */}
                 <button
                   type="button"
                   onClick={() => toggleCategory(category.id)}
-                  className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 flex justify-between items-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                  className="w-full px-4 py-3 bg-sunken flex justify-between items-center hover:bg-sunken transition-colors"
                 >
                   <div className="text-left">
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100">
+                    <h3 className="font-medium text-ink">
                       {category.name}
                     </h3>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-ink-soft">
                       {categoryIncludedCount} of {category.items.length} included
                     </span>
                   </div>
                   {/* Chevron indicator */}
                   <svg
-                    className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${
+                    className={`w-5 h-5 text-ink-soft transition-transform duration-200 ${
                       isExpanded ? 'rotate-180' : ''
                     }`}
                     fill="none"
@@ -137,27 +137,27 @@ export default function MasterListTab({
 
                 {/* Items List - Collapsible */}
                 {isExpanded && (
-                  <ul className="divide-y divide-gray-100 dark:divide-gray-800 border-t dark:border-gray-700">
+                  <ul className="divide-y divide-line border-t">
                     {category.items.map(item => {
                       const checked = isItemChecked(item.name)
 
                       return (
                         <li
                           key={item.id}
-                          className="px-4 py-3 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                          className="px-4 py-3 flex items-center gap-3 hover:bg-ground transition-colors"
                         >
                           <input
                             type="checkbox"
                             checked={checked}
                             onChange={() => handleToggle(item, checked)}
                             disabled={isPending}
-                            className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                            className="w-5 h-5 rounded-card border-line text-primary focus:ring-primary disabled:opacity-50"
                           />
                           <span
                             className={`flex-1 ${
                               checked
-                                ? 'text-gray-900 dark:text-gray-100'
-                                : 'text-gray-400 dark:text-gray-500'
+                                ? 'text-ink '
+                                : 'text-ink-soft '
                             }`}
                           >
                             {item.name}

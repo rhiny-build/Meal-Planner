@@ -78,7 +78,7 @@ export function useMealPlan(startDate: Date, weekStartDay: number = 1) {
   }
 
   const handleSwapRecipes = (column: MealSlotColumn, fromDayIndex: number, toDayIndex: number) => {
-    setWeekPlan(swapRecipesInPlan(weekPlan, column, fromDayIndex, toDayIndex))
+    setWeekPlan(prev => swapRecipesInPlan(prev, column, fromDayIndex, toDayIndex))
   }
 
   // Functional update: the AI call takes a while, so work from the latest plan, not the one

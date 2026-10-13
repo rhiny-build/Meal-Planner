@@ -33,7 +33,7 @@ export default function Select({
       {label && (
         <label htmlFor={name} className="block text-sm font-medium mb-1">
           {label}
-          {required && <span className="text-red-600"> *</span>}
+          {required && <span className="text-danger"> *</span>}
         </label>
       )}
       <select
@@ -42,7 +42,7 @@ export default function Select({
         value={value}
         onChange={onChange}
         required={required}
-        className={`w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700 ${className}`}
+        className={`w-full min-h-11 px-3 border border-line bg-surface rounded-card ${className}`}
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>

@@ -107,7 +107,7 @@ export default function RecipeImportModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-card shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-4 sm:p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">
@@ -116,7 +116,7 @@ export default function RecipeImportModal({
             <button
               onClick={onClose}
               aria-label="Close"
-              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-2"
+              className="text-ink-soft hover:text-ink p-2"
             >
               ✕
             </button>
@@ -124,7 +124,7 @@ export default function RecipeImportModal({
 
           {!draft && (
             <div className="space-y-3">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-ink-soft">
                 Paste a recipe link, or describe a recipe in your own words. You can review it before
                 anything is saved.
               </p>
@@ -135,10 +135,10 @@ export default function RecipeImportModal({
                 rows={5}
                 disabled={isImporting}
                 placeholder="https://... or: my schnitzel: chicken breast, flatten, egg, breadcrumbs, fry 4 min a side"
-                className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
+                className="w-full p-2 border rounded-card"
               />
               {error && (
-                <p className="text-red-600 text-sm" role="alert">
+                <p className="text-danger text-sm" role="alert">
                   {error}{' '}
                   {failedRunId && (
                     <Link href={`/agent-runs/${failedRunId}`} className="underline">
@@ -161,7 +161,7 @@ export default function RecipeImportModal({
             <div className="space-y-4">
               <div>
                 <h3 className="text-xl font-semibold">{draft.name}</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-ink-soft">
                   {[
                     draft.kind === 'quick' ? 'Quick item' : 'Full recipe',
                     draft.servings ? `Serves ${draft.servings}` : null,
@@ -178,7 +178,7 @@ export default function RecipeImportModal({
                     href={draft.sourceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-blue-600 dark:text-fuchsia-400 underline break-all"
+                    className="text-sm text-primary underline break-all"
                   >
                     {draft.sourceUrl}
                   </a>
@@ -186,7 +186,7 @@ export default function RecipeImportModal({
               </div>
 
               {result.similarRecipes.length > 0 && (
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded text-sm" role="status">
+                <div className="bg-accent-soft p-3 rounded-card text-sm" role="status">
                   Already in your book, maybe the same recipe:{' '}
                   {result.similarRecipes.map((r) => r.name).join(', ')}
                 </div>
@@ -207,7 +207,7 @@ export default function RecipeImportModal({
               <div>
                 <h4 className="font-medium mb-1">Method</h4>
                 {draft.steps.length === 0 ? (
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-ink-soft">
                     No method found. It will be saved without steps; you can add one later.
                   </p>
                 ) : (
@@ -216,7 +216,7 @@ export default function RecipeImportModal({
                       <li key={i}>
                         {renderStepText(step.text, stepIngredients)}
                         {step.timerSeconds ? (
-                          <span className="text-gray-500"> (timer {Math.round(step.timerSeconds / 60)} min)</span>
+                          <span className="text-ink-soft"> (timer {Math.round(step.timerSeconds / 60)} min)</span>
                         ) : null}
                       </li>
                     ))}
@@ -225,7 +225,7 @@ export default function RecipeImportModal({
               </div>
 
               {error && (
-                <p className="text-red-600 text-sm" role="alert">
+                <p className="text-danger text-sm" role="alert">
                   {error}
                 </p>
               )}
@@ -237,7 +237,7 @@ export default function RecipeImportModal({
                 <Button variant="secondary" onClick={onClose}>
                   Discard
                 </Button>
-                <Link href={`/agent-runs/${result.runId}`} className="text-sm underline text-gray-600 dark:text-gray-400">
+                <Link href={`/agent-runs/${result.runId}`} className="text-sm underline text-ink-soft">
                   How it was imported
                 </Link>
               </div>

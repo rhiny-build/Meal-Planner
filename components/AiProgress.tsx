@@ -64,11 +64,11 @@ export default function AiProgress({ active, label, estimate, className = '' }: 
       role="status"
       aria-live="polite"
       data-testid="ai-progress"
-      className={`rounded border border-blue-200 bg-blue-50 p-3 text-sm dark:border-fuchsia-900 dark:bg-fuchsia-950/30 ${className}`}
+      className={`rounded-card border border-primary bg-primary-soft p-3 text-sm   ${className}`}
     >
       <div className="flex items-baseline justify-between gap-3">
         <span className="font-medium">{label}...</span>
-        <span className="tabular-nums text-gray-600 dark:text-gray-400" data-testid="ai-progress-elapsed">
+        <span className="tabular-nums text-ink-soft " data-testid="ai-progress-elapsed">
           {elapsed}s
         </span>
       </div>
@@ -78,14 +78,14 @@ export default function AiProgress({ active, label, estimate, className = '' }: 
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={percent}
-        className="mt-2 h-2 w-full overflow-hidden rounded bg-blue-100 dark:bg-fuchsia-900/40"
+        className="mt-2 h-2 w-full overflow-hidden rounded-card bg-primary-soft"
       >
         <div
-          className="h-full rounded bg-blue-600 transition-[width] duration-500 ease-out dark:bg-fuchsia-500"
+          className="h-full rounded-card bg-primary transition-[width] duration-500 ease-out"
           style={{ width: `${percent}%` }}
         />
       </div>
-      <p className="mt-2 text-gray-600 dark:text-gray-400" data-testid="ai-progress-note">
+      <p className="mt-2 text-ink-soft " data-testid="ai-progress-note">
         {overdue
           ? 'Taking longer than usual. Still working, please keep this open.'
           : `Usually takes ${low}-${high} seconds.`}

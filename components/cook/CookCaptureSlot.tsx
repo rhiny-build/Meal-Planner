@@ -27,7 +27,7 @@ export default function CookCaptureSlot({ recipe }: CookCaptureSlotProps) {
       {capture.phase === 'idle' && capture.isRestored && (
         <button
           type="button"
-          className="mt-4 min-h-12 rounded-xl px-5 font-semibold bg-amber-100 text-amber-900 dark:bg-amber-900 dark:text-amber-100"
+          className="mt-4 min-h-12 rounded-card px-5 font-semibold bg-accent-soft text-ink"
           onClick={capture.start}
         >
           Tell me as you go

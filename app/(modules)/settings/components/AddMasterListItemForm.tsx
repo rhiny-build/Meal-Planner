@@ -52,8 +52,8 @@ export default function AddMasterListItemForm({
   }
 
   return (
-    <div className="p-4 bg-white dark:bg-gray-900 rounded-lg shadow">
-      <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">
+    <div className="p-4 bg-white rounded-card shadow">
+      <h3 className="font-medium text-ink mb-3">
         Add New {activeType === 'staple' ? 'Staple' : 'Restock Item'}
       </h3>
       <div className="flex flex-col sm:flex-row gap-3">
@@ -62,7 +62,7 @@ export default function AddMasterListItemForm({
           value={name}
           onChange={e => setName(e.target.value)}
           placeholder="Item name"
-          className="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+          className="flex-1 px-3 py-2 border rounded-card"
           onKeyDown={e => {
             if (e.key === 'Enter' && name.trim() && categoryId) {
               handleAdd()
@@ -72,7 +72,7 @@ export default function AddMasterListItemForm({
         <select
           value={categoryId}
           onChange={e => setCategoryId(e.target.value)}
-          className="px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+          className="px-3 py-2 border rounded-card"
         >
           <option value="">Select category</option>
           {categories.map(cat => (

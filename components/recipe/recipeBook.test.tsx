@@ -44,14 +44,14 @@ function recipe(overrides: Partial<RecipeWithIngredients> = {}): RecipeWithIngre
 }
 
 describe('RecipeCard book features', () => {
-  it('shows a method indicator only when there are steps', () => {
+  it('shows whether there is a method', () => {
     const steps = [
       { id: 's1', recipeId: 'r1', order: 0, text: 'Fry', timerSeconds: null, createdAt: new Date(), updatedAt: new Date() },
     ] as any
     const { rerender } = render(<RecipeCard recipe={recipe({ steps })} onEdit={vi.fn()} onDelete={vi.fn()} />)
     expect(screen.getByTestId('method-indicator')).toHaveTextContent('Method · 1 step')
     rerender(<RecipeCard recipe={recipe()} onEdit={vi.fn()} onDelete={vi.fn()} />)
-    expect(screen.queryByTestId('method-indicator')).toBeNull()
+    expect(screen.getByTestId('method-indicator')).toHaveTextContent('No method')
   })
 
   it('renders quick recipes compactly without an ingredient list', () => {
@@ -63,7 +63,7 @@ describe('RecipeCard book features', () => {
 
   it('links the name to the recipe page', () => {
     render(<RecipeCard recipe={recipe()} onEdit={vi.fn()} onDelete={vi.fn()} />)
-    expect(screen.getByRole('link', { name: 'Beef Keema' })).toHaveAttribute('href', '/recipes/r1')
+    expect(screen.getByRole('link', { name: /^Beef Keema/ })).toHaveAttribute('href', '/recipes/r1')
   })
 })
 

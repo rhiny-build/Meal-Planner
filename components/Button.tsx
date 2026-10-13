@@ -1,7 +1,8 @@
 /**
  * Reusable Button Component
  *
- * Supports light and dark themes with variants and sizes
+ * Variants and sizes in the app's one visual style. Every size is at least
+ * 44px tall so it is easy to tap.
  */
 
 import { ButtonHTMLAttributes } from 'react'
@@ -20,18 +21,18 @@ export default function Button({
   ...props
 }: ButtonProps) {
   const baseStyles =
-    'font-medium rounded transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-neutral-900 disabled:opacity-50 disabled:cursor-not-allowed'
+    'font-semibold rounded-card transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed'
 
   const variantStyles = {
-    primary: 'bg-blue-600 dark:bg-fuchsia-600 text-white hover:bg-blue-700 dark:hover:bg-fuchsia-500 focus:ring-blue-500 dark:focus:ring-fuchsia-500',
-    secondary: 'bg-gray-200 dark:bg-neutral-700 text-gray-900 dark:text-neutral-100 hover:bg-gray-300 dark:hover:bg-neutral-600 focus:ring-gray-500 dark:focus:ring-neutral-500',
-    danger: 'bg-red-600 text-white hover:bg-red-700 dark:hover:bg-red-500 focus:ring-red-500',
+    primary: 'bg-primary text-white hover:bg-primary-dark',
+    secondary: 'bg-sunken text-ink hover:bg-line',
+    danger: 'bg-danger text-white hover:bg-danger-dark',
   }
 
   const sizeStyles = {
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-4 py-2 text-base',
-    lg: 'px-6 py-3 text-lg',
+    sm: 'px-3 min-h-11 text-sm',
+    md: 'px-4 min-h-11 text-base',
+    lg: 'px-6 min-h-12 text-lg',
   }
 
   const combinedClassName = `${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`

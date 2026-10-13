@@ -6,6 +6,10 @@
  * timer. Picks the view: one step per screen for a recipe with a method, a
  * one-screen view for quick recipes, ingredients plus a note when there is
  * no method.
+ *
+ * Full screen by default. With `isEmbedded` it sits inside the recipe page's
+ * Method tab instead: no header, and the servings are owned by the page so
+ * the Ingredients tab and the steps always agree.
  */
 
 'use client'
@@ -14,6 +18,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useCookTimers } from '@/lib/cook/useCookTimers'
 import { useScreenWakeLock } from '@/lib/cook/useScreenWakeLock'
+import { useSwipe } from '@/lib/cook/useSwipe'
 import { getServingsScale } from '@/lib/cook/scaleServings'
 import {
   clampStepIndex,
@@ -32,16 +37,31 @@ import type { CookRecipeData } from './cookTypes'
 
 interface CookScreenProps {
   recipe: CookRecipeData
+  /** Render inside a page instead of as a full-screen overlay. */
+  isEmbedded?: boolean
+  /** Servings chosen by the page (embedded only); omit to let cook mode own them. */
+  servings?: number
+  onServingsChange?: (servings: number) => void
+  /** Embedded only: false while the Method tab is hidden, so the screen can sleep. */
+  isActive?: boolean
 }
 
-const bottomButton = 'min-h-16 rounded-2xl text-xl font-bold'
+const bottomButton = 'min-h-16 rounded-panel text-xl font-bold'
 
-export default function CookScreen({ recipe }: CookScreenProps) {
+export default function CookScreen({
+  recipe,
+  isEmbedded = false,
+  servings: controlledServings,
+  onServingsChange,
+  isActive = true,
+}: CookScreenProps) {
   const [stepIndex, setStepIndex] = useState(0)
-  const [servings, setServings] = useState(recipe.servings ?? 1)
+  const [ownServings, setOwnServings] = useState(recipe.servings ?? 1)
+  const servings = controlledServings ?? ownServings
+  const setServings = onServingsChange ?? setOwnServings
   const [isIngredientsOpen, setIsIngredientsOpen] = useState(false)
   const timers = useCookTimers()
-  const isAwake = useScreenWakeLock()
+  const isAwake = useScreenWakeLock(isActive)
 
   const stepCount = recipe.steps.length
   const scale = getServingsScale(servings, recipe.servings)
@@ -51,26 +71,36 @@ export default function CookScreen({ recipe }: CookScreenProps) {
   const safeIndex = clampStepIndex(stepIndex, stepCount)
   const isLast = isLastStep(safeIndex, stepCount)
 
+  const stepSwipe = useSwipe({
+    onSwipeLeft: () => setStepIndex((i) => getNextStepIndex(i, stepCount)),
+    onSwipeRight: () => setStepIndex((i) => getPreviousStepIndex(i, stepCount)),
+  })
+
   useEffect(() => {
-    if (!isStepping) return
+    if (!isStepping || !isActive) return
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'ArrowRight') setStepIndex((i) => getNextStepIndex(i, stepCount))
       if (event.key === 'ArrowLeft') setStepIndex((i) => getPreviousStepIndex(i, stepCount))
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [isStepping, stepCount])
+  }, [isStepping, isActive, stepCount])
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col bg-white dark:bg-neutral-900 text-gray-900 dark:text-neutral-100"
+      className={
+        isEmbedded
+          ? 'flex flex-1 flex-col min-h-0 text-ink'
+          : 'fixed inset-0 z-50 flex flex-col bg-ground text-ink'
+      }
       data-testid="cook-screen"
     >
-      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 border-b border-gray-200 dark:border-neutral-700">
+      {!isEmbedded && (
+      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 border-b border-line">
         <div className="flex items-center gap-3 min-w-0">
           <Link
             href={`/recipes/${recipe.id}`}
-            className="flex-none min-h-11 px-3 inline-flex items-center rounded-xl bg-gray-200 dark:bg-neutral-700 font-semibold"
+            className="flex-none min-h-11 px-3 inline-flex items-center rounded-card bg-sunken font-semibold"
             aria-label="Leave cook mode"
           >
             &times; Close
@@ -80,21 +110,22 @@ export default function CookScreen({ recipe }: CookScreenProps) {
               {recipe.name}
             </h1>
             {isAwake && (
-              <p className="text-xs text-gray-500 dark:text-neutral-400">Screen stays on</p>
+              <p className="text-xs text-ink-soft">Screen stays on</p>
             )}
           </div>
         </div>
         {recipe.servings ? (
           <ServingsControl servings={servings} onChange={setServings} />
         ) : (
-          <p className="text-sm text-gray-600 dark:text-neutral-400">Amounts as written</p>
+          <p className="text-sm text-ink-soft">Amounts as written</p>
         )}
       </header>
+      )}
 
       {isStepping && (
-        <div className="h-1.5 bg-gray-200 dark:bg-neutral-700" aria-hidden>
+        <div className="h-1.5 bg-sunken " aria-hidden>
           <div
-            className="h-full bg-blue-600 dark:bg-fuchsia-500 transition-all"
+            className="h-full bg-primary transition-all"
             style={{ width: `${((safeIndex + 1) / stepCount) * 100}%` }}
           />
         </div>
@@ -112,7 +143,9 @@ export default function CookScreen({ recipe }: CookScreenProps) {
       )}
 
       {isStepping ? (
+        <div className="flex flex-1 flex-col min-h-0" {...stepSwipe}>
         <CookStepView
+          isEmbedded={isEmbedded}
           step={recipe.steps[safeIndex]}
           stepNumber={safeIndex + 1}
           stepCount={stepCount}
@@ -124,6 +157,7 @@ export default function CookScreen({ recipe }: CookScreenProps) {
           onPauseTimer={timers.pauseTimer}
           onResetTimer={timers.resetTimer}
         />
+        </div>
       ) : isQuick ? (
         <CookQuickView
           recipe={recipe}
@@ -139,38 +173,43 @@ export default function CookScreen({ recipe }: CookScreenProps) {
         <CookNoMethod recipe={recipe} servings={servings} scale={scale} />
       )}
 
+      {(isStepping || !isEmbedded) && (
       <nav
-        className="flex gap-3 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-gray-200 dark:border-neutral-700"
+        className={`flex gap-3 px-4 pt-3 ${
+          isEmbedded ? 'pb-1' : 'pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-line bg-surface'
+        }`}
         aria-label="Cook controls"
       >
         {isStepping ? (
           <>
             <button
               type="button"
-              className={`${bottomButton} flex-1 bg-gray-200 dark:bg-neutral-700 disabled:opacity-40`}
+              className={`${bottomButton} flex-1 bg-sunken disabled:opacity-40`}
               disabled={isFirstStep(safeIndex)}
               onClick={() => setStepIndex(getPreviousStepIndex(safeIndex, stepCount))}
             >
               Back
             </button>
-            <button
-              type="button"
-              className={`${bottomButton} flex-none px-5 bg-amber-100 text-amber-900 dark:bg-amber-900 dark:text-amber-100`}
-              onClick={() => setIsIngredientsOpen(true)}
-            >
-              Ingredients
-            </button>
+            {!isEmbedded && (
+              <button
+                type="button"
+                className={`${bottomButton} flex-none px-5 bg-accent-soft text-ink`}
+                onClick={() => setIsIngredientsOpen(true)}
+              >
+                Ingredients
+              </button>
+            )}
             {isLast ? (
               <Link
-                href={`/recipes/${recipe.id}`}
-                className={`${bottomButton} flex-1 inline-flex items-center justify-center bg-green-600 text-white`}
+                href={isEmbedded ? '/' : `/recipes/${recipe.id}`}
+                className={`${bottomButton} flex-1 inline-flex items-center justify-center bg-primary text-white`}
               >
-                Finish
+                {isEmbedded ? 'Done, back to tonight' : 'Finish'}
               </Link>
             ) : (
               <button
                 type="button"
-                className={`${bottomButton} flex-1 bg-blue-600 dark:bg-fuchsia-600 text-white`}
+                className={`${bottomButton} flex-1 bg-accent text-ink`}
                 onClick={() => setStepIndex(getNextStepIndex(safeIndex, stepCount))}
               >
                 Next
@@ -180,12 +219,13 @@ export default function CookScreen({ recipe }: CookScreenProps) {
         ) : (
           <Link
             href={`/recipes/${recipe.id}`}
-            className={`${bottomButton} flex-1 inline-flex items-center justify-center bg-green-600 text-white`}
+            className={`${bottomButton} flex-1 inline-flex items-center justify-center bg-primary text-white`}
           >
             Done
           </Link>
         )}
       </nav>
+      )}
 
       {isIngredientsOpen && (
         <IngredientsSheet

@@ -83,11 +83,11 @@ export default function EmbeddingReviewModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
       <div className="w-full max-w-2xl my-8">
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
+        <div className="bg-white rounded-card shadow-lg p-6">
+          <h2 className="text-xl font-bold text-ink mb-1">
             Before we generate your list...
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+          <p className="text-sm text-ink-soft mb-6">
             We found {suggestions.length} possible match{suggestions.length !== 1 ? 'es' : ''} to
             items already in your pantry. Review each one so we can keep your shopping list accurate.
           </p>
@@ -108,7 +108,7 @@ export default function EmbeddingReviewModal({
           </div>
 
           <div className="mt-6 flex items-center justify-between">
-            <span className="text-sm text-gray-500 dark:text-gray-400">
+            <span className="text-sm text-ink-soft">
               {resolvedCount} of {suggestions.length} reviewed
             </span>
             <Button disabled={isPending} onClick={onComplete}>

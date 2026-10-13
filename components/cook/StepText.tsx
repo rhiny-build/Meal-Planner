@@ -26,7 +26,7 @@ export default function StepText({ text, ingredients, scale }: StepTextProps) {
         if (segment.type === 'text') return <span key={index}>{segment.text}</span>
         const ingredient = ingredientsById.get(segment.id)
         return (
-          <strong key={index} className="font-bold text-blue-700 dark:text-fuchsia-300">
+          <strong key={index} className="font-bold text-primary">
             {ingredient ? describeIngredient(ingredient, scale) : UNKNOWN_INGREDIENT_TEXT}
           </strong>
         )

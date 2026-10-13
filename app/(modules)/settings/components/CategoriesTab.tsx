@@ -84,25 +84,25 @@ export default function CategoriesTab({ categories }: CategoriesTabProps) {
   return (
     <div className="space-y-6">
       {/* Description */}
-      <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+      <div className="p-4 bg-ground rounded-card">
+        <p className="text-sm text-ink-soft">
           Categories organize your staples and restock items by store section (e.g., Dairy, Produce, Household).
         </p>
-        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+        <p className="text-xs text-ink-soft mt-1">
           {categories.length} {categories.length === 1 ? 'category' : 'categories'}
         </p>
       </div>
 
       {/* Categories List */}
       {categories.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
-          <p className="text-gray-600 dark:text-gray-400">
+        <div className="text-center py-12 bg-ground rounded-card">
+          <p className="text-ink-soft">
             No categories yet. Add one below.
           </p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow overflow-hidden">
-          <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+        <div className="bg-white rounded-card shadow overflow-hidden">
+          <ul className="divide-y divide-line">
             {categories.map(category => {
               const itemCount = category.items.length
 
@@ -122,10 +122,10 @@ export default function CategoriesTab({ categories }: CategoriesTabProps) {
                   deleteTitle={itemCount > 0 ? `Cannot delete - has ${itemCount} items` : 'Delete'}
                 >
                   <div className="flex-1">
-                    <span className="text-gray-900 dark:text-gray-100">
+                    <span className="text-ink">
                       {category.name}
                     </span>
-                    <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                    <span className="ml-2 text-xs text-ink-soft">
                       ({itemCount} {itemCount === 1 ? 'item' : 'items'})
                     </span>
                   </div>
@@ -137,8 +137,8 @@ export default function CategoriesTab({ categories }: CategoriesTabProps) {
       )}
 
       {/* Add Category Form */}
-      <div className="p-4 bg-white dark:bg-gray-900 rounded-lg shadow">
-        <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">
+      <div className="p-4 bg-white rounded-card shadow">
+        <h3 className="font-medium text-ink mb-3">
           Add New Category
         </h3>
         <div className="flex flex-col sm:flex-row gap-3">
@@ -147,7 +147,7 @@ export default function CategoriesTab({ categories }: CategoriesTabProps) {
             value={newCategoryName}
             onChange={e => setNewCategoryName(e.target.value)}
             placeholder="Category name (e.g., Bakery)"
-            className="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+            className="flex-1 px-3 py-2 border rounded-card"
             onKeyDown={e => {
               if (e.key === 'Enter' && newCategoryName.trim()) {
                 handleAddCategory()

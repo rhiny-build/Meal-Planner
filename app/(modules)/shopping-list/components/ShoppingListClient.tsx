@@ -7,6 +7,7 @@
  * and modals. State and handlers live in useShoppingList hook.
  */
 
+import PageHeader from '@/components/PageHeader'
 import { useShoppingList } from '../hooks/useShoppingList'
 import type { Tab } from '../hooks/useShoppingList'
 import type { Recipe } from '@/types'
@@ -75,8 +76,8 @@ export default function ShoppingListClient({
   } = useShoppingList({ initialList, initialWeekStart, startDay, initialTab, categories })
 
   return (
-    <div className="max-w-4xl mx-auto px-4">
-      <h1 className="text-3xl font-bold mb-6">Shopping List</h1>
+    <div className="max-w-xl md:max-w-4xl mx-auto px-4">
+      <PageHeader title="Shopping list" />
 
       <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
@@ -105,8 +106,8 @@ export default function ShoppingListClient({
             const mealItems = optimisticItems.filter(item => item.source === 'recipe')
             if (mealItems.length === 0) {
               return (
-                <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <p className="text-gray-600 dark:text-gray-400">
+                <div className="text-center py-12 bg-ground rounded-card">
+                  <p className="text-ink-soft">
                     No meal ingredients yet. Save a meal plan to see ingredients here.
                   </p>
                 </div>

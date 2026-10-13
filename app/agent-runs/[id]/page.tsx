@@ -23,8 +23,8 @@ export const metadata = { title: 'Agent run' }
 function Json({ value, summary, open = false }: { value: unknown; summary: string; open?: boolean }) {
   return (
     <details open={open} className="mt-1">
-      <summary className="cursor-pointer text-sm text-blue-700 dark:text-fuchsia-400">{summary}</summary>
-      <pre className="mt-1 p-2 text-xs bg-gray-100 dark:bg-neutral-900 rounded overflow-x-auto max-h-96 whitespace-pre-wrap break-words">
+      <summary className="cursor-pointer text-sm text-primary">{summary}</summary>
+      <pre className="mt-1 p-2 text-xs bg-sunken rounded-card overflow-x-auto max-h-96 whitespace-pre-wrap break-words">
         {pretty(value)}
       </pre>
     </details>
@@ -48,7 +48,7 @@ export default async function AgentRunPage({ params }: { params: Promise<{ id: s
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
-      <Link href="/agent-runs" className="text-sm text-blue-700 dark:text-fuchsia-400 underline">
+      <Link href="/agent-runs" className="text-sm text-primary underline">
         All runs
       </Link>
 
@@ -56,7 +56,7 @@ export default async function AgentRunPage({ params }: { params: Promise<{ id: s
         <h1 className="text-2xl font-bold">{run.agent}</h1>
         <StatusBadge status={run.status} />
       </div>
-      <dl className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-gray-600 dark:text-gray-400 mb-4">
+      <dl className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-ink-soft mb-4">
         <div>{formatWhen(run.startedAt)}</div>
         <div>trigger: {run.trigger}</div>
         <div>{formatDuration(run.startedAt, run.finishedAt)}</div>
@@ -68,7 +68,7 @@ export default async function AgentRunPage({ params }: { params: Promise<{ id: s
         )}
       </dl>
 
-      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
+      <section className="bg-white rounded-card shadow p-4 mb-4">
         <h2 className="font-semibold">Asked to</h2>
         <Json value={run.input} summary="Input" open />
       </section>
@@ -80,14 +80,14 @@ export default async function AgentRunPage({ params }: { params: Promise<{ id: s
           return (
             <li
               key={step.id}
-              className={`rounded-lg shadow p-3 border-l-4 bg-white dark:bg-gray-800 ${
+              className={`rounded-card shadow p-3 border-l-4 bg-white  ${
                 isError
-                  ? 'border-red-500'
+                  ? 'border-danger'
                   : step.kind === 'model'
-                    ? 'border-blue-500 dark:border-fuchsia-500'
+                    ? 'border-primary '
                     : step.kind === 'note'
-                      ? 'border-yellow-500'
-                      : 'border-gray-300 dark:border-neutral-600'
+                      ? 'border-accent'
+                      : 'border-line '
               }`}
             >
               <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
@@ -97,7 +97,7 @@ export default async function AgentRunPage({ params }: { params: Promise<{ id: s
                   {isError ? ' (error)' : ''}
                 </span>
                 {step.inputTokens !== null && (
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-ink-soft">
                     {formatTokens(step.inputTokens, step.outputTokens ?? 0)} tokens
                   </span>
                 )}
@@ -108,14 +108,14 @@ export default async function AgentRunPage({ params }: { params: Promise<{ id: s
                   <ul className="mt-1 space-y-1 text-sm">
                     {summariseModelContent(step.payload).map((block, i) => (
                       <li key={i}>
-                        <span className="text-gray-500">{block.label}</span>
+                        <span className="text-ink-soft">{block.label}</span>
                         {block.kind === 'text' || block.kind === 'thinking' ? (
                           <p className="whitespace-pre-wrap break-words">{block.detail}</p>
                         ) : null}
                       </li>
                     ))}
                   </ul>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-ink-soft mt-1">
                     stopped because: {String((step.payload as any)?.stopReason ?? 'unknown')}
                   </p>
                   <Json value={step.payload} summary="Raw response" />
@@ -137,13 +137,13 @@ export default async function AgentRunPage({ params }: { params: Promise<{ id: s
         })}
       </ol>
 
-      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+      <section className="bg-white rounded-card shadow p-4">
         <h2 className="font-semibold">Outcome</h2>
         {run.status === 'failed' && (
-          <p className="text-red-600 dark:text-red-400 text-sm mt-1">{run.error ?? 'Failed'}</p>
+          <p className="text-danger text-sm mt-1">{run.error ?? 'Failed'}</p>
         )}
         {run.output !== null && <Json value={run.output} summary="Final output" open />}
-        {run.status === 'running' && <p className="text-sm text-gray-500 mt-1">Still running, or it stopped without finishing.</p>}
+        {run.status === 'running' && <p className="text-sm text-ink-soft mt-1">Still running, or it stopped without finishing.</p>}
       </section>
     </div>
   )

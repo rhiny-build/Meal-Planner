@@ -18,6 +18,7 @@ import type { DishTypeOption } from '@/lib/dishTypeConfig'
 import { useRecipes } from '@/lib/hooks/useRecipes'
 import RecipeCard from '@/components/RecipeCard'
 import Button from '@/components/Button'
+import PageHeader from '@/components/PageHeader'
 import RecipeFilters from './RecipeFilters'
 import RecipeModal from './RecipeModal'
 import InspireModal from './InspireModal'
@@ -124,18 +125,16 @@ export default function RecipesClient({
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Recipe Library</h1>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => setImportRequest({ input: '', autoStart: false })}>
-            Import
-          </Button>
-          <Button variant="secondary" onClick={() => setShowInspire(true)}>
-            Inspire Me
-          </Button>
-          <Button onClick={() => setShowForm(true)}>Add Recipe</Button>
-        </div>
+    <div className="max-w-xl md:max-w-5xl mx-auto px-4">
+      <PageHeader title="Recipes" eyebrow={`${recipes.length} in the book`} />
+      <div className="flex flex-wrap gap-2 pb-4">
+        <Button onClick={() => setShowForm(true)}>Add Recipe</Button>
+        <Button variant="secondary" onClick={() => setImportRequest({ input: '', autoStart: false })}>
+          Import
+        </Button>
+        <Button variant="secondary" onClick={() => setShowInspire(true)}>
+          Inspire Me
+        </Button>
       </div>
 
       {showForm && (
@@ -172,18 +171,18 @@ export default function RecipesClient({
         carbOptions={carbFilterOptions}
       />
 
-      <p className="text-gray-600 dark:text-gray-400 mb-4">
+      <p className="text-sm text-ink-soft mb-3 px-1">
         Showing {filteredRecipes.length} of {recipes.length} recipes
       </p>
 
       {filteredRecipes.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
-          <p className="text-gray-600 dark:text-gray-400">
+        <div className="text-center py-12 bg-surface rounded-2xl">
+          <p className="text-ink-soft">
             No recipes found. {recipes.length === 0 ? 'Add your first recipe!' : 'Try adjusting your filters.'}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
           {filteredRecipes.map(recipe => (
             <RecipeCard
               key={recipe.id}

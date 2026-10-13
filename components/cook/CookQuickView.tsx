@@ -45,7 +45,7 @@ export default function CookQuickView({
             <ol className="space-y-6 text-2xl leading-snug">
               {recipe.steps.map((step, index) => (
                 <li key={step.id} className="flex gap-3" data-testid="quick-step">
-                  <span className="flex-none font-bold text-blue-700 dark:text-fuchsia-300">
+                  <span className="flex-none font-bold text-primary">
                     {index + 1}.
                   </span>
                   <div className="space-y-3">
@@ -71,7 +71,7 @@ export default function CookQuickView({
           </>
         ) : (
           <>
-            <p className="mt-8 text-gray-600 dark:text-neutral-400" data-testid="no-method-note">
+            <p className="mt-8 text-ink-soft " data-testid="no-method-note">
               There&apos;s no method for this recipe yet.
             </p>
             <CookCaptureSlot recipe={recipe} servings={servings} />

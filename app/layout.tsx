@@ -1,15 +1,30 @@
 /**
  * Root Layout Component
  *
- * This is the main layout wrapper for the entire app.
- * Supports light and dark themes with toggle.
+ * Wraps every page: the app's fonts and background, the desktop top bar, the
+ * phone tab bar and toast notifications. One light look; there is no dark mode.
  */
 
 import type { Metadata, Viewport } from 'next'
+import { Bricolage_Grotesque, Figtree } from 'next/font/google'
 import './globals.css'
-import { ThemeProvider } from '@/components/ThemeProvider'
 import Header from '@/components/Header'
+import TabBar from '@/components/TabBar'
 import { Toaster } from 'sonner'
+
+const displayFont = Bricolage_Grotesque({
+  subsets: ['latin'],
+  weight: ['500', '700'],
+  variable: '--font-display',
+  display: 'swap',
+})
+
+const bodyFont = Figtree({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  variable: '--font-body',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'Family Meal Planner',
@@ -20,6 +35,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
+  themeColor: '#F3F5F2',
 }
 
 export default function RootLayout({
@@ -28,24 +44,17 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen flex flex-col">
-        <ThemeProvider>
-          <Header />
+    <html lang="en" className={`${displayFont.variable} ${bodyFont.variable}`}>
+      <body className="min-h-screen flex flex-col font-sans">
+        <Header />
 
-          {/* Main content area */}
-          <main className="flex-1">{children}</main>
+        {/* Room at the bottom on phones for the tab bar */}
+        <main className="flex-1 pb-[calc(var(--tabbar-height)+env(safe-area-inset-bottom))] md:pb-8">
+          {children}
+        </main>
 
-          {/* Footer */}
-          <footer className="bg-gray-100 dark:bg-neutral-800 border-t border-gray-200 dark:border-neutral-700 py-6">
-            <div className="container mx-auto px-4 text-center text-gray-600 dark:text-neutral-500">
-              <p>Family Meal Planner - Making dinner planning easy</p>
-            </div>
-          </footer>
-
-          {/* Toast notifications */}
-          <Toaster position="top-right" richColors />
-        </ThemeProvider>
+        <TabBar />
+        <Toaster position="top-center" />
       </body>
     </html>
   )

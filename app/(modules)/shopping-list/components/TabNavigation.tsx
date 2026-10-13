@@ -22,15 +22,15 @@ interface TabNavigationProps {
 
 export default function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
   return (
-    <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
+    <div className="flex gap-1.5 bg-sunken p-1 rounded-card mb-5 overflow-x-auto" role="tablist">
       {TABS.map(({ key, label }) => (
         <button
           key={key}
           onClick={() => onTabChange(key)}
-          className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === key
-              ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+          role="tab"
+          aria-selected={activeTab === key}
+          className={`flex-1 min-h-11 px-2 whitespace-nowrap rounded-[11px] text-[13px] sm:text-sm font-semibold transition-colors ${
+            activeTab === key ? 'bg-surface text-ink' : 'text-ink-soft'
           }`}
         >
           {label}

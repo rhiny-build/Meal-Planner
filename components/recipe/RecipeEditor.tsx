@@ -29,7 +29,7 @@ interface RecipeEditorProps {
   carbOptions: DishTypeOption[]
 }
 
-const inputClass = 'w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700'
+const inputClass = 'w-full p-2 border rounded-card  '
 
 function rowsFromLines(text: string): IngredientRow[] {
   return text
@@ -169,7 +169,7 @@ export default function RecipeEditor({
       {/* Recipe Name */}
       <div>
         <label htmlFor="recipe-name" className="block text-sm font-medium mb-1">
-          Recipe Name <span className="text-red-600">*</span>
+          Recipe Name <span className="text-danger">*</span>
         </label>
         <input
           id="recipe-name"
@@ -210,10 +210,10 @@ export default function RecipeEditor({
           ).map(([value, label, hint]) => (
             <label
               key={value}
-              className={`cursor-pointer border rounded p-3 ${
+              className={`cursor-pointer border rounded-card p-3 ${
                 formData.kind === value
-                  ? 'border-blue-600 dark:border-fuchsia-500 bg-blue-50 dark:bg-fuchsia-900/20'
-                  : 'dark:border-gray-700'
+                  ? 'border-primary bg-primary-soft '
+                  : ''
               }`}
             >
               <input
@@ -225,7 +225,7 @@ export default function RecipeEditor({
                 className="mr-2"
               />
               <span className="font-medium">{label}</span>
-              <span className="block text-xs text-gray-600 dark:text-gray-400">{hint}</span>
+              <span className="block text-xs text-ink-soft">{hint}</span>
             </label>
           ))}
         </div>
@@ -337,7 +337,7 @@ export default function RecipeEditor({
               vegetableType: e.target.checked ? 'vegetable' : '',
             })
           }}
-          className="w-4 h-4 rounded border-gray-300 dark:border-gray-600"
+          className="w-4 h-4 rounded-card border-line"
         />
         <label htmlFor="vegetableType" className="text-sm font-medium">
           Includes vegetables
@@ -357,7 +357,7 @@ export default function RecipeEditor({
               isLunchAppropriate: e.target.checked,
             })
           }}
-          className="w-4 h-4 rounded border-gray-300 dark:border-gray-600"
+          className="w-4 h-4 rounded-card border-line"
         />
         <label htmlFor="isLunchAppropriate" className="text-sm font-medium">
           Good for lunch
@@ -385,14 +385,14 @@ export default function RecipeEditor({
       />
 
       {error && (
-        <p role="alert" className="text-red-600 text-sm">
+        <p role="alert" className="text-danger text-sm">
           {error}
         </p>
       )}
 
       {/* Form Actions */}
       <div
-        className="sticky bottom-0 -mx-4 flex gap-3 border-t bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-900 sm:-mx-6 sm:px-6"
+        className="sticky bottom-0 -mx-4 flex gap-3 border-t bg-white px-4 py-3 sm:-mx-6 sm:px-6"
         data-testid="editor-actions"
       >
         <Button type="submit" disabled={isSubmitting}>

@@ -28,7 +28,7 @@ interface IngredientsEditorProps {
   onPasteLines: (text: string) => void
 }
 
-const inputClass = 'w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700'
+const inputClass = 'w-full p-2 border rounded-card  '
 
 export default function IngredientsEditor({
   rows,
@@ -45,7 +45,7 @@ export default function IngredientsEditor({
   return (
     <section aria-labelledby="ingredients-heading" data-testid="ingredients-editor">
       <h3 id="ingredients-heading" className="text-lg font-semibold mb-2">
-        Ingredients <span className="text-red-600">*</span>
+        Ingredients <span className="text-danger">*</span>
       </h3>
 
       <ul className="space-y-3">
@@ -90,7 +90,7 @@ export default function IngredientsEditor({
                 onChange(rows.filter((r) => r.id !== row.id))
               }}
               aria-label={`Remove ingredient ${i + 1}`}
-              className="px-3 py-2 min-h-[2.5rem] rounded text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 col-start-3 row-start-1 sm:col-start-auto sm:row-start-auto"
+              className="px-3 py-2 min-h-[2.5rem] rounded-card text-danger hover:bg-danger-soft col-start-3 row-start-1 sm:col-start-auto sm:row-start-auto"
             >
               Remove
             </button>

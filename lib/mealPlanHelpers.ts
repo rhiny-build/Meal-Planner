@@ -111,7 +111,7 @@ export function calculateSelectedCount(weekPlan: WeekPlan[]): number {
 
 /**
  * Swap recipes between two days within the same column.
- * Used by drag-and-drop in MealPlanGrid.
+ * Used by the week list's "swap with another day".
  */
 export function swapRecipesInPlan(
   weekPlan: WeekPlan[],

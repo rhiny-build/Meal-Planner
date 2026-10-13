@@ -19,7 +19,7 @@ interface CaptureReviewProps {
   onDiscard: () => void
 }
 
-const smallButton = 'min-h-11 min-w-11 rounded-xl bg-gray-200 dark:bg-neutral-700 font-semibold disabled:opacity-30'
+const smallButton = 'min-h-11 min-w-11 rounded-card bg-sunken font-semibold disabled:opacity-30'
 
 export default function CaptureReview({ steps, ingredients, error, isSaving, onChange, onSave, onDiscard }: CaptureReviewProps) {
   const editable = ingredients.filter((ingredient) => !ingredient.id.startsWith('legacy-'))
@@ -34,20 +34,20 @@ export default function CaptureReview({ steps, ingredients, error, isSaving, onC
   }
 
   return (
-    <div className="mt-8 border-t border-gray-200 dark:border-neutral-700 pt-6" data-testid="capture-review">
+    <div className="mt-8 border-t border-line pt-6" data-testid="capture-review">
       <h2 className="text-2xl font-bold mb-1">Check the method</h2>
-      <p className="text-gray-600 dark:text-neutral-400 mb-4">
+      <p className="text-ink-soft mb-4">
         Written from your notes only. Fix anything, reorder or delete, then save. A name in {'{braces}'} is an ingredient of this recipe. Nothing is saved until you do.
       </p>
       <ol className="space-y-4">
         {steps.map((step, index) => (
-          <li key={index} className="rounded-xl bg-gray-100 dark:bg-neutral-800 p-3" data-testid="review-step">
+          <li key={index} className="rounded-card bg-sunken p-3" data-testid="review-step">
             <div className="flex items-center gap-2 mb-2">
-              <span className="font-bold text-blue-700 dark:text-fuchsia-300">Step {index + 1}</span>
+              <span className="font-bold text-primary">Step {index + 1}</span>
               {step.timerSeconds ? (
                 <button
                   type="button"
-                  className="text-sm rounded-full bg-amber-100 text-amber-900 px-3 py-1"
+                  className="text-sm rounded-full bg-accent-soft text-ink px-3 py-1"
                   onClick={() => update(index, { timerSeconds: null })}
                   aria-label="Remove timer"
                 >
@@ -60,7 +60,7 @@ export default function CaptureReview({ steps, ingredients, error, isSaving, onC
               onChange={(event) => update(index, { text: editorTextToStep(event.target.value, editable) })}
               rows={2}
               aria-label={`Step ${index + 1} text`}
-              className="w-full rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 p-2 text-lg"
+              className="w-full rounded-card border border-line bg-white p-2 text-lg"
             />
             <div className="mt-2 flex gap-2">
               <button type="button" className={smallButton} disabled={index === 0} onClick={() => move(index, -1)} aria-label={`Move step ${index + 1} up`}>
@@ -79,18 +79,18 @@ export default function CaptureReview({ steps, ingredients, error, isSaving, onC
       <div className="mt-4 flex flex-wrap gap-3">
         <button
           type="button"
-          className="min-h-12 rounded-xl px-5 font-semibold bg-green-600 text-white disabled:opacity-40"
+          className="min-h-12 rounded-card px-5 font-semibold bg-primary text-white disabled:opacity-40"
           disabled={isSaving || steps.every((step) => !step.text.trim())}
           onClick={onSave}
         >
           {isSaving ? 'Saving...' : 'Save method'}
         </button>
-        <button type="button" className="min-h-12 rounded-xl px-5 font-semibold bg-gray-200 dark:bg-neutral-700" disabled={isSaving} onClick={onDiscard}>
+        <button type="button" className="min-h-12 rounded-card px-5 font-semibold bg-sunken " disabled={isSaving} onClick={onDiscard}>
           Discard
         </button>
       </div>
       {error && (
-        <p role="alert" className="mt-3 text-red-700 dark:text-red-400" data-testid="capture-error">
+        <p role="alert" className="mt-3 text-danger " data-testid="capture-error">
           {error}
         </p>
       )}

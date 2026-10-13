@@ -141,6 +141,7 @@ describe('swapRecipesInPlan', () => {
   })
 })
 
+
 describe('applyGeneratedPlanToWeek', () => {
   it('should apply modifications to matching days', () => {
     const plan = makeWeekPlan()
