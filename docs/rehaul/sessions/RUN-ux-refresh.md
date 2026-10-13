@@ -26,7 +26,7 @@ Work on **`rehaul_phase3_ux`** (it exists; check it out). Use subagents if usefu
    - Recipes with no method: the Method page shows cook mode's existing no-method view (including "tell me as you go").
    - Edit stays reachable from the recipe page.
 4. **Recipe list cards** become short: name, kind, time, and whether it has a method. No ingredient lists on cards. Tapping a card opens the recipe page. Each card also gets a **Cook** shortcut.
-5. **Meal plan page** restyled as the week list in `Week.dc.html`: one row per day, with a swap button per day.
+5. **Meal plan page** restyled as the week list in `Week.dc.html`: one row per day. Each row shows **dinner (the protein slot) with its sides (carb, veg) underneath, and lunch as a small second line**. All 4 slots must stay editable, as today, and nothing the current grid can do may be lost. Add a swap button per day.
    - **Don't build** the "Drafted from your notes / Accept all" banner, the per-day reasons, or the "Ask" box. Those are Phase 3 agent features. Leave the existing AI fill working, restyled.
 6. **Navigation:** a bottom tab bar on phones (Tonight, Recipes, Week, Shopping), and an equivalent on desktop. Agent Runs and Admin move under Settings.
 7. **Shopping list:** restyle only. Ronen explicitly said not to change how it works.
