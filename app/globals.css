@@ -38,3 +38,8 @@ h3 {
     text-wrap: balance;
   }
 }
+
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--color-primary);
+}
