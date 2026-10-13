@@ -84,7 +84,7 @@ Accurate as of the docs-sync after S07 (12 Oct 2026). Test files (`*.test.ts`, `
 
 /prisma
 ├── schema.prisma, seed.ts
-├── migrateIngredients.ts     # Build step: legacy ingredient text -> Ingredient rows
+├── migrateIngredients.ts     # One-off (not on build): legacy ingredient text -> Ingredient rows
 ├── backfillIngredientAmounts.ts # Build step: fills Ingredient.amount (idempotent; --dry-run, --list)
 └── /migrations
 
@@ -93,7 +93,7 @@ Accurate as of the docs-sync after S07 (12 Oct 2026). Test files (`*.test.ts`, `
 /types/index.ts               # Shared types
 ```
 
-The Vercel build runs `prisma generate`, `prisma migrate deploy`, `migrateIngredients.ts`, `backfillIngredientAmounts.ts`, then `next build`.
+The Vercel build runs `prisma generate`, `prisma migrate deploy`, `backfillIngredientAmounts.ts`, then `next build`. `migrateIngredients.ts` is a one-off and no longer runs on build. Only `main` and `rehaul_phase*` branches deploy (`vercel.json`).
 
 ## Target Architecture (WIP)
 
