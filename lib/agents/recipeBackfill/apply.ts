@@ -46,7 +46,7 @@ export async function applyReport(prisma: PrismaClient, report: BackfillReport):
   return results
 }
 
-async function applyEntry(prisma: PrismaClient, entry: ReportEntry): Promise<Omit<ApplyResult, 'recipeId' | 'name' | 'action'>> {
+export async function applyEntry(prisma: PrismaClient, entry: ReportEntry): Promise<Omit<ApplyResult, 'recipeId' | 'name' | 'action'>> {
   if (entry.action === 'leave') return { status: 'nothing-to-do', detail: 'left alone' }
 
   const recipe = await prisma.recipe.findUnique({
