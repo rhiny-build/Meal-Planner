@@ -23,6 +23,19 @@ const recipe = {
 describe('discoverRecipes', () => {
   beforeEach(() => vi.clearAllMocks())
 
+  it('marks the system prompt and the prompt for caching', async () => {
+    mockAnthropic.messages.create.mockResolvedValue({
+      stop_reason: 'tool_use',
+      content: [{ type: 'tool_use', id: 't1', name: 'submit_recipes', input: { recipes: [] } }],
+    })
+
+    await discoverRecipes('quick chicken')
+
+    const request = mockAnthropic.messages.create.mock.calls[0][0]
+    expect(request.system[0].cache_control).toEqual({ type: 'ephemeral' })
+    expect(request.messages[0].content[0]).toMatchObject({ text: 'quick chicken', cache_control: { type: 'ephemeral' } })
+  })
+
   it('offers web search and returns recipes from submit_recipes', async () => {
     mockAnthropic.messages.create.mockResolvedValue({
       stop_reason: 'tool_use',

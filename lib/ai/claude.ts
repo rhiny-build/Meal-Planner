@@ -8,6 +8,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk'
+import { cachedSystem } from './cache'
 
 let client: Anthropic | undefined
 
@@ -38,7 +39,7 @@ export async function callForcedTool<T>(params: ForcedToolCall): Promise<T> {
   const message = await getAnthropic().messages.create({
     model: params.model,
     max_tokens: params.maxTokens,
-    system: `${params.system}\n\nRespond only by calling the ${params.toolName} tool.`,
+    system: cachedSystem(`${params.system}\n\nRespond only by calling the ${params.toolName} tool.`),
     messages: [{ role: 'user', content: params.prompt }],
     tools: [
       {
