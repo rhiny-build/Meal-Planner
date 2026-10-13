@@ -15,6 +15,7 @@ import {
   filterRecipesByType,
   calculateSelectedCount,
   getRecipeKeyFromColumn,
+  swapRecipesInPlan,
   applyGeneratedPlanToWeek,
   createEmptyWeekPlan,
 } from '@/lib/mealPlanHelpers'
@@ -76,6 +77,10 @@ export function useMealPlan(startDate: Date, weekStartDay: number = 1) {
     setWeekPlan(createEmptyWeekPlan(startDate, weekStartDay))
   }
 
+  const handleSwapRecipes = (column: MealSlotColumn, fromDayIndex: number, toDayIndex: number) => {
+    setWeekPlan(prev => swapRecipesInPlan(prev, column, fromDayIndex, toDayIndex))
+  }
+
   // Functional update: the AI call takes a while, so work from the latest plan, not the one
   // captured when the request started.
   const applyGeneratedPlan = (
@@ -101,6 +106,7 @@ export function useMealPlan(startDate: Date, weekStartDay: number = 1) {
     handleNoteChange,
     handleSave,
     handleClear,
+    handleSwapRecipes,
     applyGeneratedPlan,
   }
 }

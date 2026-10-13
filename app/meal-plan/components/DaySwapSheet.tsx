@@ -3,18 +3,23 @@
  *
  * The existing way of changing a day: a searchable dropdown for each meal
  * slot (lunch, protein, carb, vegetable) plus the day's note, shown as a
- * bottom sheet on phones and a dialog on desktop. Changes apply to the week
- * plan straight away; "Save plan" on the page stores them.
+ * bottom sheet on phones and a dialog on desktop. It also swaps a slot (or the
+ * whole dinner) with another day. Changes apply to the week plan straight
+ * away; "Save plan" on the page stores them.
  */
 
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { RecipeWithIngredients, WeekPlan } from '@/types'
 import type { MealSlotColumn } from '@/lib/mealPlanHelpers'
 import SearchableSelect from '@/components/SearchableSelect'
 import Button from '@/components/Button'
 import { recipesToOptions } from '../helpers/gridHelpers'
+
+type SwapSlot = MealSlotColumn | 'dinner'
+
+const DINNER_SLOTS: MealSlotColumn[] = ['protein', 'carb', 'vegetable']
 
 interface DaySwapSheetProps {
   dayIndex: number
@@ -26,6 +31,9 @@ interface DaySwapSheetProps {
   vegetableRecipes: RecipeWithIngredients[]
   onRecipeChange: (dayIndex: number, column: MealSlotColumn, recipeId: string) => void
   onNoteChange: (day: string, note: string) => void
+  onSwapRecipes: (column: MealSlotColumn, fromDayIndex: number, toDayIndex: number) => void
+  /** Names of every day in the week, in order (for "swap with another day"). */
+  dayNames: string[]
   onClose: () => void
 }
 
@@ -39,8 +47,13 @@ export default function DaySwapSheet({
   vegetableRecipes,
   onRecipeChange,
   onNoteChange,
+  onSwapRecipes,
+  dayNames,
   onClose,
 }: DaySwapSheetProps) {
+  const [swapSlot, setSwapSlot] = useState<SwapSlot>('dinner')
+  const [swapDayIndex, setSwapDayIndex] = useState<number | null>(null)
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose()
@@ -91,6 +104,51 @@ export default function DaySwapSheet({
             className="min-h-11 px-3 rounded-card bg-ground border border-line text-ink placeholder:text-ink-soft focus:outline-none focus:border-primary"
           />
         </div>
+        <fieldset className="flex flex-col gap-2 border-t border-line pt-4">
+          <legend className="text-sm font-semibold text-ink-soft pb-1">Swap with another day</legend>
+          <div className="flex gap-2">
+            <select
+              aria-label="What to swap"
+              value={swapSlot}
+              onChange={(event) => setSwapSlot(event.target.value as SwapSlot)}
+              className="flex-1 min-h-11 px-3 rounded-card bg-surface border border-line text-ink"
+            >
+              <option value="dinner">Whole dinner</option>
+              {slots.map((slot) => (
+                <option key={slot.column} value={slot.column}>
+                  {slot.label}
+                </option>
+              ))}
+            </select>
+            <select
+              aria-label="Swap with day"
+              value={swapDayIndex ?? ''}
+              onChange={(event) => setSwapDayIndex(event.target.value === '' ? null : Number(event.target.value))}
+              className="flex-1 min-h-11 px-3 rounded-card bg-surface border border-line text-ink"
+            >
+              <option value="">Day...</option>
+              {dayNames.map((name, index) =>
+                index === dayIndex ? null : (
+                  <option key={name} value={index}>
+                    {name}
+                  </option>
+                )
+              )}
+            </select>
+          </div>
+          <Button
+            variant="secondary"
+            disabled={swapDayIndex === null}
+            onClick={() => {
+              if (swapDayIndex === null) return
+              const columns = swapSlot === 'dinner' ? DINNER_SLOTS : [swapSlot]
+              columns.forEach((column) => onSwapRecipes(column, dayIndex, swapDayIndex))
+              setSwapDayIndex(null)
+            }}
+          >
+            Swap
+          </Button>
+        </fieldset>
         <Button size="lg" onClick={onClose}>
           Done
         </Button>

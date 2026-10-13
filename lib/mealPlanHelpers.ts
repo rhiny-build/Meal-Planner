@@ -109,6 +109,26 @@ export function calculateSelectedCount(weekPlan: WeekPlan[]): number {
   }, 0)
 }
 
+/**
+ * Swap recipes between two days within the same column.
+ * Used by the week list's "swap with another day".
+ */
+export function swapRecipesInPlan(
+  weekPlan: WeekPlan[],
+  column: MealSlotColumn,
+  fromDayIndex: number,
+  toDayIndex: number
+): WeekPlan[] {
+  const newPlan = [...weekPlan]
+  const recipeKey = getRecipeKeyFromColumn(column)
+
+  const temp = newPlan[fromDayIndex][recipeKey]
+  newPlan[fromDayIndex] = { ...newPlan[fromDayIndex], [recipeKey]: newPlan[toDayIndex][recipeKey] }
+  newPlan[toDayIndex] = { ...newPlan[toDayIndex], [recipeKey]: temp }
+
+  return newPlan
+}
+
 const YMD_RE = /^\d{4}-\d{2}-\d{2}$/
 
 /**

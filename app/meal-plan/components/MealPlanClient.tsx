@@ -46,12 +46,14 @@ export default function MealPlanClient({ weekStartDay }: MealPlanClientProps) {
     proteinRecipes,
     carbRecipes,
     vegetableRecipes,
+    selectedCount,
     isLoading,
     isSaving,
     handleRecipeChange,
     handleNoteChange,
     handleSave,
     handleClear,
+    handleSwapRecipes,
     applyGeneratedPlan,
   } = useMealPlan(startDate, weekStartDay)
 
@@ -126,6 +128,9 @@ export default function MealPlanClient({ weekStartDay }: MealPlanClientProps) {
         onSave={handleSave}
         onClear={handleClear}
       />
+      <p className="text-sm text-ink-soft pb-3 px-1" data-testid="selected-count">
+        {selectedCount} of 21 meals planned
+      </p>
 
       {/* Filling the empty slots with Claude: measured 9-13 s */}
       <AiProgress
@@ -144,6 +149,7 @@ export default function MealPlanClient({ weekStartDay }: MealPlanClientProps) {
         vegetableRecipes={vegetableRecipes}
         onRecipeChange={handleRecipeChange}
         onNoteChange={handleNoteChange}
+        onSwapRecipes={handleSwapRecipes}
       />
     </div>
   )

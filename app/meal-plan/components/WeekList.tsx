@@ -11,9 +11,9 @@
 import { useEffect, useState } from 'react'
 import type { RecipeWithIngredients, WeekPlan } from '@/types'
 import type { MealSlotColumn } from '@/lib/mealPlanHelpers'
-import type { PlanDay } from '@/lib/tonight'
 import { formatDateParam } from '@/lib/dateUtils'
 import WeekDayRow from './WeekDayRow'
+import type { DaySlots } from './WeekDayDetails'
 import DaySwapSheet from './DaySwapSheet'
 
 interface WeekListProps {
@@ -25,6 +25,7 @@ interface WeekListProps {
   vegetableRecipes: RecipeWithIngredients[]
   onRecipeChange: (dayIndex: number, column: MealSlotColumn, recipeId: string) => void
   onNoteChange: (day: string, note: string) => void
+  onSwapRecipes: (column: MealSlotColumn, fromDayIndex: number, toDayIndex: number) => void
 }
 
 export default function WeekList({
@@ -36,6 +37,7 @@ export default function WeekList({
   vegetableRecipes,
   onRecipeChange,
   onNoteChange,
+  onSwapRecipes,
 }: WeekListProps) {
   const [openDayIndex, setOpenDayIndex] = useState<number | null>(null)
   const [hasHandledDayParam, setHasHandledDayParam] = useState(false)
@@ -56,11 +58,11 @@ export default function WeekList({
     <>
       <ul className="flex flex-col gap-2" data-testid="week-list">
         {weekPlan.map((dayPlan, index) => {
-          const plan: PlanDay = {
-            dayOfWeek: dayPlan.day,
-            proteinRecipe: findRecipe(dayPlan.proteinRecipeId),
-            carbRecipe: findRecipe(dayPlan.carbRecipeId),
-            vegetableRecipe: findRecipe(dayPlan.vegetableRecipeId),
+          const slots: DaySlots = {
+            lunch: findRecipe(dayPlan.lunchRecipeId),
+            protein: findRecipe(dayPlan.proteinRecipeId),
+            carb: findRecipe(dayPlan.carbRecipeId),
+            vegetable: findRecipe(dayPlan.vegetableRecipeId),
           }
           return (
             <WeekDayRow
@@ -68,8 +70,7 @@ export default function WeekList({
               day={dayPlan.day}
               date={dayPlan.date}
               isToday={formatDateParam(dayPlan.date) === todayKey}
-              plan={plan}
-              lunchName={findRecipe(dayPlan.lunchRecipeId)?.name ?? null}
+              slots={slots}
               note={dayNotes[dayPlan.day] ?? ''}
               onSwap={() => setOpenDayIndex(index)}
             />
@@ -88,6 +89,8 @@ export default function WeekList({
           vegetableRecipes={vegetableRecipes}
           onRecipeChange={onRecipeChange}
           onNoteChange={onNoteChange}
+          onSwapRecipes={onSwapRecipes}
+          dayNames={weekPlan.map((dayPlan) => dayPlan.day)}
           onClose={() => setOpenDayIndex(null)}
         />
       )}
