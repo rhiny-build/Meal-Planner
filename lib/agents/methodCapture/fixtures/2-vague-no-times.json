@@ -1,0 +1,128 @@
+{
+ "case": "2-vague-no-times",
+ "model": "claude-haiku-5-5",
+ "ingredients": [
+  {
+   "id": "cmv6vm8lc000fjs0c1lnnt3s8",
+   "name": "beef mince"
+  },
+  {
+   "id": "cmv6vm8lc000gjs0cu09nih86",
+   "name": "onion"
+  },
+  {
+   "id": "cmv6vm8lc000hjs0c5pghlyu1",
+   "name": "garlic"
+  },
+  {
+   "id": "cmv6vm8lc000ijs0c7ljc6a0r",
+   "name": "garam masala"
+  },
+  {
+   "id": "cmv6vm8lc000jjs0caq6jj44v",
+   "name": "tinned tomatoes"
+  },
+  {
+   "id": "cmv6vm8lc000kjs0c9xkqzvjm",
+   "name": "peas"
+  }
+ ],
+ "notes": [
+  {
+   "at": 1791914400000,
+   "text": "fried the onion"
+  },
+  {
+   "at": 1791914460000,
+   "text": "mince in"
+  },
+  {
+   "at": 1791914520000,
+   "text": "spices"
+  },
+  {
+   "at": 1791914580000,
+   "text": "tomatoes, left it to bubble for a while"
+  },
+  {
+   "at": 1791914640000,
+   "text": "peas at the end"
+  }
+ ],
+ "responses": [
+  {
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "",
+     "signature": "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"
+    },
+    {
+     "id": "toolu_01Y8VRqpykpoaqkjNiEAMQkh",
+     "name": "submit_method",
+     "type": "tool_use",
+     "input": {
+      "steps": [
+       {
+        "text": "Fry {ing:cmv6vm8lc000gjs0cu09nih86} until softened.",
+        "from_notes": [
+         1
+        ],
+        "timer_seconds": null,
+        "timer_evidence": null
+       },
+       {
+        "text": "Add {ing:cmv6vm8lc000fjs0c1lnnt3s8}.",
+        "from_notes": [
+         2
+        ],
+        "timer_seconds": null,
+        "timer_evidence": null
+       },
+       {
+        "text": "Add the spices.",
+        "from_notes": [
+         3
+        ],
+        "timer_seconds": null,
+        "timer_evidence": null
+       },
+       {
+        "text": "Add {ing:cmv6vm8lc000jjs0caq6jj44v}.",
+        "from_notes": [
+         4
+        ],
+        "timer_seconds": null,
+        "timer_evidence": null
+       },
+       {
+        "text": "Leave it to bubble for a while.",
+        "from_notes": [
+         4
+        ],
+        "timer_seconds": null,
+        "timer_evidence": null
+       },
+       {
+        "text": "Add {ing:cmv6vm8lc000kjs0c9xkqzvjm} at the end.",
+        "from_notes": [
+         5
+        ],
+        "timer_seconds": null,
+        "timer_evidence": null
+       }
+      ]
+     },
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "usage": {
+    "input_tokens": 4,
+    "output_tokens": 1193
+   }
+  }
+ ]
+}

@@ -1,0 +1,118 @@
+{
+ "case": "1-clear-timings",
+ "model": "claude-haiku-5-5",
+ "ingredients": [
+  {
+   "id": "cmv6vm2cq0001js0c1oa4fp7v",
+   "name": "beef mince"
+  },
+  {
+   "id": "cmv6vm2cq0002js0cw8ivbr9q",
+   "name": "onion"
+  },
+  {
+   "id": "cmv6vm2cq0003js0cvj136ru8",
+   "name": "garlic"
+  },
+  {
+   "id": "cmv6vm2cq0004js0c3tzgj3yb",
+   "name": "garam masala"
+  },
+  {
+   "id": "cmv6vm2cq0005js0c42kvef8s",
+   "name": "tinned tomatoes"
+  },
+  {
+   "id": "cmv6vm2cq0006js0c6sb2fibc",
+   "name": "peas"
+  }
+ ],
+ "notes": [
+  {
+   "at": 1791914400000,
+   "text": "onions in the pan, oil first"
+  },
+  {
+   "at": 1791914760000,
+   "text": "onions soft, adding garlic and the mince"
+  },
+  {
+   "at": 1791915120000,
+   "text": "mince browned, in with garam masala and the tomatoes, simmering now"
+  },
+  {
+   "at": 1791916320000,
+   "text": "simmered 20 min, adding peas"
+  },
+  {
+   "at": 1791916560000,
+   "text": "done, served"
+  }
+ ],
+ "responses": [
+  {
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "",
+     "signature": "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"
+    },
+    {
+     "id": "toolu_01GcxTT6LmjGZxuD9MvWbZLk",
+     "name": "submit_method",
+     "type": "tool_use",
+     "input": {
+      "steps": [
+       {
+        "text": "Put {ing:cmv6vm2cq0002js0cw8ivbr9q} in the pan, oil first.",
+        "from_notes": [
+         1
+        ],
+        "timer_seconds": 360,
+        "timer_evidence": "[+0:00] onions in the pan, oil first; [+6:00] onions soft, adding garlic and the mince"
+       },
+       {
+        "text": "Add {ing:cmv6vm2cq0003js0cvj136ru8} and {ing:cmv6vm2cq0001js0c1oa4fp7v}, and brown the mince.",
+        "from_notes": [
+         2,
+         3
+        ],
+        "timer_seconds": 360,
+        "timer_evidence": "[+6:00] onions soft, adding garlic and the mince; [+12:00] mince browned"
+       },
+       {
+        "text": "Stir in {ing:cmv6vm2cq0004js0c3tzgj3yb} and {ing:cmv6vm2cq0005js0c42kvef8s}, then simmer.",
+        "from_notes": [
+         3,
+         4
+        ],
+        "timer_seconds": 1200,
+        "timer_evidence": "[+12:00] mince browned, in with garam masala and the tomatoes, simmering now; [+32:00] simmered 20 min, adding peas"
+       },
+       {
+        "text": "Add {ing:cmv6vm2cq0006js0c6sb2fibc}.",
+        "from_notes": [
+         4
+        ]
+       },
+       {
+        "text": "Serve.",
+        "from_notes": [
+         5
+        ]
+       }
+      ]
+     },
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "usage": {
+    "input_tokens": 4,
+    "output_tokens": 1887
+   }
+  }
+ ]
+}

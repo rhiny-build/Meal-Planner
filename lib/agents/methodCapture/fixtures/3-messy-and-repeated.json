@@ -1,0 +1,164 @@
+{
+ "case": "3-messy-and-repeated",
+ "model": "claude-haiku-5-5",
+ "ingredients": [
+  {
+   "id": "cmv6vmcnv000tjs0c6sl5gsfu",
+   "name": "beef mince"
+  },
+  {
+   "id": "cmv6vmcnv000ujs0cvgw4k9za",
+   "name": "onion"
+  },
+  {
+   "id": "cmv6vmcnv000vjs0cftegh1gu",
+   "name": "garlic"
+  },
+  {
+   "id": "cmv6vmcnv000wjs0calj8w681",
+   "name": "garam masala"
+  },
+  {
+   "id": "cmv6vmcnv000xjs0c2gis920h",
+   "name": "tinned tomatoes"
+  },
+  {
+   "id": "cmv6vmcnv000yjs0cqfq3bn4b",
+   "name": "peas"
+  }
+ ],
+ "notes": [
+  {
+   "at": 1791914400000,
+   "text": "ok starting. kids shouting"
+  },
+  {
+   "at": 1791914460000,
+   "text": "chop onion and garlic"
+  },
+  {
+   "at": 1791914640000,
+   "text": "onion in the pan"
+  },
+  {
+   "at": 1791914940000,
+   "text": "garlic now, oh and I forgot to say I heated the oil first"
+  },
+  {
+   "at": 1791915000000,
+   "text": "mince"
+  },
+  {
+   "at": 1791915480000,
+   "text": "tomatoes + garam masala"
+  },
+  {
+   "at": 1791915540000,
+   "text": "phone call, ignore"
+  },
+  {
+   "at": 1791916800000,
+   "text": "peas in, 2 more minutes then off"
+  }
+ ],
+ "responses": [
+  {
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "",
+     "signature": "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"
+    },
+    {
+     "id": "toolu_01DYS8V1CHq25udnQ9E5MB9E",
+     "name": "submit_method",
+     "type": "tool_use",
+     "input": {
+      "steps": [
+       {
+        "text": "Chop {ing:cmv6vmcnv000ujs0cvgw4k9za} and {ing:cmv6vmcnv000vjs0cftegh1gu}.",
+        "from_notes": [
+         2
+        ],
+        "timer_seconds": null,
+        "timer_evidence": null
+       },
+       {
+        "text": "Heat the oil.",
+        "from_notes": [
+         4
+        ],
+        "timer_seconds": null,
+        "timer_evidence": null
+       },
+       {
+        "text": "Add {ing:cmv6vmcnv000ujs0cvgw4k9za} to the pan.",
+        "from_notes": [
+         3
+        ],
+        "timer_seconds": null,
+        "timer_evidence": null
+       },
+       {
+        "text": "Add {ing:cmv6vmcnv000vjs0cftegh1gu}.",
+        "from_notes": [
+         4
+        ],
+        "timer_seconds": null,
+        "timer_evidence": null
+       },
+       {
+        "text": "Add {ing:cmv6vmcnv000tjs0c6sl5gsfu}.",
+        "from_notes": [
+         5
+        ],
+        "timer_seconds": null,
+        "timer_evidence": null
+       },
+       {
+        "text": "Add {ing:cmv6vmcnv000xjs0c2gis920h}.",
+        "from_notes": [
+         6
+        ],
+        "timer_seconds": null,
+        "timer_evidence": null
+       },
+       {
+        "text": "Add {ing:cmv6vmcnv000wjs0calj8w681}.",
+        "from_notes": [
+         6
+        ],
+        "timer_seconds": null,
+        "timer_evidence": null
+       },
+       {
+        "text": "Add {ing:cmv6vmcnv000yjs0cqfq3bn4b}.",
+        "from_notes": [
+         8
+        ],
+        "timer_seconds": null,
+        "timer_evidence": null
+       },
+       {
+        "text": "Cook for 2 minutes, then turn off the heat.",
+        "from_notes": [
+         8
+        ],
+        "timer_seconds": 120,
+        "timer_evidence": "peas in, 2 more minutes then off"
+       }
+      ]
+     },
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "usage": {
+    "input_tokens": 4,
+    "output_tokens": 1559
+   }
+  }
+ ]
+}

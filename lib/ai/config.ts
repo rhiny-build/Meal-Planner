@@ -33,6 +33,12 @@ export const AI_CONFIG = {
     /** Guard for the agent loop: most imports take 3-4 turns */
     maxTurns: 8,
   },
+  methodCapture: {
+    /** Cooking notes to steps. Haiku unless the 5-case sample says otherwise (docs/rehaul/logs/S09.md). */
+    model: CLAUDE_MODELS.cheap,
+    maxTokens: 3000,
+    maxTurns: 4,
+  },
   discoverRecipes: {
     model: CLAUDE_MODELS.agent,
     maxTokens: 4000,
