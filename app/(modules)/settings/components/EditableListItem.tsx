@@ -42,7 +42,7 @@ export default function EditableListItem({
   return (
     <li
       key={id}
-      className="px-4 py-3 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+      className="px-4 py-3 flex items-center gap-3 hover:bg-ground transition-colors"
     >
       {isEditing ? (
         <>
@@ -54,13 +54,13 @@ export default function EditableListItem({
               if (e.key === 'Enter') onSaveEdit()
               if (e.key === 'Escape') onCancelEdit()
             }}
-            className="flex-1 px-2 py-1 border rounded dark:bg-gray-800 dark:border-gray-600"
+            className="flex-1 px-2 py-1 border rounded-card"
             autoFocus
           />
           <button
             onClick={onSaveEdit}
             disabled={isPending}
-            className="p-1 text-green-600 hover:text-green-700 disabled:opacity-50"
+            className="p-1 text-primary hover:text-primary disabled:opacity-50"
             title="Save"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -69,7 +69,7 @@ export default function EditableListItem({
           </button>
           <button
             onClick={onCancelEdit}
-            className="p-1 text-gray-500 hover:text-gray-700"
+            className="p-1 text-ink-soft hover:text-ink"
             title="Cancel"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -83,7 +83,7 @@ export default function EditableListItem({
           <button
             onClick={onStartEdit}
             disabled={isPending}
-            className="p-1 text-gray-400 hover:text-blue-600 disabled:opacity-50"
+            className="p-1 text-ink-soft hover:text-primary disabled:opacity-50"
             title="Edit"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -95,8 +95,8 @@ export default function EditableListItem({
             disabled={isPending || deleteDisabled}
             className={`p-1 disabled:opacity-50 ${
               deleteDisabled
-                ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-                : 'text-gray-400 hover:text-red-600'
+                ? 'text-ink-soft cursor-not-allowed'
+                : 'text-ink-soft hover:text-danger'
             }`}
             title={deleteTitle}
           >

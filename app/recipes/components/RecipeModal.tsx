@@ -32,7 +32,7 @@ export default function RecipeModal({
       data-testid="recipe-modal-scroll"
     >
       <div className="flex min-h-full items-start justify-center p-2 sm:items-center sm:p-4">
-        <div className="bg-white dark:bg-gray-900 rounded-lg p-4 sm:p-6 max-w-2xl w-full">
+        <div className="bg-white rounded-card p-4 sm:p-6 max-w-2xl w-full">
           <h2 className="text-2xl font-bold mb-4">
             {recipe ? 'Edit Recipe' : 'Add New Recipe'}
           </h2>

@@ -10,6 +10,7 @@
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { Category, MasterListItem, DishType } from '@prisma/client'
+import PageHeader from '@/components/PageHeader'
 import MasterListsTab from './MasterListsTab'
 import CategoriesTab from './CategoriesTab'
 import DishTypesTab from './DishTypesTab'
@@ -61,18 +62,18 @@ export default function SettingsClient({
 
   return (
     <div className="max-w-4xl mx-auto px-4">
-      <h1 className="text-3xl font-bold mb-6">Settings</h1>
+      <PageHeader title="Settings" hideSettingsLink />
 
       {/* Tab Navigation */}
-      <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
+      <div className="flex gap-1.5 bg-sunken p-1 rounded-card mb-5 overflow-x-auto" role="tablist">
         {tabs.map(tab => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === tab.key
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+            role="tab"
+            aria-selected={activeTab === tab.key}
+            className={`flex-1 min-h-11 px-3 whitespace-nowrap rounded-[11px] text-sm font-semibold transition-colors ${
+              activeTab === tab.key ? 'bg-surface text-ink' : 'text-ink-soft'
             }`}
           >
             {tab.label}
@@ -97,12 +98,19 @@ export default function SettingsClient({
         <PreferencesTab weekStartDay={weekStartDay} />
       )}
 
-      <p className="mt-10 text-sm text-gray-500 dark:text-gray-400">
-        Admin:{' '}
-        <Link href="/admin/backfill" className="underline">
-          Recipe backfill
+      <section aria-labelledby="more-heading" className="mt-10 flex flex-col gap-2">
+        <h2 id="more-heading" className="font-display text-lg font-bold">
+          Behind the scenes
+        </h2>
+        <Link href="/agent-runs" className="min-h-14 bg-surface rounded-card px-4 py-3 flex flex-col justify-center">
+          <span className="font-semibold">Agent runs</span>
+          <span className="text-sm text-ink-soft">What the AI helpers did, step by step</span>
         </Link>
-      </p>
+        <Link href="/admin/backfill" className="min-h-14 bg-surface rounded-card px-4 py-3 flex flex-col justify-center">
+          <span className="font-semibold">Recipe backfill</span>
+          <span className="text-sm text-ink-soft">Admin: tidy up older recipes</span>
+        </Link>
+      </section>
     </div>
   )
 }

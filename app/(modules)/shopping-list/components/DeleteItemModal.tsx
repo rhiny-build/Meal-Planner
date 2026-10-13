@@ -59,7 +59,7 @@ export default function DeleteItemModal({
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-md w-full"
+        className="bg-white rounded-card p-6 max-w-md w-full"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-lg font-bold mb-4">
@@ -70,22 +70,22 @@ export default function DeleteItemModal({
           <div className="space-y-3">
             <button
               onClick={() => setMode('mapExisting')}
-              className="w-full text-left p-3 rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="w-full text-left p-3 rounded-card border hover:bg-ground transition-colors"
             >
               <p className="font-medium">Map to existing item</p>
-              <p className="text-sm text-gray-500">Link to something already on your master list</p>
+              <p className="text-sm text-ink-soft">Link to something already on your master list</p>
             </button>
             <button
               onClick={() => setMode('createNew')}
-              className="w-full text-left p-3 rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="w-full text-left p-3 rounded-card border hover:bg-ground transition-colors"
             >
               <p className="font-medium">Add to master list</p>
-              <p className="text-sm text-gray-500">Create a new staple or restock item</p>
+              <p className="text-sm text-ink-soft">Create a new staple or restock item</p>
             </button>
             <button
               onClick={onJustDelete}
               disabled={isPending}
-              className="w-full text-center text-sm text-gray-500 hover:text-red-500 transition-colors py-2"
+              className="w-full text-center text-sm text-ink-soft hover:text-danger transition-colors py-2"
             >
               Just remove it
             </button>
@@ -99,12 +99,12 @@ export default function DeleteItemModal({
               placeholder="Search master list..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-card bg-white focus:outline-none focus:ring-2 focus:ring-primary"
               autoFocus
             />
-            <ul className="max-h-48 overflow-y-auto border dark:border-gray-700 rounded-lg divide-y dark:divide-gray-700">
+            <ul className="max-h-48 overflow-y-auto border rounded-card divide-y">
               {filteredItems.length === 0 && (
-                <li className="p-3 text-sm text-gray-500">No items found</li>
+                <li className="p-3 text-sm text-ink-soft">No items found</li>
               )}
               {filteredItems.map((m) => (
                 <li
@@ -112,12 +112,12 @@ export default function DeleteItemModal({
                   onClick={() => setSelectedId(m.id)}
                   className={`p-3 cursor-pointer text-sm transition-colors ${
                     selectedId === m.id
-                      ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                      : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                      ? 'bg-primary-soft text-primary '
+                      : 'hover:bg-ground '
                   }`}
                 >
                   {m.name}
-                  <span className="text-xs text-gray-400 ml-2">({m.type})</span>
+                  <span className="text-xs text-ink-soft ml-2">({m.type})</span>
                 </li>
               ))}
             </ul>
@@ -144,7 +144,7 @@ export default function DeleteItemModal({
                 type="text"
                 value={newItemName}
                 onChange={(e) => setNewItemName(e.target.value)}
-                className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border rounded-card bg-white focus:outline-none focus:ring-2 focus:ring-primary"
                 autoFocus
               />
             </div>
@@ -155,10 +155,10 @@ export default function DeleteItemModal({
                   <button
                     key={t}
                     onClick={() => setNewItemType(t)}
-                    className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                    className={`flex-1 py-2 rounded-card border text-sm font-medium transition-colors ${
                       newItemType === t
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                        : 'border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        ? 'border-primary bg-primary-soft text-primary '
+                        : 'border-line hover:bg-ground '
                     }`}
                   >
                     {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -171,7 +171,7 @@ export default function DeleteItemModal({
               <select
                 value={selectedCategoryId}
                 onChange={(e) => setSelectedCategoryId(e.target.value)}
-                className="w-full px-3 py-2 border dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border rounded-card bg-white focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>

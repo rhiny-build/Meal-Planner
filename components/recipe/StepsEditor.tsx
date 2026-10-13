@@ -28,7 +28,7 @@ interface StepsEditorProps {
   ingredients: IngredientRow[]
 }
 
-const inputClass = 'w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700'
+const inputClass = 'w-full p-2 border rounded-card  '
 
 export default function StepsEditor({ steps, onChange, ingredients }: StepsEditorProps) {
   const areas = useRef<Record<string, HTMLTextAreaElement | null>>({})
@@ -56,10 +56,10 @@ export default function StepsEditor({ steps, onChange, ingredients }: StepsEdito
   return (
     <section aria-labelledby="method-heading" data-testid="steps-editor">
       <h3 id="method-heading" className="text-lg font-semibold mb-1">
-        Method <span className="text-sm font-normal text-gray-500">(optional)</span>
+        Method <span className="text-sm font-normal text-ink-soft">(optional)</span>
       </h3>
       {steps.length === 0 && (
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">No steps. That is fine.</p>
+        <p className="text-sm text-ink-soft mb-2">No steps. That is fine.</p>
       )}
 
       <ol className="space-y-3">
@@ -68,7 +68,7 @@ export default function StepsEditor({ steps, onChange, ingredients }: StepsEdito
           return (
             <li
               key={step.key}
-              className="border rounded p-3 dark:border-gray-700 space-y-2"
+              className="border rounded-card p-3 space-y-2"
               data-testid="step-row"
             >
               <div className="flex items-center justify-between gap-2">
@@ -79,7 +79,7 @@ export default function StepsEditor({ steps, onChange, ingredients }: StepsEdito
                     onClick={() => move(i, -1)}
                     disabled={i === 0}
                     aria-label={`Move step ${i + 1} up`}
-                    className="px-3 py-1.5 rounded border dark:border-gray-700 disabled:opacity-40"
+                    className="px-3 py-1.5 rounded-card border disabled:opacity-40"
                   >
                     Up
                   </button>
@@ -88,7 +88,7 @@ export default function StepsEditor({ steps, onChange, ingredients }: StepsEdito
                     onClick={() => move(i, 1)}
                     disabled={i === steps.length - 1}
                     aria-label={`Move step ${i + 1} down`}
-                    className="px-3 py-1.5 rounded border dark:border-gray-700 disabled:opacity-40"
+                    className="px-3 py-1.5 rounded-card border disabled:opacity-40"
                   >
                     Down
                   </button>
@@ -96,7 +96,7 @@ export default function StepsEditor({ steps, onChange, ingredients }: StepsEdito
                     type="button"
                     onClick={() => onChange(steps.filter((s) => s.key !== step.key))}
                     aria-label={`Remove step ${i + 1}`}
-                    className="px-3 py-1.5 rounded text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    className="px-3 py-1.5 rounded-card text-danger hover:bg-danger-soft"
                   >
                     Remove
                   </button>
@@ -126,7 +126,7 @@ export default function StepsEditor({ steps, onChange, ingredients }: StepsEdito
                     aria-label={`Timer minutes for step ${i + 1}`}
                     value={step.timerMinutes}
                     onChange={(e) => update(step.key, { timerMinutes: e.target.value })}
-                    className="w-20 p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
+                    className="w-20 p-2 border rounded-card"
                   />
                 </label>
                 {named.length > 0 && (
@@ -134,7 +134,7 @@ export default function StepsEditor({ steps, onChange, ingredients }: StepsEdito
                     aria-label={`Insert an ingredient into step ${i + 1}`}
                     value=""
                     onChange={(e) => e.target.value && insertIngredient(step, e.target.value)}
-                    className="p-2 border rounded dark:bg-gray-800 dark:border-gray-700 max-w-full"
+                    className="p-2 border rounded-card max-w-full"
                   >
                     <option value="">Insert ingredient...</option>
                     {named.map((n) => (
@@ -147,7 +147,7 @@ export default function StepsEditor({ steps, onChange, ingredients }: StepsEdito
               </div>
 
               {preview !== step.text && (
-                <p className="text-sm text-gray-600 dark:text-gray-400" data-testid="step-preview">
+                <p className="text-sm text-ink-soft " data-testid="step-preview">
                   Reads as: {preview}
                 </p>
               )}

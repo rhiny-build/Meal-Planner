@@ -24,14 +24,15 @@ export default async function AgentRunsPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
+      <Link href="/settings" className="inline-flex items-center min-h-11 text-sm font-semibold text-primary">&larr; Settings</Link>
       <h1 className="text-3xl font-bold mb-1">Agent runs</h1>
-      <p className="text-gray-600 dark:text-gray-400 mb-6">
+      <p className="text-ink-soft mb-6">
         Everything the app&apos;s agents did: what they were asked, which tools they used, and how they finished.
       </p>
 
       {runs.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
-          <p className="text-gray-600 dark:text-gray-400">No runs yet. Import a recipe to see one here.</p>
+        <div className="text-center py-12 bg-white rounded-card shadow">
+          <p className="text-ink-soft">No runs yet. Import a recipe to see one here.</p>
         </div>
       ) : (
         <ul className="space-y-3">
@@ -39,16 +40,16 @@ export default async function AgentRunsPage() {
             <li key={run.id}>
               <Link
                 href={`/agent-runs/${run.id}`}
-                className="block bg-white dark:bg-gray-800 rounded-lg shadow p-4 hover:ring-2 hover:ring-blue-500 dark:hover:ring-fuchsia-500"
+                className="block bg-white rounded-card shadow p-4 hover:ring-2 hover:ring-primary"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-semibold">{run.agent}</span>
                   <StatusBadge status={run.status} />
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 break-words">
+                <p className="text-sm text-ink-soft mt-1 break-words">
                   {summariseInput(run.input)}
                 </p>
-                <dl className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+                <dl className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-soft">
                   <div>{formatWhen(run.startedAt)}</div>
                   <div>trigger: {run.trigger}</div>
                   <div>{formatDuration(run.startedAt, run.finishedAt)}</div>

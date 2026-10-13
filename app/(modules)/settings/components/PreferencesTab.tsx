@@ -37,14 +37,14 @@ export default function PreferencesTab({ weekStartDay }: PreferencesTabProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <h2 className="text-lg font-semibold text-ink mb-4">
           Week Settings
         </h2>
 
         <div className="flex items-center gap-4">
           <label
             htmlFor="weekStartDay"
-            className="text-sm font-medium text-gray-700 dark:text-gray-300"
+            className="text-sm font-medium text-ink"
           >
             Week starts on
           </label>
@@ -53,7 +53,7 @@ export default function PreferencesTab({ weekStartDay }: PreferencesTabProps) {
             value={weekStartDay}
             onChange={handleChange}
             disabled={isPending}
-            className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            className="rounded-card border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 min-h-11"
           >
             {DAY_OPTIONS.map(option => (
               <option key={option.value} value={option.value}>
@@ -62,11 +62,11 @@ export default function PreferencesTab({ weekStartDay }: PreferencesTabProps) {
             ))}
           </select>
           {isPending && (
-            <span className="text-sm text-gray-500 dark:text-gray-400">Saving...</span>
+            <span className="text-sm text-ink-soft">Saving...</span>
           )}
         </div>
 
-        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+        <p className="mt-2 text-sm text-ink-soft">
           Controls which day the meal plan and shopping list weeks begin on.
           Existing weeks will keep their original start day.
         </p>

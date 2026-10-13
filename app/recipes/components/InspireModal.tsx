@@ -68,13 +68,13 @@ export default function InspireModal({ onAccept, onClose }: InspireModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-card shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">Inspire Me</h2>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              className="text-ink-soft hover:text-ink"
             >
               ✕
             </button>
@@ -91,7 +91,7 @@ export default function InspireModal({ onAccept, onClose }: InspireModalProps) {
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 placeholder="e.g., quick chicken dinners, vegetarian pasta dishes..."
-                className="flex-1 p-2 border rounded dark:bg-gray-700 dark:border-gray-600"
+                className="flex-1 p-2 border rounded-card"
                 disabled={isSearching}
                 rows={4}
               />
@@ -99,7 +99,7 @@ export default function InspireModal({ onAccept, onClose }: InspireModalProps) {
                 {isSearching ? 'Searching...' : 'Search'}
               </Button>
             </div>
-            {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
+            {error && <p className="text-danger text-sm mt-2">{error}</p>}
             {/* Searching the web with Claude: measured 6-8 s in the sandbox, 15-60 s in S01 */}
             <AiProgress
               active={isSearching}
@@ -116,19 +116,19 @@ export default function InspireModal({ onAccept, onClose }: InspireModalProps) {
               {suggestions.map((recipe, index) => (
                 <div
                   key={index}
-                  className={`border rounded-lg p-4 ${
+                  className={`border rounded-card p-4 ${
                     acceptedIds.has(index)
-                      ? 'bg-green-50 dark:bg-green-900/20 border-green-300'
-                      : rejectedRecipes.has(recipe.recipeUrl)? 'bg-red-50 dark:bg-red-900/20 border-red-300' :
-                      'dark:border-gray-600'
+                      ? 'bg-primary-soft border-primary'
+                      : rejectedRecipes.has(recipe.recipeUrl)? 'bg-danger-soft border-danger' :
+                      ''
                   }`}
                 >
                   <div className="flex justify-between items-start mb-2">
                     <h4 className="font-semibold text-lg">{recipe.name}</h4>
                     {acceptedIds.has(index) ? (
-                      <span className="text-green-600 font-medium">Added!</span>
+                      <span className="text-primary font-medium">Added!</span>
                     ) : rejectedRecipes.has(recipe.recipeUrl)? (
-                      <span className="text-red-600 font-medium">Rejected!</span>
+                      <span className="text-danger font-medium">Rejected!</span>
                     ) : (
                       <div className="flex gap-2">
                         <Button
@@ -153,23 +153,23 @@ export default function InspireModal({ onAccept, onClose }: InspireModalProps) {
                       href={recipe.recipeUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline text-sm block mb-2"
+                      className="text-primary hover:underline text-sm block mb-2"
                     >
                       View Recipe →
                     </a>
                   )}
 
-                  <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                  <div className="text-sm text-ink-soft space-y-1">
                     {recipe.proteinType && <p>Protein: {recipe.proteinType}</p>}
                     {recipe.carbType && <p>Carb: {recipe.carbType}</p>}
                     {recipe.prepTime && <p>Prep: {recipe.prepTime}</p>}
                   </div>
 
                   <details className="mt-2">
-                    <summary className="text-sm text-gray-500 cursor-pointer">
+                    <summary className="text-sm text-ink-soft cursor-pointer">
                       Show ingredients
                     </summary>
-                    <pre className="text-sm mt-2 whitespace-pre-wrap bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                    <pre className="text-sm mt-2 whitespace-pre-wrap bg-ground p-2 rounded-card">
                       {recipe.ingredients}
                     </pre>
                   </details>

@@ -54,7 +54,7 @@ export default function ShoppingListItems({
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-600 hover:underline"
+          className="text-primary hover:underline"
           onClick={(e) => e.stopPropagation()}
         >
           {name}
@@ -71,10 +71,10 @@ export default function ShoppingListItems({
 
     return (
       <div
-        className={`flex items-center gap-3 p-3 rounded-lg border dark:border-gray-700 transition-colors ${
+        className={`flex items-center gap-3 p-3 rounded-card border transition-colors ${
           item.checked
-            ? 'bg-gray-100 dark:bg-gray-800 opacity-60'
-            : 'bg-white dark:bg-gray-900'
+            ? 'bg-sunken opacity-60'
+            : 'bg-white '
         }`}
       >
         {!showDeleteButton && (
@@ -82,11 +82,11 @@ export default function ShoppingListItems({
             type="checkbox"
             checked={item.checked}
             onChange={(e) => onToggle(item.id, e.target.checked)}
-            className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+            className="w-5 h-5 rounded-card border-line text-primary focus:ring-primary cursor-pointer"
           />
         )}
         <div className="flex-1">
-          <span className={item.checked ? 'line-through text-gray-500' : ''}>
+          <span className={item.checked ? 'line-through text-ink-soft' : ''}>
             {item.name}
           </span>
           {debugBase && (
@@ -95,7 +95,7 @@ export default function ShoppingListItems({
             </span>
           )}
           {recipeNames.length > 0 && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-xs text-ink-soft mt-1">
               For: {recipeNames.map((name, i) => (
                 <span key={name}>
                   {i > 0 && ', '}
@@ -105,13 +105,13 @@ export default function ShoppingListItems({
             </p>
           )}
           {item.source === 'manual' && (
-            <span className="text-xs text-blue-500 ml-2">(added manually)</span>
+            <span className="text-xs text-primary ml-2">(added manually)</span>
           )}
         </div>
         {showDeleteButton && (
           <button
             onClick={() => onDelete(item)}
-            className="text-gray-400 hover:text-red-500 transition-colors p-1 shrink-0"
+            className="text-ink-soft hover:text-danger transition-colors p-1 shrink-0"
             title="Remove item"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -127,10 +127,10 @@ export default function ShoppingListItems({
     <div className="space-y-4">
       {uncheckedItems.length > 0 && (
         <div>
-          <h2 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+          <h2 className="text-sm font-medium text-ink-soft mb-2">
             To Buy ({uncheckedItems.length})
           </h2>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
+          <p className="text-xs text-ink-soft mb-3">
             Check the box to mark as purchased
           </p>
           <div className="space-y-2">
@@ -143,7 +143,7 @@ export default function ShoppingListItems({
 
       {checkedItems.length > 0 && (
         <div className="mt-6">
-          <h2 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+          <h2 className="text-sm font-medium text-ink-soft mb-2">
             Got It ({checkedItems.length})
           </h2>
           <div className="space-y-2">

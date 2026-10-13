@@ -1,7 +1,6 @@
 import type { Config } from 'tailwindcss'
 
 const config: Config = {
-  darkMode: 'class',
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -10,23 +9,36 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      // One look for the whole app (colours from the Tonight/Recipe/Week mockups).
+      // Values live as CSS variables in app/globals.css; change them there.
       colors: {
-        background: 'var(--background)',
-        foreground: 'var(--foreground)',
-      },
-      keyframes: {
-        slideDown: {
-          from: { height: '0', opacity: '0' },
-          to: { height: 'var(--radix-collapsible-content-height)', opacity: '1' },
+        ground: 'var(--color-ground)',
+        surface: 'var(--color-surface)',
+        sunken: 'var(--color-sunken)',
+        line: 'var(--color-line)',
+        ink: { DEFAULT: 'var(--color-ink)', soft: 'var(--color-ink-soft)' },
+        primary: {
+          DEFAULT: 'var(--color-primary)',
+          dark: 'var(--color-primary-dark)',
+          soft: 'var(--color-primary-soft)',
         },
-        slideUp: {
-          from: { height: 'var(--radix-collapsible-content-height)', opacity: '1' },
-          to: { height: '0', opacity: '0' },
+        accent: { DEFAULT: 'var(--color-accent)', soft: 'var(--color-accent-soft)' },
+        danger: {
+          DEFAULT: 'var(--color-danger)',
+          dark: 'var(--color-danger-dark)',
+          soft: 'var(--color-danger-soft)',
         },
       },
-      animation: {
-        slideDown: 'slideDown 200ms ease-out',
-        slideUp: 'slideUp 200ms ease-out',
+      fontFamily: {
+        display: ['var(--font-display)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-body)', 'system-ui', 'sans-serif'],
+      },
+      borderRadius: {
+        card: '14px',
+        panel: '22px',
+      },
+      spacing: {
+        tabbar: 'var(--tabbar-height)',
       },
     },
   },

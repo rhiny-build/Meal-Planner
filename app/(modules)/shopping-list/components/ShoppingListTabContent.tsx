@@ -46,8 +46,8 @@ export default function ShoppingListTabContent({
 }: ShoppingListTabContentProps) {
   if (items.length === 0) {
     return (
-      <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
-        <p className="text-gray-600 dark:text-gray-400">
+      <div className="text-center py-12 bg-ground rounded-card">
+        <p className="text-ink-soft">
           No items yet. Save a meal plan or customise your staples and restock items.
         </p>
       </div>
@@ -61,11 +61,11 @@ export default function ShoppingListTabContent({
   return (
     <>
       {recipeItems.length > 0 && (
-        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
-          <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
+        <div className="bg-ground rounded-card p-4">
+          <h2 className="text-base font-semibold text-ink mb-3 flex items-center gap-2">
             <span className="text-lg">🍽</span>
             Meal Plan Ingredients
-            <span className="text-xs font-normal bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">
+            <span className="text-xs font-normal bg-primary-soft text-primary px-2 py-0.5 rounded-full">
               {recipeItems.length}
             </span>
           </h2>
@@ -78,11 +78,11 @@ export default function ShoppingListTabContent({
         </div>
       )}
       {masterItems.length > 0 && (
-        <div className="mt-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
-          <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
+        <div className="mt-6 bg-ground rounded-card p-4">
+          <h2 className="text-base font-semibold text-ink mb-3 flex items-center gap-2">
             <span className="text-lg">📋</span>
             Master List Items
-            <span className="text-xs font-normal bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">
+            <span className="text-xs font-normal bg-primary-soft text-primary px-2 py-0.5 rounded-full">
               {masterItems.length}
             </span>
           </h2>
@@ -94,11 +94,11 @@ export default function ShoppingListTabContent({
         </div>
       )}
       {manualItems.length > 0 && (
-        <div className="mt-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
-          <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
+        <div className="mt-6 bg-ground rounded-card p-4">
+          <h2 className="text-base font-semibold text-ink mb-3 flex items-center gap-2">
             <span className="text-lg">✏️</span>
             Manual Items
-            <span className="text-xs font-normal bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full">
+            <span className="text-xs font-normal bg-sunken text-ink-soft px-2 py-0.5 rounded-full">
               {manualItems.length}
             </span>
           </h2>

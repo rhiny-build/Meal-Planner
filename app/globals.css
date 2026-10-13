@@ -2,20 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
+/* The one visual style for the whole app. Tailwind's theme (tailwind.config.ts) reads these. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-.dark {
-  --background: #1f1f1f;
-  --foreground: #f5f5f5;
+  --color-ground: #f3f5f2;
+  --color-surface: #ffffff;
+  --color-sunken: #e3e8e3;
+  --color-line: #dde3de;
+  --color-ink: #1c221f;
+  --color-ink-soft: #4f5a54;
+  --color-primary: #1f5c4a;
+  --color-primary-dark: #143d31;
+  --color-primary-soft: #e8efe9;
+  --color-accent: #f2b544;
+  --color-accent-soft: #fbebc8;
+  --color-danger: #b42318;
+  --color-danger-dark: #8f1b12;
+  --color-danger-soft: #fdecea;
+  --tabbar-height: 64px;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--color-ink);
+  background: var(--color-ground);
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display), system-ui, sans-serif;
 }
 
 @layer utilities {

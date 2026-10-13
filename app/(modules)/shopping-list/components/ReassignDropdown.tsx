@@ -23,13 +23,13 @@ export default function ReassignDropdown({ masterItems, onSelect, onCancel }: Re
   )
 
   return (
-    <div className="mt-2 p-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-600">
+    <div className="mt-2 p-2 border rounded-card bg-white">
       <input
         type="text"
         placeholder="Search master items..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="w-full px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        className="w-full px-2 py-1 text-sm border rounded-card bg-white focus:ring-2 focus:ring-primary focus:outline-none"
         autoFocus
       />
       <ul className="max-h-32 overflow-y-auto mt-1">
@@ -37,20 +37,20 @@ export default function ReassignDropdown({ masterItems, onSelect, onCancel }: Re
           <li key={item.id}>
             <button
               onClick={() => onSelect(item.id)}
-              className="w-full text-left px-2 py-1 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 rounded"
+              className="w-full text-left px-2 py-1 text-sm hover:bg-primary-soft rounded-card"
             >
               {item.name}
-              <span className="text-xs text-gray-400 ml-2">({item.type})</span>
+              <span className="text-xs text-ink-soft ml-2">({item.type})</span>
             </button>
           </li>
         ))}
         {filtered.length === 0 && (
-          <li className="px-2 py-1 text-sm text-gray-400">No matches</li>
+          <li className="px-2 py-1 text-sm text-ink-soft">No matches</li>
         )}
       </ul>
       <button
         onClick={onCancel}
-        className="mt-1 text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+        className="mt-1 text-xs text-ink-soft hover:text-ink"
       >
         Cancel
       </button>

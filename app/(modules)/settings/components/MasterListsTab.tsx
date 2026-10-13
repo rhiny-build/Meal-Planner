@@ -120,20 +120,20 @@ export default function MasterListsTab({
       <div className="flex gap-2">
         <button
           onClick={() => setActiveType('staple')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`px-4 py-2 rounded-card text-sm font-medium transition-colors ${
             activeType === 'staple'
-              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
+              ? 'bg-primary-soft text-primary  '
+              : 'bg-sunken text-ink-soft hover:bg-sunken   '
           }`}
         >
           Staples
         </button>
         <button
           onClick={() => setActiveType('restock')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`px-4 py-2 rounded-card text-sm font-medium transition-colors ${
             activeType === 'restock'
-              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
+              ? 'bg-primary-soft text-primary  '
+              : 'bg-sunken text-ink-soft hover:bg-sunken   '
           }`}
         >
           Restock
@@ -141,21 +141,21 @@ export default function MasterListsTab({
       </div>
 
       {/* Description */}
-      <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+      <div className="p-4 bg-ground rounded-card">
+        <p className="text-sm text-ink-soft">
           {activeType === 'staple'
             ? 'Items you buy every week. These are automatically included when generating a shopping list.'
             : 'Household items you restock as needed. Check these when assembling your weekly shopping list.'}
         </p>
-        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+        <p className="text-xs text-ink-soft mt-1">
           {totalItems} {totalItems === 1 ? 'item' : 'items'}
         </p>
       </div>
 
       {/* Items by Category */}
       {filteredCategories.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
-          <p className="text-gray-600 dark:text-gray-400">
+        <div className="text-center py-12 bg-ground rounded-card">
+          <p className="text-ink-soft">
             No {activeType === 'staple' ? 'staples' : 'restock items'} yet. Add one below.
           </p>
         </div>
@@ -182,7 +182,7 @@ export default function MasterListsTab({
                   onCancelEdit={cancelEdit}
                   onDelete={() => handleDelete(item)}
                 >
-                  <span className="flex-1 text-gray-900 dark:text-gray-100">
+                  <span className="flex-1 text-ink">
                     {item.name}
                   </span>
                 </EditableListItem>
