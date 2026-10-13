@@ -27,7 +27,8 @@ export const AI_CONFIG = {
     maxTokens: 300,
   },
   recipeImporter: {
-    model: CLAUDE_MODELS.agent,
+    /** Haiku: about 10x cheaper than Sonnet with matching quality on the 5-case comparison (docs/rehaul/logs/RUN-cost-caching-haiku.md). Also used by the backfill. */
+    model: CLAUDE_MODELS.cheap,
     maxTokens: 8000,
     /** Guard for the agent loop: most imports take 3-4 turns */
     maxTurns: 8,
