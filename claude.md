@@ -22,6 +22,12 @@ Every message to Ronen uses this shape:
 
 Stop and wait whenever "What I need from you" isn't "nothing".
 
+## Pushing to a Branch with a PR
+
+- Before every push to a branch, check whether it has a pull request and whether that PR is already merged or closed
+- Never push to a branch whose PR is merged or closed. The commits won't reach `main`. Start a new branch from the latest `main` and open a new PR
+- After pushing, confirm the PR includes the new commit before telling Ronen it's ready
+
 ## Setup and Infrastructure Decisions
 
 Applies to environments, secrets, CI, deployments and databases.
