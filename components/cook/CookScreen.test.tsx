@@ -3,6 +3,7 @@ import { render, screen, fireEvent, act, within } from '@testing-library/react'
 import CookScreen from './CookScreen'
 import type { CookRecipeData } from './cookTypes'
 
+vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }))
 vi.mock('@/lib/cook/timerAlert', () => ({
   alertTimerFinished: vi.fn(),
   unlockTimerAudio: vi.fn(),

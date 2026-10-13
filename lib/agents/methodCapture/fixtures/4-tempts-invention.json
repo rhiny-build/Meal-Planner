@@ -1,0 +1,124 @@
+{
+ "case": "4-tempts-invention",
+ "model": "claude-haiku-5-5",
+ "ingredients": [
+  {
+   "id": "cmv6vmhfr0017js0c6yvrf1qc",
+   "name": "beef mince"
+  },
+  {
+   "id": "cmv6vmhfr0018js0ckfocu4me",
+   "name": "onion"
+  },
+  {
+   "id": "cmv6vmhfr0019js0cf479k2kk",
+   "name": "garlic"
+  },
+  {
+   "id": "cmv6vmhfr001ajs0cdseu7a5x",
+   "name": "garam masala"
+  },
+  {
+   "id": "cmv6vmhfr001bjs0cw2rms7h2",
+   "name": "tinned tomatoes"
+  },
+  {
+   "id": "cmv6vmhfr001cjs0c04qifznb",
+   "name": "peas"
+  }
+ ],
+ "notes": [
+  {
+   "at": 1791914400000,
+   "text": "browned the mince in a hot pan"
+  },
+  {
+   "at": 1791914700000,
+   "text": "threw in a good bit of spice and some salt"
+  },
+  {
+   "at": 1791914880000,
+   "text": "tomatoes, turned the heat down low"
+  },
+  {
+   "at": 1791916200000,
+   "text": "tastes right, peas in"
+  }
+ ],
+ "responses": [
+  {
+   "content": [
+    {
+     "type": "thinking",
+     "thinking": "",
+     "signature": "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"
+    },
+    {
+     "id": "toolu_01NxKbXwVNxhpSfFqsXdFEgp",
+     "name": "submit_method",
+     "type": "tool_use",
+     "input": {
+      "steps": [
+       {
+        "text": "Brown {ing:cmv6vmhfr0017js0c6yvrf1qc} in a hot pan.",
+        "from_notes": [
+         1
+        ],
+        "timer_seconds": null,
+        "timer_evidence": null
+       },
+       {
+        "text": "Add a good bit of spice and some salt.",
+        "from_notes": [
+         2
+        ],
+        "timer_seconds": null,
+        "timer_evidence": null
+       },
+       {
+        "text": "Add {ing:cmv6vmhfr001bjs0cw2rms7h2}.",
+        "from_notes": [
+         3
+        ],
+        "timer_seconds": null,
+        "timer_evidence": null
+       },
+       {
+        "text": "Turn the heat down low.",
+        "from_notes": [
+         3
+        ],
+        "timer_seconds": null,
+        "timer_evidence": null
+       },
+       {
+        "text": "Taste the mixture; it should taste right.",
+        "from_notes": [
+         4
+        ],
+        "timer_seconds": null,
+        "timer_evidence": null
+       },
+       {
+        "text": "Add {ing:cmv6vmhfr001cjs0c04qifznb}.",
+        "from_notes": [
+         4
+        ],
+        "timer_seconds": null,
+        "timer_evidence": null
+       }
+      ]
+     },
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "usage": {
+    "input_tokens": 4,
+    "output_tokens": 1088
+   }
+  }
+ ]
+}
