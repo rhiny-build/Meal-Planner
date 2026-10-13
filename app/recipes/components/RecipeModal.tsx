@@ -6,7 +6,7 @@
 
 import type { RecipeWithIngredients, RecipeFormData } from '@/types'
 import type { DishTypeOption } from '@/lib/dishTypeConfig'
-import RecipeForm from '@/components/RecipeForm'
+import RecipeEditor from '@/components/recipe/RecipeEditor'
 
 interface RecipeModalProps {
   recipe?: RecipeWithIngredients
@@ -24,18 +24,26 @@ export default function RecipeModal({
   carbOptions,
 }: RecipeModalProps) {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-2xl w-full my-8">
-        <h2 className="text-2xl font-bold mb-4">
-          {recipe ? 'Edit Recipe' : 'Add New Recipe'}
-        </h2>
-        <RecipeForm
-          recipe={recipe}
-          onSubmit={onSubmit}
-          onCancel={onCancel}
-          proteinOptions={proteinOptions}
-          carbOptions={carbOptions}
-        />
+    // The overlay is the scroll container. The card sits in a wrapper that is at least as tall
+    // as the screen and is NOT vertically centred by the scroll container itself: centring a
+    // taller-than-screen child inside an overflow container pushes its top out of reach.
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-black bg-opacity-50"
+      data-testid="recipe-modal-scroll"
+    >
+      <div className="flex min-h-full items-start justify-center p-2 sm:items-center sm:p-4">
+        <div className="bg-white dark:bg-gray-900 rounded-lg p-4 sm:p-6 max-w-2xl w-full">
+          <h2 className="text-2xl font-bold mb-4">
+            {recipe ? 'Edit Recipe' : 'Add New Recipe'}
+          </h2>
+          <RecipeEditor
+            recipe={recipe}
+            onSubmit={onSubmit}
+            onCancel={onCancel}
+            proteinOptions={proteinOptions}
+            carbOptions={carbOptions}
+          />
+        </div>
       </div>
     </div>
   )

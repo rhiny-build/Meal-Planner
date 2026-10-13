@@ -29,7 +29,7 @@ export function useMealPlan(startDate: Date, weekStartDay: number = 1) {
   const [isSaving, setIsSaving] = useState(false)
 
   const days = getOrderedDays(weekStartDay)
-  const { dayNotes, handleNoteChange } = useDayNotes(startDate)
+  const { dayNotes, handleNoteChange } = useDayNotes(startDate, days)
 
   const fetchData = useCallback(async () => {
     setIsLoading(true)
@@ -81,8 +81,13 @@ export function useMealPlan(startDate: Date, weekStartDay: number = 1) {
     setWeekPlan(swapRecipesInPlan(weekPlan, column, fromDayIndex, toDayIndex))
   }
 
-  const applyGeneratedPlan = (modifiedPlan: Parameters<typeof applyGeneratedPlanToWeek>[1]) => {
-    setWeekPlan(applyGeneratedPlanToWeek(weekPlan, modifiedPlan))
+  // Functional update: the AI call takes a while, so work from the latest plan, not the one
+  // captured when the request started.
+  const applyGeneratedPlan = (
+    modifiedPlan: Parameters<typeof applyGeneratedPlanToWeek>[1],
+    options?: Parameters<typeof applyGeneratedPlanToWeek>[2]
+  ) => {
+    setWeekPlan(prev => applyGeneratedPlanToWeek(prev, modifiedPlan, options))
   }
 
   const { lunchRecipes, proteinRecipes, carbRecipes, vegetableRecipes } = filterRecipesByType(allRecipes)

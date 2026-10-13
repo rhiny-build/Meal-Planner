@@ -2,20 +2,13 @@
  * AI Abstraction Layer
  *
  * This module provides a clean interface for all AI operations in the app.
- * Currently uses OpenAI, but is designed to be easily swappable with Claude
- * or other AI providers in the future.
+ * All generative calls run on Claude (see claude.ts and config.ts).
+ * OpenAI is used for embeddings only (see openaiEmbeddings.ts).
  *
- * TO SWITCH TO CLAUDE API:
- * 1. Install the Anthropic SDK: npm install @anthropic-ai/sdk
- * 2. Update lib/ai/client.ts with the Claude client
- * 3. Update each function file to use Claude's API format
- * 4. Update the .env file with ANTHROPIC_API_KEY
- *
- * The function signatures (inputs and outputs) remain the same,
- * so the rest of the app won't need to change.
+ * Function signatures (inputs and outputs) are provider-independent,
+ * so the rest of the app doesn't depend on the provider.
  */
 
-export { extractIngredientsFromURL } from './extractIngredientsFromURL'
 export { modifyMealPlan } from './modifyMealPlan'
 export { normaliseMasterItems } from '../shopping-list/normaliseMasterItem'
 export type { NormalisationInput, NormalisationResult } from '../shopping-list/normaliseMasterItem'

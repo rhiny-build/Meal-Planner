@@ -11,9 +11,10 @@
  * lib/normalisation/normaliseRecipeIngredient.ts.
  */
 
-import { openai, MODEL } from '../ai/client'
+import { callForcedTool } from '../ai/claude'
 import { AI_CONFIG } from '../ai/config'
 import { SYSTEM_PROMPTS, buildNormaliseIngredientsPrompt } from '../ai/prompts'
+import { NORMALISE_ITEMS_SCHEMA } from '../ai/schemas'
 
 export type NormalisationInput = { id: string; name: string }
 export type NormalisationResult = { id: string; baseIngredient: string; normalisedName?: string }
@@ -29,22 +30,15 @@ export async function normaliseMasterItems(
 
   const prompt = buildNormaliseIngredientsPrompt(itemsList)
 
-  const completion = await openai.chat.completions.create({
-    model: MODEL,
-    messages: [
-      { role: 'system', content: SYSTEM_PROMPTS.normaliseIngredients },
-      { role: 'user', content: prompt },
-    ],
-    response_format: { type: 'json_object' },
-    ...AI_CONFIG.normaliseIngredients,
+  const parsed = await callForcedTool<{ items: NormalisationResult[] }>({
+    model: AI_CONFIG.normaliseIngredients.model,
+    maxTokens: AI_CONFIG.normaliseIngredients.maxTokens,
+    system: SYSTEM_PROMPTS.normaliseIngredients,
+    prompt,
+    toolName: 'record_normalised_items',
+    toolDescription: 'Record the normalised base ingredient for each item.',
+    schema: NORMALISE_ITEMS_SCHEMA,
   })
-
-  const result = completion.choices[0]?.message?.content
-  if (!result) {
-    throw new Error('No response from AI for ingredient normalisation')
-  }
-
-  const parsed = JSON.parse(result) as { items: NormalisationResult[] }
 
   if (!parsed.items || !Array.isArray(parsed.items)) {
     throw new Error('Unexpected AI response format: missing items array')

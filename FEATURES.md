@@ -8,32 +8,44 @@
   - Form with all required fields (name, ingredients, protein, carb, prep time, tier)
   - Input validation
   - Create and save to database
-  - File: [components/RecipeForm.tsx](./components/RecipeForm.tsx)
+  - Editor also covers kind, servings, total time, description, notes, method steps (optional timer, insert-ingredient) and a plain "Recipe URL (optional)" field
+  - File: [components/recipe/RecipeEditor.tsx](./components/recipe/RecipeEditor.tsx)
 
-- ✅ **AI-Powered Recipe Import**
-  - Paste recipe text
-  - AI extracts ingredients and recipe name
-  - Pre-fills form for manual adjustment
-  - Files: [lib/ai.ts](./lib/ai.ts), [app/api/recipes/extract/route.ts](./app/api/recipes/extract/route.ts)
+- ✅ **Import from URL or Description (agent)**
+  - "Import" button on the recipes page: paste a recipe link, or describe a recipe in your own words
+  - A Claude agent reads the page's own recipe data (or its visible text), checks it, and shows a review screen: name, kind, servings, time, ingredients (the source's own quantities), method, and a "maybe the same recipe" warning
+  - Nothing is saved until "Save to recipe book" (tier "new"); Discard saves nothing
+  - Method only if the source has one; never guessed. Unreadable pages or non-recipes give a plain message, not a made-up recipe
+  - Replaces the old AI import box and `/api/recipes/extract`
+  - Files: [lib/agents/recipeImporter/](./lib/agents/recipeImporter/), [app/recipes/components/RecipeImportModal.tsx](./app/recipes/components/RecipeImportModal.tsx)
 
-- ✅ **Recipe Library View**
-  - Grid display of all recipes
-  - Shows key info on each card
-  - Files: [app/recipes/page.tsx](./app/recipes/page.tsx), [components/RecipeCard.tsx](./components/RecipeCard.tsx)
+- ✅ **Agent Runs Page**
+  - Menu "Agent Runs" (`/agent-runs`): every agent run with status, time, duration, steps and tokens
+  - Tap a run to replay it: model turns, each tool call and result, final output or error
+  - Generic: later agents appear with no changes
+  - Files: [app/agent-runs/](./app/agent-runs/), [lib/agents/runLog.ts](./lib/agents/runLog.ts)
+
+- ✅ **Recipe Book View**
+  - Grid display of all recipes with a "Type" filter (All / Full recipes / Quick)
+  - Quick items (e.g. Simple Fries) are compact amber-edged cards; full recipes with a method show "Method · N steps"
+  - Each recipe name opens a recipe page (`/recipes/[id]`): description, servings, total time, ingredients (amount + unit), method steps with ingredient amounts and timers, notes, source link. No method means no Method section
+  - A disabled "Cook" button is a placeholder for cook mode
+  - Files: [app/recipes/](./app/recipes/), [components/RecipeCard.tsx](./components/RecipeCard.tsx)
 
 - ✅ **Recipe Filtering**
   - Filter by tier (Favorite/Non-Regular/New)
   - Filter by protein type
   - Filter by carb type
   - Filter by prep time
+  - Filter by type (full / quick)
   - Real-time filter application
-  - File: [app/recipes/page.tsx](./app/recipes/page.tsx)
+  - File: [app/recipes/components/RecipeFilters.tsx](./app/recipes/components/RecipeFilters.tsx)
 
 - ✅ **Edit Recipe**
-  - Click edit on any recipe card
+  - Edit from the recipe list or the recipe page (modal)
   - Pre-filled form with current values
-  - Update in database
-  - File: [app/recipes/page.tsx](./app/recipes/page.tsx)
+  - Ingredient ids stay stable across edits so method steps keep pointing at the right ingredient
+  - Files: [components/recipe/RecipeEditor.tsx](./components/recipe/RecipeEditor.tsx), [lib/recipeWrite.ts](./lib/recipeWrite.ts)
 
 - ✅ **Delete Recipe**
   - Click delete with confirmation
@@ -50,7 +62,7 @@
     - Recipe tier mix: Mostly favorites, 1-2 non-regular, max 1 new
     - No consecutive same protein
     - No consecutive same carb
-  - Files: [lib/ai.ts](./lib/ai.ts), [app/api/meal-plan/route.ts](./app/api/meal-plan/route.ts)
+  - Files: [lib/aiService.ts](./lib/aiService.ts), [app/api/meal-plan/route.ts](./app/api/meal-plan/route.ts)
 
 - ✅ **View Weekly Plan**
   - Display Monday-Sunday
@@ -72,7 +84,8 @@
     - "swap Tuesday for something faster"
     - "replace chicken with fish on Wednesday"
   - Shows explanation of changes
-  - Files: [lib/ai.ts](./lib/ai.ts), [app/api/meal-plan/modify/route.ts](./app/api/meal-plan/modify/route.ts)
+  - Powered by Claude
+  - Files: [lib/ai/modifyMealPlan.ts](./lib/ai/modifyMealPlan.ts), [app/api/meal-plan/modify/route.ts](./app/api/meal-plan/modify/route.ts)
 
 - ✅ **Week Navigation**
   - Navigate to previous week
@@ -84,6 +97,11 @@
   - Meal plans saved to database
   - Load plan for any week
   - Plans survive app restarts
+
+- ✅ **Day Notes (synced)**
+  - Notes on each day of the plan grid are stored in the database, so they sync across devices and are kept as history (past weeks are no longer cleared)
+  - Saves after 600 ms of quiet and when you leave the page; a failed save shows a toast
+  - Files: [app/meal-plan/dayNoteActions.ts](./app/meal-plan/dayNoteActions.ts), [lib/hooks/useDayNotes.ts](./lib/hooks/useDayNotes.ts)
 
 ### Shopping List (Implemented)
 
@@ -108,9 +126,9 @@
 
 - ✅ **Structured Ingredients**
   - Ingredients stored with quantity, unit, name, notes
-  - AI extraction returns structured data
+  - A numeric `amount` is set on every save (for servings scaling); quantity/unit stay as the free-text fallback
   - Ingredient parser for existing text ingredients
-  - Files: [lib/ingredientParser.ts](./lib/ingredientParser.ts), [lib/ai/extractIngredientsFromURL.ts](./lib/ai/extractIngredientsFromURL.ts)
+  - Files: [lib/ingredientParser.ts](./lib/ingredientParser.ts), [lib/ingredientAmount.ts](./lib/ingredientAmount.ts)
 
 ### Database & Infrastructure
 
@@ -127,11 +145,26 @@
   - Mix of prep times and tiers
   - File: [prisma/seed.ts](./prisma/seed.ts)
 
-- ✅ **AI Abstraction Layer**
-  - Clean interface for AI operations
-  - Easy to swap providers
-  - Well-documented
-  - File: [lib/ai.ts](./lib/ai.ts)
+- ✅ **AI Layer (Claude)**
+  - All generative AI runs on Claude (import, meal-plan modify, ingredient normalisation, Inspire Me); OpenAI is used for embeddings only
+  - Models configured in one place
+  - Files: [lib/ai/](./lib/ai/), [lib/agents/](./lib/agents/)
+
+- ✅ **Inspire Me (recipe discovery)**
+  - Claude searches the web itself (server-side web search) and returns 3 recipe suggestions
+  - File: [lib/ai/discoverRecipes.ts](./lib/ai/discoverRecipes.ts)
+
+- ✅ **Save and Edit Recipes from Claude.ai (MCP)**
+  - Ask Claude.ai for a recipe, say "save it", and it lands in the book with method steps (with timers), servings, kind, description, total time and notes
+  - Claude can read one recipe in full (`get_recipe`) and change an existing one (`update_recipe`), e.g. add a method to a family recipe
+  - `get_recipes` shows kind, has-method and servings. Spec: [docs/Specs/MCP.md](./docs/Specs/MCP.md)
+  - Note: the endpoint has no authentication yet (see BACKLOG)
+  - Files: [lib/mcp/](./lib/mcp/), [app/api/mcp/route.ts](./app/api/mcp/route.ts)
+
+- ✅ **Backfill of Existing Recipes (one-off script)**
+  - Terminal job: dry-run report (enrich / quick / leave / duplicate, one line per recipe), then apply what you keep
+  - Fills only empty fields, never overwrites what you typed; duplicates merged only when approved in the report; refuses to apply without a backup flag
+  - Files: [scripts/rehaul/backfillRecipes.ts](./scripts/rehaul/backfillRecipes.ts), [lib/agents/recipeBackfill/](./lib/agents/recipeBackfill/)
 
 - ✅ **Type Safety**
   - Full TypeScript coverage
@@ -207,9 +240,8 @@
 - 📋 Structure: API route structure ready
 - 📋 Would add: Image upload, OCR or vision API, recipe parsing
 
-### Recipe Discovery
-- 📋 Structure: AI layer supports new functions
-- 📋 Would add: Natural language recipe search, AI recommendations
+### Recipe Discovery (in-app chat)
+- 📋 Inspire Me and Claude.ai (MCP) cover discovery today; an in-app discovery chat agent is planned
 
 ### Staples Management
 - 📋 Structure: ShoppingList model ready for extension
@@ -236,17 +268,17 @@
 
 ### Automated Testing (Implemented)
 - ✅ Unit tests for utilities (dateUtils, ingredientParser)
-- ✅ Unit tests for AI functions (mocked)
+- ✅ Unit tests for AI functions and agents (mocked Claude)
 - ✅ Hook tests (useRecipes, useMealPlan)
 - ⬜ E2E tests
-- ⬜ Full integration tests with database
+- ✅ Integration tests with a real Postgres database (`tests/integration/`)
 
 ## Known Limitations
 
 1. **Single User** - No authentication, designed for one household
 2. **No Drag-and-Drop** - Using dropdown selection instead (simpler, works well)
 3. **No Image Upload** - Text-only recipes for now
-4. **API Costs** - Using OpenAI API (costs per request)
+4. **API Costs** - Anthropic API for generative features and OpenAI API for embeddings (costs per request)
 5. **No Staples Management** - All ingredients appear in shopping list (future feature)
 
 ## Performance Metrics
@@ -310,6 +342,6 @@ Phase 1 and Phase 2 core features are **complete** with all requested functional
 - AI-powered meal plan generation and modification
 - Shopping list generation from meal plans with ingredient aggregation
 
-The codebase is well-documented, type-safe, and ready for learning and extension. The AI abstraction layer makes it easy to switch providers in the future.
+The codebase is well-documented, type-safe, and ready for learning and extension. Model choices live in one place (`lib/ai/config.ts`).
 
 The app is production-ready for single-user/family use with PostgreSQL database and proper environment variables.

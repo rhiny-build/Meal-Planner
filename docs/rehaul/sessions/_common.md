@@ -33,7 +33,7 @@ When you do interrupt, use the message format in `claude.md` and stop until he a
 
 ## Session environment
 - **Database:** `service postgresql start`, create a local database, point `DATABASE_URL` and `DATABASE_URL_UNPOOLED` at it, then run migrations and `npm run db:seed`. Integration tests use the same server. Never production.
-- **Claude:** `ANTHROPIC_API_KEY` comes from the cloud environment (dev-only, capped). Unit tests mock Claude, but run the real path yourself at least once.
+- **Claude:** the cloud environment provides a dev-only, capped key as `DEV_ANTHROPIC_API_KEY` (the name `ANTHROPIC_API_KEY` is reserved by Claude Code itself). Whenever you run the app, scripts or real-Claude checks, set `ANTHROPIC_API_KEY=$DEV_ANTHROPIC_API_KEY` for that command. Unit tests mock Claude, but run the real path yourself at least once. If `DEV_ANTHROPIC_API_KEY` is empty, that's a blocker: tell Ronen.
 - **Never ask for production keys or connection strings.**
 
 ## Test it yourself before calling it done

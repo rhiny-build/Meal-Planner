@@ -2,17 +2,19 @@
  * Inspire Modal Component
  *
  * Modal for AI-powered recipe discovery.
- * User enters a prompt, Perplexity finds recipes, user can accept/reject each.
+ * User enters a prompt, Claude finds recipes, user can accept/reject each.
  */
 
 'use client'
 
 import { useState } from 'react'
 import Button from '@/components/Button'
+import AiProgress from '@/components/AiProgress'
 import { discoverRecipes, type RecipeSuggestion } from '@/lib/aiService'
 
 interface InspireModalProps {
-  onAccept: (recipe: RecipeSuggestion) => Promise<void>
+  /** Resolves true once the recipe is in the book, false if the person backed out. */
+  onAccept: (recipe: RecipeSuggestion) => Promise<boolean>
   onClose: () => void
 }
 
@@ -53,8 +55,8 @@ export default function InspireModal({ onAccept, onClose }: InspireModalProps) {
 
   const handleAccept = async (recipe: RecipeSuggestion, index: number) => {
     try {
-      await onAccept(recipe)
-      setAcceptedIds(prev => new Set(prev).add(index))
+      const saved = await onAccept(recipe)
+      if (saved) setAcceptedIds(prev => new Set(prev).add(index))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save recipe')
     }
@@ -98,6 +100,13 @@ export default function InspireModal({ onAccept, onClose }: InspireModalProps) {
               </Button>
             </div>
             {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
+            {/* Searching the web with Claude: measured 6-8 s in the sandbox, 15-60 s in S01 */}
+            <AiProgress
+              active={isSearching}
+              label="Searching the web for recipes"
+              estimate={[8, 30]}
+              className="mt-3"
+            />
           </div>
 
           {/* Results */}

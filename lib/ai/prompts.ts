@@ -5,7 +5,7 @@
  * without risking changes to data processing or response handling.
  *
  * Each function takes pre-formatted data and returns the prompt string.
- * The JSON contract (what shape the AI must return) is documented inline.
+ * The result shape is defined by the tool schemas in lib/ai/schemas.ts.
  */
 
 // ---------------------------------------------------------------------------
@@ -14,9 +14,9 @@
 
 export const SYSTEM_PROMPTS = {
   modifyMealPlan:
-    'You are a helpful meal planning assistant. Return your response as JSON.',
+    'You are a helpful meal planning assistant. Submit your answer using the provided tool.',
   normaliseIngredients:
-    'You are a helpful assistant that normalises grocery product names to their base ingredient concept. Always return valid JSON.',
+    'You are a helpful assistant that normalises grocery product names to their base ingredient concept. Submit your answer using the provided tool.',
   normaliseIngredientSingle: `You are an expert chef and recipe analyst. Your job is to normalise ingredient names to canonical British English form for use in a shopping list deduplication system.
 
 Instructions:
@@ -24,23 +24,20 @@ Instructions:
 - Identify the base ingredient and any meaningful form qualifier (fresh, dried, tinned, frozen, ground, smoked, pickled, paste)
 - Ignore preference/quality markers that don't affect shopping (free range, organic, sea, baby)
 - Preserve variety qualifiers that affect the recipe (cherry tomato, new potato, button mushroom)
-- Return ONLY a JSON object, no preamble, no explanation
+- Submit your answer using the provided tool
 
-Return this exact JSON structure:
-{
-  "canonical": "spring onion (fresh)",
-  "base": "spring onion",
-  "form": "fresh"
-}
+Example: "scallions" -> canonical "spring onion (fresh)", base "spring onion", form "fresh".
+If there is no meaningful form qualifier, set "form" to null and omit the parenthetical from "canonical": "butter" -> canonical "butter", base "butter", form null.`,
+  discoverRecipes: `You are a recipe discovery assistant. Search the web for real recipes matching the user's request, then call submit_recipes ONCE with exactly 3 recipes.
 
-If there is no meaningful form qualifier, set "form" to null and omit the parenthetical from "canonical":
-{
-  "canonical": "butter",
-  "base": "butter",
-  "form": null
-}`,
-  extractIngredients:
-    'You are a helpful assistant that extracts recipe information from HTML. Return your response as JSON with "name", "ingredients", and "structuredIngredients" fields.',
+For each recipe:
+- name: Recipe name
+- recipeUrl: Direct URL to the recipe page (must be a real URL you found via search)
+- ingredients: List of ingredients, one per line
+- proteinType: One of chicken, fish, red-meat, vegetarian (null if not applicable)
+- carbType: One of rice, pasta, couscous, fries, other (null if not applicable)
+- prepTime: quick (<30min), medium (30-60min) or long (>60min)
+- tier: always "new"`,
 } as const
 
 // ---------------------------------------------------------------------------
@@ -52,7 +49,7 @@ If there is no meaningful form qualifier, set "form" to null and omit the parent
  *
  * Expected JSON response shape:
  * {
- *   modifiedPlan: { date: string, lunchRecipeId: string, proteinRecipeId: string, carbRecipeId: string, vegetableRecipeId: string }[]
+ *   modifiedPlan: { date: string (YYYY-MM-DD, as given), lunchRecipeId: string, proteinRecipeId: string, carbRecipeId: string, vegetableRecipeId: string }[]
  *   explanation: string
  * }
  */
@@ -114,10 +111,9 @@ ${params.vegetableRecipes}
 User instruction: "${params.instruction}"
 
 
-Return JSON with:
-- "modifiedPlan": array of {date: ISO date string, lunchRecipeId: string, proteinRecipeId: string, carbRecipeId: string, vegetableRecipeId: string} for ALL days in the plan
--  "explanation": "Explain briefly how you ensured all slots were filled and locked meals preserved."
-}
+Submit with the tool:
+- "modifiedPlan": array of {date: the YYYY-MM-DD date exactly as written in the current plan, lunchRecipeId, proteinRecipeId, carbRecipeId, vegetableRecipeId} for ALL days in the plan
+- "explanation": explain briefly how you ensured all slots were filled and locked meals preserved.
 
 CRITICAL:
 - Return ALL 7 days.
@@ -151,33 +147,5 @@ Forms: fresh, dried, ground, tinned, frozen, smoked, pickled, paste, flaked.
 Examples: "tomatoes (tinned)", "garlic (fresh)", "cumin (ground)", "salmon (smoked)", "eggs", "spring onions".
 If no specific form applies, canonicalName equals baseIngredient.
 
-Return JSON: { "items": [{ "id": "...", "baseIngredient": "...", "canonicalName": "..." }] }`
-}
-
-/**
- * Build the prompt for extracting ingredients from recipe page HTML.
- *
- * Expected JSON response shape:
- * { name: string, ingredients: string, structuredIngredients: { name, quantity, unit, notes, order }[] }
- */
-export function buildExtractIngredientsPrompt(html: string): string {
-  return `Extract the recipe name and ingredients from this webpage HTML.
-
-For each ingredient, parse it into structured format:
-- name: the ingredient name only (e.g., "chicken breast", "olive oil") - do NOT include quantities or units in the name
-- quantity: the amount as a string (e.g., "2", "1/2", "500") - null if not specified
-- unit: the unit of measurement in METRIC units (convert imperial to metric):
-  - Use "g" or "kg" for weight (not lb, oz)
-  - Use "ml" or "L" for liquids (not cups, fl oz)
-  - Keep tbsp/tsp for small amounts
-  - Keep countable units (cloves, bunches, etc.)
-- notes: preparation notes (e.g., "diced", "optional", "for garnish") - null if none
-
-Return JSON with:
-- "name": the recipe name
-- "ingredients": string with one ingredient per line (for backwards compatibility)
-- "structuredIngredients": array of {name, quantity, unit, notes, order} objects
-
-HTML content:
-${html}`
+Submit one entry per item with the tool (id, baseIngredient, canonicalName).`
 }

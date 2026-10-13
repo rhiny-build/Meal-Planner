@@ -12,7 +12,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { RecipeWithIngredients, RecipeFormData } from '@/types'
 import type { DishTypeOption } from '@/lib/dishTypeConfig'
 import { useRecipes } from '@/lib/hooks/useRecipes'
@@ -21,6 +21,7 @@ import Button from '@/components/Button'
 import RecipeFilters from './RecipeFilters'
 import RecipeModal from './RecipeModal'
 import InspireModal from './InspireModal'
+import RecipeImportModal from './RecipeImportModal'
 import type { RecipeSuggestion } from '@/lib/aiService'
 
 interface RecipesClientProps {
@@ -41,6 +42,7 @@ export default function RecipesClient({
     filteredRecipes,
     filters,
     isLoading,
+    refresh,
     handleFilterChange,
     handleCreate,
     handleUpdate,
@@ -53,6 +55,14 @@ export default function RecipesClient({
 
   // State for inspire modal
   const [showInspire, setShowInspire] = useState(false)
+
+  // State for URL/description import modal. `autoStart` is set when it was opened by accepting
+  // an Inspire Me suggestion: the suggestion's page is imported straight away.
+  const [importRequest, setImportRequest] = useState<{ input: string; autoStart: boolean } | null>(
+    null
+  )
+  // Resolves the Inspire Me "Accept" click: true when the recipe was saved, false when discarded.
+  const pendingAccept = useRef<((saved: boolean) => void) | null>(null)
 
   const onSubmit = async (data: RecipeFormData): Promise<void> => {
     const success = editingRecipe
@@ -81,8 +91,28 @@ export default function RecipesClient({
     }
   }
 
-  const onAcceptSuggestion = async (recipe: RecipeSuggestion): Promise<void> => {
-    await handleCreate(recipe)
+  // Accepting a suggestion runs its page through the recipe importer (same agent as Import), so
+  // the method, servings and steps come in, then the normal review screen asks to save.
+  const onAcceptSuggestion = (recipe: RecipeSuggestion): Promise<boolean> =>
+    new Promise((resolve) => {
+      pendingAccept.current?.(false)
+      pendingAccept.current = resolve
+      setImportRequest({
+        input: recipe.recipeUrl?.trim() || `${recipe.name}: ${recipe.ingredients}`,
+        autoStart: true,
+      })
+    })
+
+  const onImportSaved = async () => {
+    await refresh()
+    pendingAccept.current?.(true)
+    pendingAccept.current = null
+  }
+
+  const onImportClose = () => {
+    setImportRequest(null)
+    pendingAccept.current?.(false)
+    pendingAccept.current = null
   }
 
   if (isLoading) {
@@ -98,6 +128,9 @@ export default function RecipesClient({
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Recipe Library</h1>
         <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => setImportRequest({ input: '', autoStart: false })}>
+            Import
+          </Button>
           <Button variant="secondary" onClick={() => setShowInspire(true)}>
             Inspire Me
           </Button>
@@ -119,6 +152,16 @@ export default function RecipesClient({
         <InspireModal
           onAccept={onAcceptSuggestion}
           onClose={() => setShowInspire(false)}
+        />
+      )}
+
+      {/* After Inspire Me in the DOM so it stacks above it when opened from a suggestion. */}
+      {importRequest && (
+        <RecipeImportModal
+          initialInput={importRequest.input}
+          autoStart={importRequest.autoStart}
+          onSaved={onImportSaved}
+          onClose={onImportClose}
         />
       )}
 

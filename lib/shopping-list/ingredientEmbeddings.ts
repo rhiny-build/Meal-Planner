@@ -6,7 +6,7 @@
  * cosine similarity in JS — replaces the slow LLM matching call.
  */
 
-import { openai } from '../ai/client'
+import { getOpenAIEmbeddingsClient } from '../ai/openaiEmbeddings'
 import { AI_CONFIG } from '../ai/config'
 
 /**
@@ -16,7 +16,7 @@ import { AI_CONFIG } from '../ai/config'
 export async function computeEmbeddings(texts: string[]): Promise<number[][]> {
   if (texts.length === 0) return []
 
-  const response = await openai.embeddings.create({
+  const response = await getOpenAIEmbeddingsClient().embeddings.create({
     model: AI_CONFIG.embeddings.model,
     input: texts,
   })

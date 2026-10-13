@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { modifyMealPlan } from '@/lib/ai'
+import { dateKey } from '@/lib/ai/alignMealPlan'
 import type { MealPlanModificationRequest } from '@/types'
 
 /**
@@ -39,7 +40,9 @@ export async function POST(request: NextRequest) {
     // Build the modification request
     // The AI needs to know the dates, day names, and any existing selections
     const planForAI = currentPlan.map((day: { day: string; date: string; lunchRecipeId: string; proteinRecipeId: string; carbRecipeId: string; vegetableRecipeId: string }) => ({
-      date: new Date(day.date),
+      // A plain calendar date. The client sends "YYYY-MM-DD"; a full timestamp from an older
+      // client is cut down to its date (its UTC date, the best that can be done).
+      date: dateKey(day.date) ?? String(day.date),
       dayOfWeek: day.day,
       lunchRecipeId: day.lunchRecipeId || null,
       proteinRecipeId: day.proteinRecipeId || null,

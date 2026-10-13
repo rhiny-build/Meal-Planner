@@ -11,9 +11,11 @@ import type {
   MealPlanModificationRequest,
   MealPlanModificationResult,
 } from '@/types'
-import { openai, MODEL } from './client'
+import { callForcedTool } from './claude'
 import { AI_CONFIG } from './config'
 import { SYSTEM_PROMPTS, buildModifyMealPlanPrompt } from './prompts'
+import { MODIFY_MEAL_PLAN_SCHEMA } from './schemas'
+import { alignModifiedPlan } from './alignMealPlan'
 
 export async function modifyMealPlan(
   request: MealPlanModificationRequest
@@ -23,7 +25,7 @@ export async function modifyMealPlan(
     const currentPlanText = request.currentPlan
       .map(
         mp =>
-          `${mp.dayOfWeek} (${mp.date.toLocaleDateString()}):
+          `${mp.dayOfWeek} (${mp.date}):
       - Lunch: ${mp.lunchRecipe?.name || 'none'}
       - Protein: ${mp.proteinRecipe?.name || 'none'} (${mp.proteinRecipe?.proteinType}, ${mp.proteinRecipe?.prepTime})
       - Carb: ${mp.carbRecipe?.name || 'none'} (${mp.carbRecipe?.carbType}, ${mp.carbRecipe?.prepTime})
@@ -49,35 +51,27 @@ export async function modifyMealPlan(
       instruction: request.instruction,
     })
 
-    const completion = await openai.chat.completions.create({
-      model: MODEL,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPTS.modifyMealPlan },
-        { role: 'user', content: prompt },
-      ],
-      response_format: { type: 'json_object' },
-      ...AI_CONFIG.modifyMealPlan,
-    })
-
-    const result = completion.choices[0]?.message?.content
-    if (!result) {
-      throw new Error('No response from AI')
-    }
-
-    const parsed = JSON.parse(result) as {
+    const parsed = await callForcedTool<{
       modifiedPlan: { date: string; lunchRecipeId: string; proteinRecipeId: string; carbRecipeId: string; vegetableRecipeId: string }[]
       explanation: string
-    }
+    }>({
+      model: AI_CONFIG.modifyMealPlan.model,
+      maxTokens: AI_CONFIG.modifyMealPlan.maxTokens,
+      system: SYSTEM_PROMPTS.modifyMealPlan,
+      prompt,
+      toolName: 'submit_meal_plan',
+      toolDescription: 'Submit the complete modified weekly meal plan.',
+      schema: MODIFY_MEAL_PLAN_SCHEMA,
+    })
 
-    // Convert date strings back to Date objects
+    // One entry per day we sent, dated as we sent it, with every recipe id checked
+    // (the model's date labels and ids are not trusted as they come).
     return {
-      modifiedPlan: parsed.modifiedPlan.map(mp => ({
-        date: new Date(mp.date),
-        lunchRecipeId: mp.lunchRecipeId || '',
-        proteinRecipeId: mp.proteinRecipeId,
-        carbRecipeId: mp.carbRecipeId,
-        vegetableRecipeId: mp.vegetableRecipeId,
-      })),
+      modifiedPlan: alignModifiedPlan(
+        request.currentPlan,
+        parsed.modifiedPlan ?? [],
+        request.availableRecipes
+      ),
       explanation: parsed.explanation,
     }
   } catch (error) {

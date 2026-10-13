@@ -16,80 +16,84 @@ This document explains the technical architecture of the Family Meal Planner app
 - **PostgreSQL** - Production-ready relational database (via Vercel Postgres)
 
 ### AI Integration
-- **OpenAI API** - GPT models for intelligent features
-- **Abstraction Layer** - Easy to swap to Claude or other providers
+- **Claude (Anthropic API)** - all generative and agentic AI (URL/description import, meal-plan modify, ingredient normalisation, Inspire Me discovery, MCP). Via the official `@anthropic-ai/sdk`; needs `ANTHROPIC_API_KEY` (the key Vercel uses)
+- **OpenAI API** - embeddings only (`text-embedding-3-small`, ingredient matching); needs `OPENAI_API_KEY`. OpenAI is not used for chat/generation, and Perplexity is gone
+- **Models in one place** - `CLAUDE_MODELS` and `AI_CONFIG` in `lib/ai/config.ts`; never hardcode model names elsewhere
 
-## Project Structure - Note: accurate as of 03/02 and about to change in the next couple of weeks
+## Project Structure
+
+Accurate as of the docs-sync after S07 (12 Oct 2026). Test files (`*.test.ts`, `tests/integration/`) are omitted; `components/` and `app/**/components/` are summarised.
 
 ```
-/app                    # Next.js App Router pages and API
-├── /api               # Backend API routes
-│   ├── /recipes       # Recipe CRUD operations
-│   │   ├── route.ts           # GET all recipes
-│   │   ├── /create/route.ts   # POST new recipe
-│   │   ├── /[id]/route.ts     # GET, PATCH, DELETE by ID
-│   │   └── /extract/route.ts  # AI extraction endpoint
-│   ├── /meal-plan     # Meal plan operations
-│   │   ├── route.ts           # GET, POST, PATCH meal plan
-│   │   └── /modify/route.ts   # Natural language modifications
-│   └── /shopping-list # Shopping list operations
-│       ├── route.ts           # GET shopping list for week
-│       ├── /generate/route.ts # POST generate from meal plan
-│       └── /item
-│           ├── route.ts       # POST add item
-│           ├── /update/route.ts # PATCH update item
-│           └── /delete/route.ts # DELETE remove item
-├── /recipes          # Recipe library page
-│   └── page.tsx
-├── /meal-plan        # Weekly meal plan page
-│   └── page.tsx
-├── /shopping-list    # Shopping list page
-│   ├── page.tsx
-│   └── /components
-│       ├── ShoppingListHeader.tsx
-│       ├── ShoppingListItems.tsx
-│       └── AddItemForm.tsx
-├── layout.tsx        # Root layout (header, footer)
-├── page.tsx          # Home page
-└── globals.css       # Global styles
+/app                          # Next.js App Router
+├── layout.tsx, page.tsx, globals.css
+├── /(modules)                # Route group (no URL effect): modules with page.tsx + server actions
+│   ├── /shopping-list        # page.tsx, actions.ts and *Actions.ts, syncPipeline.ts (5-step match), components/, hooks/
+│   ├── /settings             # page.tsx, actions.ts, preferenceActions.ts, components/ (categories, dish types, master lists, preferences), hooks/
+│   └── /purchase-history     # page.tsx
+├── /meal-plan                # Weekly plan page (page.tsx, components/, helpers/)
+│   └── dayNoteActions.ts     # Server actions: getDayNotesForWeek, saveDayNote (DB-backed day notes)
+├── /recipes                  # Recipe book
+│   ├── page.tsx              # Server component -> RecipesClient (filters incl. Type, cards, add/edit modal, Import, Inspire Me)
+│   ├── components/           # RecipesClient, RecipeFilters, RecipeModal, RecipeImportModal, InspireModal
+│   └── /[id]                 # Recipe page: page.tsx (ingredients, method, notes), RecipeMethod.tsx, RecipeActions.tsx (Edit; Cook is a disabled placeholder)
+├── /agent-runs               # Agent runs page: page.tsx (list), [id]/page.tsx (step-by-step replay), StatusBadge.tsx
+└── /api                      # Route handlers (external integrations and client-fetched data)
+    ├── /recipes
+    │   ├── route.ts          # GET (includes steps; ?kind=full|quick), POST
+    │   ├── /create/route.ts  # POST new recipe
+    │   ├── /[id]/route.ts    # GET, PATCH, DELETE
+    │   ├── /discover/route.ts # POST Inspire Me (Claude web search)
+    │   └── /import/route.ts  # POST run the importer agent; /import/save/route.ts saves a reviewed draft
+    ├── /meal-plan            # route.ts, create/, update/, delete/, modify/ (natural-language modify)
+    └── /mcp/route.ts         # MCP server (Streamable HTTP) for Claude.ai
 
-/components           # Reusable UI components
-├── Button.tsx        # Styled button with variants
-├── RecipeCard.tsx    # Recipe display card
-└── RecipeForm.tsx    # Recipe add/edit form
+/components                   # Shared UI
+├── Button, Header, RecipeCard, Select, SearchableSelect, ThemeProvider
+└── /recipe                   # RecipeEditor (whole form), IngredientsEditor, StepsEditor
 
-/lib                  # Shared utilities and business logic
-├── /ai               # AI abstraction layer
-│   ├── client.ts                     # OpenAI client singleton
-│   ├── config.ts                     # AI model and threshold config
-│   ├── embeddings.ts                 # Embedding computation, cosine similarity, matching
-│   ├── extractIngredientsFromURL.ts  # URL recipe extraction
-│   ├── matchIngredients.ts           # Ingredient-to-master-list matching
-│   ├── normaliseIngredients.ts       # LLM-based ingredient normalisation
-│   ├── prompts.ts                    # AI prompt templates
-│   └── modifyMealPlan.ts             # Natural language modifications
-├── /hooks            # React hooks
-│   ├── useMealPlan.ts        # Meal plan state management
-│   ├── useRecipes.ts         # Recipe state + filtering
-│   └── useShoppingList.ts    # Shopping list state management
-├── apiService.ts       # API call utilities
-├── normalise.ts        # Local ingredient normalisation (form extraction, singularisation)
-├── shoppingListHelpers.ts # Shopping list business logic
-├── ingredientParser.ts # Ingredient string parsing utility
-├── dateUtils.ts      # Date manipulation helpers
-└── prisma.ts         # Prisma client singleton
+/lib
+├── /ai                       # Claude + embeddings layer
+│   ├── claude.ts             # getAnthropic() lazy client; callForcedTool() one-shot structured output via a tool
+│   ├── config.ts             # CLAUDE_MODELS, AI_CONFIG, embedding thresholds
+│   ├── schemas.ts            # Tool input schemas
+│   ├── discoverRecipes.ts    # Inspire Me: Claude + server-side web search
+│   ├── modifyMealPlan.ts     # Natural-language meal plan changes
+│   ├── openaiEmbeddings.ts   # OpenAI embeddings client (the only OpenAI use)
+│   ├── prompts.ts, index.ts
+├── /agents                   # Agent code (see "Agents" below)
+│   ├── loop.ts               # Generic hand-written agent loop (runAgent)
+│   ├── runLog.ts, runView.ts # Write AgentRun/AgentStep rows; shape them for /agent-runs
+│   ├── /recipeImporter       # prompt.ts, enrichPrompt.ts, tools.ts, safeFetch.ts, pageText.ts, saveDraft.ts, types.ts, index.ts
+│   └── /recipeBackfill       # plan.ts, classify.ts, enrich.ts, apply.ts, report.ts, cli.ts, types.ts (one-off, delete after use)
+├── /mcp                      # server.ts, recipeInput.ts (shared zod schemas, step resolution), tools/ (getMealPlan, getShoppingHistory, getRecipes, getRecipe, createRecipe, updateRecipe)
+├── /shopping-list            # aggregateRecipeIngredients, ingredientEmbeddings, matchRecipeToMaster, normaliseMasterItem, normaliseRecipeIngredient(+LLM)
+├── /purchase-history         # frequencyAnalysis, purchaseMapping, suggestions
+├── /hooks                    # useMealPlan, useDayNotes, migrateLocalStorageNotes (temporary), useRecipes, useAutoRefresh
+├── recipeWrite.ts            # Single write path for recipes (create/update from form data)
+├── recipeStepTokens.ts       # {ing:<id>} step token helpers
+├── stepEditorText.ts         # Editor text {name} <-> stored {ing:<id>}
+├── ingredientAmount.ts       # parseAmount(quantity, unit)
+├── ingredientParser.ts, ingredientHelpers.ts, mealPlanHelpers.ts, dishTypeConfig.ts, recipeFormConfig.ts, selectThemeConfig.ts
+├── aiService.ts, apiService.ts, dateUtils.ts, logger.ts, prisma.ts
 
-/scripts              # Maintenance and backfill scripts
-├── backfill-embeddings.ts      # Backfill embedding vectors for master list items
-└── backfill-canonical-names.ts # Backfill canonicalName + re-embed master list items
+/scripts
+├── /shopping-list            # backfillNormalisedNames.ts, evalRecipeIngredientNormaliser.ts
+├── /purchase-history         # import-receipts, upload-receipts, analyse-frequency, analyse-gaps
+└── /rehaul                   # backfillRecipes.ts (one-off recipe backfill CLI) and synthetic/ (rehearsal fixtures; delete once applied)
 
-/prisma              # Database configuration
-├── schema.prisma    # Database schema definition
-└── seed.ts          # Example data seeder
+/prisma
+├── schema.prisma, seed.ts
+├── migrateIngredients.ts     # Build step: legacy ingredient text -> Ingredient rows
+├── backfillIngredientAmounts.ts # Build step: fills Ingredient.amount (idempotent; --dry-run, --list)
+└── /migrations
 
-/types               # TypeScript type definitions
-└── index.ts         # All shared types
+/tests/integration            # Real-Postgres tests (npm run test:integration)
+/restock-agent                # Untested WIP, to be rebuilt in the main app then deleted (PLAN D8)
+/types/index.ts               # Shared types
 ```
+
+The Vercel build runs `prisma generate`, `prisma migrate deploy`, `migrateIngredients.ts`, `backfillIngredientAmounts.ts`, then `next build`.
 
 ## Target Architecture (WIP)
 
@@ -137,7 +141,7 @@ Modules should be "mostly independent" - they can query each other's data via Pr
 **4. When to Keep API Routes**
 
 API routes are still appropriate for:
-- AI integrations (recipe extraction, meal plan generation)
+- AI integrations (recipe import agent, Inspire Me, meal plan modification)
 - Webhooks from external services
 - Endpoints that external clients need to call
 - Complex multi-step operations that benefit from HTTP semantics
@@ -157,17 +161,26 @@ User clicks "Add Recipe"
   ↓
 RecipeForm component shows
   ↓
-User fills form or uses AI import
-  ↓ (if AI import)
-POST /api/recipes/extract → AI extraction → Returns ingredients
+User fills the RecipeEditor form (ingredients, method steps, kind, servings...)
   ↓
-User submits form
-  ↓
-POST /api/recipes → Prisma creates recipe → Updates database
+POST /api/recipes/create → lib/recipeWrite.ts createRecipeFromForm → Prisma (amounts via parseAmount)
   ↓
 Recipes page refetches data
   ↓
 RecipeCard components display updated list
+```
+
+### Recipe Import Flow (agent)
+```
+User taps "Import", pastes a URL or describes a recipe
+  ↓
+POST /api/recipes/import → runRecipeImporter() → runAgent() loop (lib/agents/loop.ts)
+  ↓ Claude calls tools: fetch_page, find_similar_recipes, then submit_recipe (or cannot_import_recipe)
+Run recorded to AgentRun/AgentStep (visible on /agent-runs)
+  ↓
+Review screen shows the draft (nothing saved yet)
+  ↓ "Save to recipe book"
+POST /api/recipes/import/save → saveRecipeDraft (tier "new")
 ```
 
 ### Natural Language Modification Flow
@@ -180,7 +193,7 @@ API fetches current meal plan + all recipes
   ↓
 Calls modifyMealPlan() in lib/ai/modifyMealPlan.ts
   ↓
-AI understands instruction and picks new recipe
+Claude (via a tool call) understands the instruction and picks the new recipe
   ↓
 API updates affected meal plans in database
   ↓
@@ -218,7 +231,7 @@ Step 3: EXPLICIT MAPPING LOOKUP
 
 Step 4: EMBEDDING MATCH
   Embed canonicalName → cosine similarity vs master list embeddings
-  Matched (≥0.82) → matchConfidence: 'embedding'
+  Auto-matched at ≥0.90; 0.65-0.90 surfaces as a suggestion (thresholds in lib/ai/config.ts)
 
 Step 5: CROSS-RECIPE DEDUP + WRITE
   Group unmatched items by canonicalName (string equality)
@@ -297,25 +310,20 @@ if (process.env.NODE_ENV !== 'production')
 
 ### 4. AI Abstraction Layer
 
-All AI calls go through modular files in `lib/ai/`:
+All generative AI goes through `lib/ai/` (one-shot calls) or `lib/agents/` (tool loops), on Claude:
 ```typescript
-// lib/ai/extractIngredientsFromURL.ts
-export async function extractIngredientsFromURL(
-  url: string
-): Promise<ExtractedRecipeData>  // Returns name, ingredients, and structuredIngredients
-
 // lib/ai/modifyMealPlan.ts
 export async function modifyMealPlan(
   instruction: string,
   currentPlan: MealPlan[],
   allRecipes: Recipe[]
 ): Promise<ModifyResult>
+
+// lib/ai/claude.ts: one tool, schema = the shape we want; the reply's tool_use.input is already an object
+export async function callForcedTool<T>(...): Promise<T>
 ```
 
-To switch AI providers, modify the files in `lib/ai/`:
-- Change the client initialization
-- Update the API calls
-- Keep the same function signatures
+Function signatures are provider-independent, so callers do not know which model runs. Model names and token limits live only in `lib/ai/config.ts`. OpenAI is used only by `lib/ai/openaiEmbeddings.ts`.
 
 ### 5. Ingredient Parsing
 
@@ -361,26 +369,54 @@ async function handleCreate(data: RecipeFormData) {
 model Recipe {
   id                    String       @id @default(cuid())
   name                  String
-  ingredients           String       // Legacy text field (kept for backwards compatibility)
+  ingredients           String       // Legacy text field (kept in step by the write paths; still read by some code)
   proteinType           String?
   carbType              String?
-  prepTime              String
+  vegetableType         String?
+  recipeUrl             String?
+  prepTime              String?      // quick | medium | long (coarse bucket)
   tier                  String
+  isLunchAppropriate    Boolean      @default(false)
+  kind                  String       @default("full") // 'full' | 'quick' (quick side/main, e.g. Simple Fries)
+  servings              Int?         // People the ingredient amounts serve (scaling)
+  description           String?
+  totalTimeMinutes      Int?
+  notes                 String?
   createdAt             DateTime     @default(now())
   updatedAt             DateTime     @updatedAt
-  structuredIngredients Ingredient[] // New structured ingredients
-  mealPlans             MealPlan[]
+  structuredIngredients Ingredient[]
+  steps                 RecipeStep[] // Optional method; zero steps is normal
+  // plus four MealPlan relations (lunch / protein / carb / vegetable), all onDelete: Cascade
 }
 ```
 
-### Ingredient Table (New)
+Deleting a recipe deletes the meal-plan days that use it (cascade on all four slots).
+
+### RecipeStep Table
+```prisma
+model RecipeStep {
+  id           String @id @default(cuid())
+  recipeId     String
+  order        Int     // 0-based, contiguous; no unique constraint
+  text         String  // May contain {ing:<ingredientId>} tokens
+  timerSeconds Int?
+  recipe       Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([recipeId, order])
+}
+```
+
+Step text refers to ingredients with `{ing:<ingredientId>}` tokens (`lib/recipeStepTokens.ts`). Cook mode / the recipe page render a token as amount + unit + name, scaled by `servings wanted / recipe servings` (`renderStepText`, `describeIngredient`). An unknown or deleted id renders as "the ingredient"; malformed fragments are left as text; nothing throws. Writers must call `validateStepText` and reject unknown ids. The editor shows `{name}` instead (`lib/stepEditorText.ts`); MCP accepts `{ing:N}` (1-based position in the submitted ingredient list) and stores real ids.
+
+### Ingredient Table
 ```prisma
 model Ingredient {
   id        String   @id @default(cuid())
   recipeId  String
   name      String   // Ingredient name (e.g., "flour")
-  quantity  String?  // Amount (e.g., "2")
+  quantity  String?  // Free-text amount as written (e.g., "1 1/2"); the fallback when amount is null
   unit      String?  // Unit of measurement (e.g., "cups")
+  amount    Float?   // Numeric amount from parseAmount(quantity, unit), for servings scaling; null when unsure
   notes     String?  // Additional notes (e.g., "sifted")
   order     Int      // Display order
   createdAt DateTime @default(now())
@@ -397,14 +433,58 @@ model MealPlan {
   id        String   @id @default(cuid())
   date      DateTime
   dayOfWeek String
-  recipeId  String
-  recipe    Recipe   @relation(fields: [recipeId], references: [id])
+  lunchRecipeId     String?   // plus proteinRecipeId, carbRecipeId, vegetableRecipeId
+  lunchRecipe       Recipe?   @relation("LunchRecipe", fields: [lunchRecipeId], references: [id], onDelete: Cascade)
+  // ... same pattern for protein / carb / vegetable
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([date])  // For efficient date queries
 }
 ```
+
+`amount` is set on every save by `parseAmount` (`lib/ingredientAmount.ts`) in `lib/recipeWrite.ts`, the importer and the MCP tools; `prisma/backfillIngredientAmounts.ts` fills older rows at build time. The parser is conservative: ranges, sums, words ("a pinch") and unit conflicts stay null.
+
+### DayNote Table
+```prisma
+model DayNote {
+  id   String   @id @default(cuid())
+  date DateTime @unique @db.Date   // calendar day, no time component
+  text String
+  // createdAt, updatedAt
+}
+```
+Day notes on the meal-plan grid are stored here (previously browser localStorage), via `app/meal-plan/dayNoteActions.ts` (`getDayNotesForWeek`, `saveDayNote`; empty text deletes the row). Dates cross the server boundary as `YYYY-MM-DD` strings and are stored at UTC midnight, so no timezone shift. Last write wins. `useDayNotes` debounces saves by 600 ms and flushes on unmount / tab hide. Notes are keyed by date only, not linked to a `MealPlan` row.
+
+### AgentRun and AgentStep Tables
+```prisma
+model AgentRun {
+  id String @id @default(cuid())
+  agent   String   // e.g. "recipe-importer"
+  trigger String   // manual | batch | schedule | mcp
+  input   Json
+  status  String   @default("running") // running | succeeded | failed
+  output  Json?
+  error   String?
+  startedAt DateTime @default(now())
+  finishedAt DateTime?
+  inputTokens, outputTokens, cacheReadTokens, cacheCreationTokens Int @default(0)
+  steps AgentStep[]
+}
+
+model AgentStep {
+  id String @id @default(cuid())
+  runId String
+  order Int            // 0-based, contiguous
+  kind String          // model | tool_call | tool_result | note (loop commentary)
+  toolName String?
+  payload Json         // model: {content, stopReason}; tool_call: {id, input}; tool_result: {output, isError}; note: {text, reason}
+  inputTokens Int?     // model steps only
+  outputTokens Int?
+  run AgentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+}
+```
+Allowed values are plain strings, not DB-enforced (like `tier`, `source`). Every agent records its runs here; `/agent-runs` reads them generically.
 
 ### ShoppingList Table (New)
 ```prisma
@@ -522,38 +602,32 @@ For a larger app, consider:
 
 ## AI Integration Details
 
-### OpenAI Configuration
-```typescript
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+### Claude configuration
+`getAnthropic()` (`lib/ai/claude.ts`) creates the SDK client lazily, so importing never needs a key. Models and limits come from `lib/ai/config.ts`:
 
-const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-```
+- `CLAUDE_MODELS.agent` = `claude-sonnet-5-5` (import agent, meal-plan modify, discovery)
+- `CLAUDE_MODELS.cheap` = `claude-haiku-5-5` (ingredient normalisers)
+- `AI_CONFIG` holds per-function model and max tokens (`recipeImporter` also has `maxTurns: 8`; `discoverRecipes.webSearchMaxUses: 5`)
 
-### Prompt Engineering
-All AI functions use structured prompts with:
-1. System message - Defines AI role
-2. User message - Specific task with context
-3. JSON response format - Structured output
+Env: `ANTHROPIC_API_KEY` (the key must have web search enabled). `claude-sonnet-5-5` rejects forced `tool_choice` and `thinking: disabled`, so `callForcedTool` offers one tool with `tool_choice: auto`, appends "Respond only by calling the X tool" to the system prompt, and throws if no `tool_use` block returns.
 
-Example:
-```typescript
-const completion = await openai.chat.completions.create({
-  model: MODEL,
-  messages: [
-    {
-      role: 'system',
-      content: 'You are a meal planning assistant...'
-    },
-    {
-      role: 'user',
-      content: `Generate a meal plan for...\n\n${data}`
-    }
-  ],
-  response_format: { type: 'json_object' },
-})
-```
+### Structured output via tools
+Instead of asking for JSON in free text, each call defines a tool whose `input_schema` is the shape we want (schemas in `lib/ai/schemas.ts`). The `tool_use` block's `input` is already a parsed object.
+
+### Discovery (Inspire Me)
+`lib/ai/discoverRecipes.ts` gives Claude the Anthropic-hosted `web_search_20250305` tool (max 5 searches) plus a `submit_recipes` tool. It handles `pause_turn` continuations (up to 3) and nudges once if Claude answers in text. `POST /api/recipes/discover` is a thin wrapper.
+
+### Agents (`lib/agents/`)
+- **`loop.ts` `runAgent`**: a generic, hand-written tool loop (design decision D7). Each turn it calls Claude (`tool_choice: auto`), logs the turn, runs every requested tool, returns results as `tool_result` blocks (a thrown error becomes `is_error: true` so Claude can retry), and repeats. A tool marked `endsRun` ends the run with its output; one marked `givesUp` fails it with the model's reason. It also stops on an API error, a reply cut off by `max_tokens`, a model that ignores one nudge, or `maxTurns`. It never throws; it returns `{ runId, ok, output?, error?, gaveUpReason? }`.
+- **`runLog.ts`**: `startRun({agent, trigger, input})` returns `{ id, step, finish, fail }`; writes `AgentRun` / `AgentStep` rows as the run goes. Token totals are written at the end (a run killed mid-way stays `running`; no cleanup job yet).
+- **`recipeImporter/`**: the first agent. Tools: `fetch_page(url)`, `find_similar_recipes(name)`, `cannot_import_recipe(reason)` (honest exit) and `submit_recipe(recipe)` (final answer, validated by `buildDraft`; does not save). `pageText.ts` returns the schema.org Recipe from JSON-LD when present, else cleaned page text (capped at `EXTRACT_HTML_MAX_LENGTH`). The model supplies quantity and unit as written; the server fills `amount` with `parseAmount`, and sets the source URL. Step text uses temporary `{ing:i1}` keys that `saveRecipeDraft` rewrites to real ids in one transaction. Method is optional and never guessed (D3). One text box: a lone `http(s)` URL is a URL, anything else is a description (`classifyImportInput`).
+- **`safeFetch.ts` (SSRF guard)**: the only way to fetch a user-supplied URL. http/https only; the host is resolved and every address must be public (blocks loopback, private, link-local incl. cloud metadata, multicast, IPv6 equivalents); redirects followed by hand (max 5), each re-checked; 15 s timeout; 2 MB cap; page content types only. `ALLOW_PRIVATE_FETCH=1` (dev/test only, ignored when `NODE_ENV=production`) allows loopback/private fixtures and never opens link-local. Known gap: DNS rebinding (address checked before the request, not pinned).
+- **Enrich mode**: `runRecipeImporter(input, 'batch', { enrich })` (`enrichPrompt.ts`) runs the same agent against a recipe already in the book (without `find_similar_recipes`); the caller keeps only gaps in empty fields.
+- **`recipeBackfill/`** + `scripts/rehaul/backfillRecipes.ts`: one-off backfill. `--dry-run` (default) writes `backfill-report.md/.json` (gitignored; one line per recipe: enrich / quick / leave / duplicate) and changes no recipe data (it only records `AgentRun` rows, trigger `batch`). `--apply <report.json> --i-have-a-backup` applies what is left in the JSON: fills only still-empty fields, never touches ingredients or existing steps, sets `quick` by plain name/ingredient-count rules (no AI), and merges duplicates only where `"approved": true`, re-pointing all four meal-plan slots before deleting. Idempotent; each recipe in its own transaction. Options: `--delay-ms`, `--token-budget`, `--only`, `--limit`. Remove the script and `lib/agents/recipeBackfill/` once applied in production.
+- Cost guard: each real import took 3 to 5 model turns and 5k to 9k input tokens. No prompt caching yet.
+
+### MCP server (`/api/mcp`, `lib/mcp/`)
+Streamable HTTP MCP server (version 0.2.0) with six tools; spec in `docs/Specs/MCP.md`. Handlers are exported functions separate from `registerX` so they can be unit-tested. Read tools: `get_meal_plan`, `get_shopping_history`, `get_recipes` (adds `kind`, `has_method`, `servings`; no steps), `get_recipe` (one recipe in full; steps as `text` and `text_with_references`). Write tools: `create_recipe` (kind, servings, description, totalTimeMinutes, notes, steps with optional timers, legacy `ingredients[{name, quantity}]` + `metadata` still accepted) and `update_recipe` (a patch: omitted = unchanged, `null` = clear; `steps` and `ingredients` replace the whole list; one transaction). Tool descriptions are instructions to the model (confirm before writing, check `get_recipes` first, never invent a method). Shared code is `lib/mcp/recipeInput.ts`: zod schemas, `toIngredientRow` (fills `amount` via `parseAmount`), `resolveSteps` (`{ing:N}` to `{ing:<id>}`; replacing ingredients re-points tokens by name, dropped ones become plain text), `jsonResult` / `errorResult` (errors return `isError: true`). **The route has no authentication** (see BACKLOG).
 
 ## Performance Considerations
 
@@ -585,6 +659,7 @@ const completion = await openai.chat.completions.create({
 - API key in server-side env variables
 - No authentication (single-user app)
 - Input validation on API routes
+- `/api/mcp` has no authentication (open BACKLOG item); `safeFetch` guards the importer against SSRF
 
 ### For Production
 - Add user authentication (NextAuth.js)
@@ -596,7 +671,7 @@ const completion = await openai.chat.completions.create({
 
 ## Testing Strategy
 
-Currently no tests, but here's a recommended approach:
+Unit tests (`npm test`, mocked Claude and Prisma) and real-Postgres integration tests (`npm run test:integration`, `tests/integration/`) exist; see `TESTING.md`. Recommended approach going forward:
 
 ### Unit Tests
 - Test AI prompt functions
@@ -621,7 +696,7 @@ Currently no tests, but here's a recommended approach:
 ```bash
 # 1. Push code to GitHub
 # 2. Connect repo to Vercel
-# 3. Add OPENAI_API_KEY to environment variables
+# 3. Add ANTHROPIC_API_KEY and OPENAI_API_KEY (embeddings) to environment variables
 # 4. Deploy!
 ```
 
@@ -637,9 +712,10 @@ Currently no tests, but here's a recommended approach:
 
 ### Environment Variables
 Set these in your hosting platform:
-- `OPENAI_API_KEY`
-- `DATABASE_URL` (PostgreSQL connection string)
-- `OPENAI_MODEL` (optional)
+- `ANTHROPIC_API_KEY` (all generative AI; web search must be enabled on the key)
+- `OPENAI_API_KEY` (embeddings only)
+- `DATABASE_URL` (pooled, runtime) and `DATABASE_URL_UNPOOLED` (direct, Prisma migrations)
+- `ALLOW_PRIVATE_FETCH=1` is for local dev/tests only; never set it on Vercel (ignored in production anyway)
 
 ## Extending the App
 
@@ -676,22 +752,23 @@ export interface RecipeFormData {
 ### Q: Why Prisma instead of raw SQL?
 **A:** Type safety, automatic migrations, great DX
 
-### Q: Why SQLite instead of PostgreSQL?
-**A:** Simplicity for learning and local development
+### Q: Why PostgreSQL?
+**A:** Production runs on Neon Postgres via Vercel; local and CI use a local PostgreSQL server
 
 ### Q: Why not use a state management library?
 **A:** This app is simple enough for useState + fetch
 
 ### Q: Why abstraction layer for AI?
-**A:** Makes it easy to switch providers without rewriting the whole app
+**A:** Callers depend on function signatures, not on a provider; model names live in `lib/ai/config.ts`
 
 ### Q: Can I use this commercially?
-**A:** Yes! It's open source. Just be aware of OpenAI API costs.
+**A:** Yes! It's open source. Just be aware of Anthropic and OpenAI (embeddings) API costs.
 
 ## Resources
 
 - [Next.js App Router Docs](https://nextjs.org/docs/app)
 - [Prisma Quickstart](https://www.prisma.io/docs/getting-started)
 - [Tailwind CSS Docs](https://tailwindcss.com/docs)
-- [OpenAI API Docs](https://platform.openai.com/docs)
+- [Anthropic API Docs](https://docs.anthropic.com)
+- [OpenAI Embeddings Docs](https://platform.openai.com/docs/guides/embeddings)
 - [TypeScript Handbook](https://www.typescriptlang.org/docs/handbook/)

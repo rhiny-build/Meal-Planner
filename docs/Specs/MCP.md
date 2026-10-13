@@ -1,8 +1,8 @@
 # Meal Planner MCP — Specification
 
-**Version:** 0.1 (draft)  
-**Status:** For review  
-**Scope:** Read queries + recipe write operations via Claude chat
+**Version:** 0.2  
+**Status:** Implemented (tools 4.1 to 4.6); authentication via `MCP_AUTH_TOKEN` (OQ-5)  
+**Scope:** Read queries + recipe write operations (create, edit) via Claude chat
 
 ---
 
@@ -25,10 +25,10 @@ This is a learning exercise in MCP server construction. The spec intentionally k
 
 ---
 
-## 3. Out of Scope (v0.1)
+## 3. Out of Scope
 
 - Modifying an existing meal plan
-- Editing or deleting existing recipes
+- Deleting recipes (editing an existing recipe is in scope since v0.2: `update_recipe`)
 - Generating or modifying shopping lists
 - Managing staples / restock items
 - AI meal plan generation (previously paused in-app feature)
@@ -116,13 +116,12 @@ Returns all shopping lists with their items, enabling Claude to reason across hi
 
 ### 4.3 `get_recipes`
 
-Returns the full recipe catalogue, optionally filtered. Used both for ingredient-matching (UC-3) and as context when suggesting new recipes (UC-4).
+Returns the recipe catalogue, optionally filtered. Used for ingredient-matching (UC-3), as context when suggesting new recipes (UC-4), to avoid duplicates, and to find a `recipe_id`. Does not return the method; use `get_recipe` for that.
 
 **Input**
 ```ts
 {
-  query?: string            // Free-text filter on recipe name/tags — server does a 
-                            // simple case-insensitive match, Claude does the reasoning
+  query?: string            // Case-insensitive substring match on recipe name
 }
 ```
 
@@ -132,45 +131,58 @@ Returns the full recipe catalogue, optionally filtered. Used both for ingredient
   recipes: Array<{
     recipe_id: string,
     name: string,
+    kind: "full" | "quick",
+    has_method: boolean,    // true if the recipe has at least one step
+    servings: number | null,
     ingredients: Array<{
-      name: string,         // normalised ingredient name
-      quantity?: string
+      name: string,
+      quantity?: string     // quantity and unit as text
     }>,
     metadata: {
       carbs?: string,
       protein?: string,
       veg?: string,
-      tags?: string[],
-      source?: string       // e.g. "Ottolenghi", "improvised" — if captured
+      source?: string       // recipe URL or name, if captured
     }
   }>
 }
 ```
 
 **Notes**
-- No pagination in v0.1. Assumption: recipe catalogue is small enough to return in full.
-- This tool serves UC-3 (ingredient matching) with no write side-effect. Claude does the matching logic.
+- No pagination. Assumption: the catalogue is small enough to return in full.
+- Read-only. Claude does the matching logic.
 
 ---
 
 ### 4.4 `create_recipe`
 
-Persists a new recipe to the app. Only called after explicit user confirmation in conversation.
+Persists a new recipe to the app. Only called after explicit user confirmation in conversation. The tool description instructs Claude to check `get_recipes` first and use `update_recipe` if the recipe exists, and never to invent a method. There is no server-side duplicate-name guard.
 
 **Input**
 ```ts
 {
   name: string,
+  kind?: "full" | "quick",          // default "full"
+  servings?: number,                // people the ingredient amounts serve
+  description?: string,
+  totalTimeMinutes?: number,
+  notes?: string,
   ingredients: Array<{
-    name: string,           // will be normalised server-side
-    quantity?: string
+    name: string,                   // name only, no amount or preparation
+    amount?: number,                // numeric, used to scale servings
+    unit?: string,
+    quantity?: string,              // legacy free text, e.g. "2 cups"; optional when amount is given
+    notes?: string
   }>,
-  metadata: {
+  steps?: Array<{                   // the method; omit if there is no real method
+    text: string,                   // may contain {ing:N}, see "Step references" below
+    timerSeconds?: number
+  }>,
+  metadata?: {
     carbs?: string,
     protein?: string,
     veg?: string,
-    tags?: string[],
-    source?: string         // e.g. "Claude suggestion", "BBC Good Food"
+    source?: string                 // maps to the recipe URL field (can hold a URL or a name)
   }
 }
 ```
@@ -181,13 +193,84 @@ Persists a new recipe to the app. Only called after explicit user confirmation i
   success: boolean,
   recipe_id: string,        // assigned by the app
   name: string
+  // plus ingredient and step counts
 }
 ```
 
 **Notes**
-- Ingredient normalisation (mapping to `normalisedName`) is the app's responsibility, not the MCP layer's.
-- The MCP server must never call this tool speculatively. The Claude client confirms with the user in natural language first; `create_recipe` is only invoked on explicit user approval.
-- On failure, return `success: false` with an `error` string — do not throw.
+- The old shape (`name`, `ingredients[{name, quantity}]`, `metadata`) still works unchanged. `tags` was never implemented.
+- If `amount` is given and `quantity` is not, `quantity` is filled with the formatted number. If only `quantity` is given, the numeric `amount` is parsed from it (null when unsure).
+- Tier is always `new` for recipes created through MCP.
+- Everything is saved in one transaction: a bad step reference saves nothing.
+- On failure, return `success: false` with an `error` string and MCP `isError: true`; do not throw.
+- The MCP server must never call this tool speculatively. The Claude client confirms with the user in natural language first.
+
+**Step references (`{ing:N}`)**
+Claude cannot know database ids before the recipe exists, so steps point into the submitted ingredient list: `"Whisk {ing:1} and {ing:2}"`, N being the 1-based position. The server rewrites each into the real `{ing:<id>}` token, which the app renders as amount + unit + name, scaled by servings. Out-of-range positions (0, or beyond the list) are rejected with a message naming the step. Real ingredient ids of the same recipe are also accepted, so `get_recipe` output can be sent back unchanged.
+
+---
+
+### 4.5 `get_recipe`
+
+Returns one recipe in full. Always called before `update_recipe`.
+
+**Input**
+```ts
+{ id: string }              // recipe_id from get_recipes or create_recipe
+```
+
+**Output**
+```ts
+{
+  recipe_id: string, name: string, kind: "full" | "quick",
+  servings: number | null, description: string | null,
+  total_time_minutes: number | null, notes: string | null,
+  has_method: boolean,
+  ingredients: Array<{ position: number, ingredient_id: string, name: string,
+                       amount: number | null, unit: string | null,
+                       quantity: string | null, notes: string | null }>,
+  steps: Array<{ position: number,
+                 text: string,                  // rendered with amounts, for showing the user
+                 text_with_references: string,  // raw {ing:<id>} tokens, to send back to update_recipe
+                 timer_seconds: number | null }>,
+  metadata: { carbs?, protein?, veg?, source? }
+}
+```
+
+**Notes**
+- Read-only. An unknown id returns `success: false` with `isError: true`. A recipe with no steps is normal, not an error.
+
+---
+
+### 4.6 `update_recipe`
+
+Changes an existing recipe. Only called after Claude has told the user exactly what will change and they agreed.
+
+**Input**
+```ts
+{
+  id: string,
+  name?: string,
+  kind?: "full" | "quick",
+  servings?: number | null,
+  description?: string | null,
+  totalTimeMinutes?: number | null,
+  notes?: string | null,
+  metadata?: { carbs?: string | null, protein?: string | null, veg?: string | null, source?: string | null },
+  ingredients?: Array<...>,   // same shape as create_recipe; REPLACES the whole list
+  steps?: Array<...>          // same shape as create_recipe; REPLACES the whole method ([] removes it)
+}
+```
+
+**Output**
+```ts
+{ success: boolean, changed: string[], ingredient_count: number, step_count: number }
+```
+
+**Notes**
+- It is a patch: omitted means unchanged, `null` clears (servings, description, totalTimeMinutes, notes, metadata fields).
+- `{ing:N}` in `steps` refers to the position in the final ingredient list. When ingredients are replaced and no new steps are sent, existing step references are re-pointed to the new ingredient with the same name (case-insensitive); if that ingredient was dropped, the reference becomes its plain name.
+- Runs in one transaction: a bad reference changes nothing. Errors return `success: false` with `isError: true`.
 
 ---
 
@@ -235,7 +318,8 @@ Claude:  [calls get_recipes]
 | OQ-1 | ~~Does the app have a concept of shopping list history?~~ | **Resolved:** History exists. Tool redesigned as `get_shopping_history`. |
 | OQ-2 | ~~What is the actual data shape for a recipe in the DB?~~ | **Dropped:** Output contract defined in spec; DB shape is an implementation detail. |
 | OQ-3 | ~~Is there a "week" entity in the DB?~~ | **Resolved:** No week entity. Week is derived from dates; `week_start_date` on shopping lists is the closest anchor. |
-| OQ-4 | Should `create_recipe` also optionally add the recipe to the current week's plan? | Parked for v0.2. |
+| OQ-4 | Should `create_recipe` also optionally add the recipe to the current week's plan? | Parked. |
+| OQ-5 | **Authentication.** Resolved: `/api/mcp` requires the shared secret in `MCP_AUTH_TOKEN`, sent as `Authorization: Bearer <token>` or `?token=<token>` on the connector URL. Production and previews reject every request if the variable is unset; local development allows requests without it. OAuth remains a possible later upgrade. | Resolved |
 
 ---
 

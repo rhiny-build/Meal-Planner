@@ -13,10 +13,11 @@
 
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { getWeekStart } from '@/lib/dateUtils'
+import { getWeekStart, formatDateParam } from '@/lib/dateUtils'
 import { useMealPlan } from '@/lib/hooks/useMealPlan'
 import MealPlanHeader from './MealPlanHeader'
 import MealPlanGrid from './MealPlanGrid'
+import AiProgress from '@/components/AiProgress'
 
 const DEFAULT_PROMPT = 'Generate a balanced meal plan for the week following the rules. Do not change existing meals that are already set.'
 
@@ -78,7 +79,9 @@ export default function MealPlanClient({ weekStartDay }: MealPlanClientProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           instruction: DEFAULT_PROMPT,
-          currentPlan: weekPlan,
+          // Dates as plain local calendar days ("2026-10-12"), not timestamps: a timestamp
+          // is a different day on the server and in the model's answer outside UTC.
+          currentPlan: weekPlan.map((d) => ({ ...d, date: formatDateParam(d.date) })),
         }),
       })
 
@@ -88,7 +91,7 @@ export default function MealPlanClient({ weekStartDay }: MealPlanClientProps) {
       }
 
       const result = await response.json()
-      applyGeneratedPlan(result.modifiedPlan)
+      applyGeneratedPlan(result.modifiedPlan, { keepFilled: true })
       toast.success(result.explanation, { duration: 5000 })
     } catch (error) {
       console.error('Error generating meal plan:', error)
@@ -121,6 +124,14 @@ export default function MealPlanClient({ weekStartDay }: MealPlanClientProps) {
         onGenerate={handleGenerate}
         onSave={handleSave}
         onClear={handleClear}
+      />
+
+      {/* Filling the empty slots with Claude: measured 9-13 s */}
+      <AiProgress
+        active={isGenerating}
+        label="Filling in your meal plan"
+        estimate={[10, 20]}
+        className="mb-4"
       />
 
       <MealPlanGrid

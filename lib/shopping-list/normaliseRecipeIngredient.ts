@@ -187,7 +187,7 @@ export async function normaliseIngredient(
     return result
   }
 
-  // Lazy-import to avoid loading OpenAI when LLM is disabled
+  // Lazy-import to avoid loading the Claude client when LLM is disabled
   const { llmNormalise } = await import('./normaliseRecipeIngredientLLM')
   return llmNormalise(raw)
 }

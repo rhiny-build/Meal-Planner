@@ -31,11 +31,16 @@ function createMockRecipe(overrides: Partial<RecipeWithIngredients> = {}): Recip
     isLunchAppropriate: false,
     prepTime: 'quick',
     tier: 'favorite',
+    kind: 'full',
+    servings: null,
+    description: null,
+    totalTimeMinutes: null,
+    notes: null,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
     structuredIngredients: [
-      { id: 'ing-1', recipeId: 'test-recipe-id', name: 'chicken breast', quantity: '2', unit: 'lbs', notes: null, order: 0, createdAt: new Date('2025-01-01'), updatedAt: new Date('2025-01-01') },
-      { id: 'ing-2', recipeId: 'test-recipe-id', name: 'garlic', quantity: '3', unit: 'cloves', notes: 'minced', order: 1, createdAt: new Date('2025-01-01'), updatedAt: new Date('2025-01-01') },
+      { id: 'ing-1', recipeId: 'test-recipe-id', name: 'chicken breast', quantity: '2', unit: 'lbs', notes: null, amount: null, order: 0, createdAt: new Date('2025-01-01'), updatedAt: new Date('2025-01-01') },
+      { id: 'ing-2', recipeId: 'test-recipe-id', name: 'garlic', quantity: '3', unit: 'cloves', notes: 'minced', amount: null, order: 1, createdAt: new Date('2025-01-01'), updatedAt: new Date('2025-01-01') },
     ],
     ...overrides,
   }
@@ -81,8 +86,8 @@ describe('MealPlanDrawer', () => {
       const proteinRecipe = createMockRecipe({
         name: 'Grilled Salmon',
         structuredIngredients: [
-          { id: 'ing-1', recipeId: 'test', name: 'salmon fillet', quantity: '4', unit: 'oz', notes: null, order: 0, createdAt: new Date('2025-01-01'), updatedAt: new Date('2025-01-01') },
-          { id: 'ing-2', recipeId: 'test', name: 'lemon', quantity: '1', unit: null, notes: null, order: 1, createdAt: new Date('2025-01-01'), updatedAt: new Date('2025-01-01') },
+          { id: 'ing-1', recipeId: 'test', name: 'salmon fillet', quantity: '4', unit: 'oz', notes: null, amount: null, order: 0, createdAt: new Date('2025-01-01'), updatedAt: new Date('2025-01-01') },
+          { id: 'ing-2', recipeId: 'test', name: 'lemon', quantity: '1', unit: null, notes: null, amount: null, order: 1, createdAt: new Date('2025-01-01'), updatedAt: new Date('2025-01-01') },
         ],
       })
 
@@ -107,7 +112,7 @@ describe('MealPlanDrawer', () => {
       const carbRecipe = createMockRecipe({
         name: 'Rice Pilaf',
         structuredIngredients: [
-          { id: 'ing-1', recipeId: 'test', name: 'rice', quantity: '2', unit: 'cups', notes: 'rinsed', order: 0, createdAt: new Date('2025-01-01'), updatedAt: new Date('2025-01-01') },
+          { id: 'ing-1', recipeId: 'test', name: 'rice', quantity: '2', unit: 'cups', notes: 'rinsed', amount: null, order: 0, createdAt: new Date('2025-01-01'), updatedAt: new Date('2025-01-01') },
         ],
       })
 
