@@ -9,6 +9,7 @@
 
 import type Anthropic from '@anthropic-ai/sdk'
 import { getAnthropic } from './claude'
+import { cachedSystem, withConversationCache } from './cache'
 import { AI_CONFIG } from './config'
 import { SYSTEM_PROMPTS } from './prompts'
 import { DISCOVER_RECIPES_SCHEMA } from './schemas'
@@ -34,8 +35,8 @@ export async function discoverRecipes(prompt: string): Promise<DiscoveredRecipe[
     const message = await getAnthropic().messages.create({
       model: AI_CONFIG.discoverRecipes.model,
       max_tokens: AI_CONFIG.discoverRecipes.maxTokens,
-      system: SYSTEM_PROMPTS.discoverRecipes,
-      messages,
+      system: cachedSystem(SYSTEM_PROMPTS.discoverRecipes),
+      messages: withConversationCache(messages),
       tools: [
         {
           type: 'web_search_20250305',

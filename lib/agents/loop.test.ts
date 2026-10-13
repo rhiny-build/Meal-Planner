@@ -99,6 +99,29 @@ describe('runAgent', () => {
     })
   })
 
+  it('marks the system prompt and the end of the conversation for prompt caching on every turn', async () => {
+    mockAnthropic.messages.create
+      .mockResolvedValueOnce(reply([toolUse('t1', 'lookup', { q: 'a' })]))
+      .mockResolvedValueOnce(reply([toolUse('t2', 'submit', { answer: 'done' })]))
+
+    await runAgent(params)
+
+    const [first, second] = mockAnthropic.messages.create.mock.calls.map((c) => c[0])
+    const eph = { type: 'ephemeral' }
+    for (const request of [first, second]) {
+      // system is a block carrying the marker (this also caches the tools before it)
+      expect(request.system).toEqual([{ type: 'text', text: 'sys', cache_control: eph }])
+      // exactly one marker in the messages: on the final block
+      const blocks = request.messages.flatMap((m: any) => (typeof m.content === 'string' ? [] : m.content))
+      expect(blocks.filter((b: any) => b.cache_control)).toHaveLength(1)
+      const lastMessage = request.messages[request.messages.length - 1]
+      expect(lastMessage.content[lastMessage.content.length - 1].cache_control).toEqual(eph)
+    }
+    // Turn 2's marker has moved to the tool result; turn 1's user message no longer carries one.
+    expect(second.messages[0].content[0].cache_control).toBeUndefined()
+    expect(second.messages[2].content[0]).toMatchObject({ type: 'tool_result', cache_control: eph })
+  })
+
   it('records every model turn, tool call and tool result in order', async () => {
     mockAnthropic.messages.create
       .mockResolvedValueOnce(reply([toolUse('t1', 'lookup', { q: 'a' })]))
@@ -185,7 +208,8 @@ describe('runAgent', () => {
     expect(log.steps.map((s) => s.kind)).toEqual(['model', 'note', 'model', 'tool_call', 'tool_result'])
     const secondCall = mockAnthropic.messages.create.mock.calls[1][0]
     const last = secondCall.messages[2]
-    expect(last).toEqual({ role: 'user', content: expect.stringContaining('submit') })
+    expect(last.role).toBe('user')
+    expect(last.content[0].text).toContain('submit')
   })
 
   it('fails cleanly when the model ignores the nudge too', async () => {

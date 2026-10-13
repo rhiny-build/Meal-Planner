@@ -30,6 +30,8 @@ export interface ImporterOptions {
    * the book's copy and is told to reuse its ingredient ids. The run still only produces a draft.
    */
   enrich?: EnrichContext
+  /** Override the configured model (used by the Haiku-vs-Sonnet comparison script). */
+  model?: string
 }
 
 export async function runRecipeImporter(
@@ -46,7 +48,7 @@ export async function runRecipeImporter(
     agent: RECIPE_IMPORTER_AGENT,
     trigger,
     input: enrich ? { ...input, mode: 'enrich', recipeId: enrich.recipeId } : input,
-    model: config.model,
+    model: options.model ?? config.model,
     maxTokens: config.maxTokens,
     maxTurns: config.maxTurns,
     system:

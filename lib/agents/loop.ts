@@ -19,6 +19,7 @@
 
 import type Anthropic from '@anthropic-ai/sdk'
 import { getAnthropic } from '@/lib/ai/claude'
+import { cachedSystem, withConversationCache } from '@/lib/ai/cache'
 import { startRun, type RunTrigger } from './runLog'
 
 export interface AgentTool {
@@ -80,10 +81,12 @@ export async function runAgent<T>(params: RunAgentParams): Promise<AgentResult<T
       const response = await getAnthropic().messages.create({
         model: params.model,
         max_tokens: params.maxTokens,
-        system: params.system,
+        // Prompt caching: the tools + system prompt, and the conversation so far, are read from
+        // the cache on every turn after the first (see lib/ai/cache.ts).
+        system: cachedSystem(params.system),
         tools: toolDefinitions,
         tool_choice: { type: 'auto' },
-        messages,
+        messages: withConversationCache(messages),
       })
       await run.step(
         'model',
