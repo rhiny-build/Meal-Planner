@@ -41,6 +41,14 @@ When you do interrupt, use the message format in `claude.md` and stop until he a
 - Run the app against local Postgres and exercise the feature the way a user would (Playwright, per the `ui` skill). For AI features, use real Claude at least once.
 - "I haven't tried it in the running app" is never an acceptable hand-over.
 
+## Real Claude spend (dev key, capped)
+Real Claude calls cost money. Spend them only where they tell you something cheaper tests can't.
+1. **Logic: replayed responses (free).** Record real Claude responses once from a handful of runs, save them as test fixtures, and replay them in tests. Use them for the loop, tools, reports, apply/idempotency, and everything except Claude's judgement.
+2. **Judgement: a small real sample.** At most 5 representative cases, run once when an AI feature is finished, and again only if its prompt, tools or model change.
+3. **Batch jobs (e.g. the recipe backfill) are never run in full by a session,** not even as a rehearsal. Build and test them with 1 and 2 (`--limit 5` at most). The full run is done once, on real data, with Ronen.
+- **Budget: 150,000 tokens of real Claude per session.** Track it from the API responses' usage numbers and report it in your log. If you'd go over it, stop and ask.
+- If the dev key hits its spending cap, that's a blocker: tell Ronen. Don't work around it.
+
 ## AI conventions
 - Claude via the official Anthropic TypeScript SDK. Use the client and model config from `lib/ai/` (set up in S01). Don't hardcode model names elsewhere.
 - Check the current SDK docs for tool-use and server-tool identifiers. Don't rely on remembered version strings.
