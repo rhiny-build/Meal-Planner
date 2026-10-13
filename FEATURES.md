@@ -29,8 +29,21 @@
   - Grid display of all recipes with a "Type" filter (All / Full recipes / Quick)
   - Quick items (e.g. Simple Fries) are compact amber-edged cards; full recipes with a method show "Method · N steps"
   - Each recipe name opens a recipe page (`/recipes/[id]`): description, servings, total time, ingredients (amount + unit), method steps with ingredient amounts and timers, notes, source link. No method means no Method section
-  - A disabled "Cook" button is a placeholder for cook mode
+  - A "Cook" button opens cook mode
   - Files: [app/recipes/](./app/recipes/), [components/RecipeCard.tsx](./components/RecipeCard.tsx)
+
+- ✅ **Cook Mode**
+  - One step per screen with big Back/Next buttons; ingredient amounts inline in each step
+  - Servings control rescales every amount (free-text quantities like "to taste" stay unscaled)
+  - Timers on steps: start, pause, reset; several at once; beep and vibration when one finishes, even from another step
+  - Keeps the screen awake where the browser allows; quick recipes get a simple one-screen view; recipes with no method show the ingredients and a quiet note
+  - Files: [app/recipes/[id]/cook/](./app/recipes/[id]/cook/), [components/cook/](./components/cook/), [lib/cook/](./lib/cook/)
+
+- ✅ **Capture As You Cook** ("Tell me as you go")
+  - For a recipe with no method, cook mode offers an optional button; type short notes while cooking (kept on the device until saved or discarded)
+  - Finish: Claude writes steps from the notes only (never inventing steps, quantities or times; timers only where the notes support them); you edit, reorder or delete, then save or discard
+  - Never overwrites a recipe that already has a method; shown on Agent Runs as `method-capture`
+  - Files: [lib/agents/methodCapture/](./lib/agents/methodCapture/), [lib/methodCapture/](./lib/methodCapture/)
 
 - ✅ **Recipe Filtering**
   - Filter by tier (Favorite/Non-Regular/New)

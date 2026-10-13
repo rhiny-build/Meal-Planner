@@ -29,11 +29,14 @@ Living document for tracking features, bugs, and improvements.
 - [ ] **Deleting a recipe deletes the meal-plan days that use it** (`onDelete: Cascade` on all four MealPlan recipe relations). Warn or re-point before deleting (recipe delete button, future cleanup). Changing the relation is a schema change.
 - [ ] **Ingredient reorder in the recipe editor.** Rows keep their order; steps can be moved up/down but ingredients cannot.
 - [ ] **Modal vs page editing** — editing is still a modal (also reachable from the recipe page). Decide whether it moves onto the recipe page; `RecipeEditor` works either way.
-- [ ] **Servings scaling on the recipe page** (optional; cook mode S08 needs it anyway). `renderStepText` already takes a scale.
+- [ ] **Servings scaling on the recipe page** (optional; cook mode has it, the recipe page does not).
 - [ ] Optional: server-side duplicate-name warning for MCP `create_recipe` (today only the tool description tells Claude to check `get_recipes` first).
 - [ ] Optional: per-host rate limiter for batch imports if many recipes share one site.
 - [ ] Stale `running` agent runs: mark runs as failed after a timeout (a run killed mid-way stays `running` with 0 tokens).
-- [ ] Prompt caching (`cache_control`) for long agent runs, if cost matters.
+- [ ] Cook mode: make `describeIngredient` read "salt, to taste" for non-numeric quantities (today "to taste salt"); remember step and servings per recipe across reloads; browser notification or push for timers when the phone locks.
+- [ ] Capture: for recipes that already have a method (append or correct steps); sync notes across devices; voice-note button using browser speech recognition; make the check-then-write in `saveCapturedMethod` a single transaction.
+- [ ] `npm run lint` is broken (`next lint` project-directory error). Playwright is not a project dependency, so there are no committed end-to-end tests.
+- [ ] Per-turn cache numbers are not stored (only run totals on `AgentRun`); add columns if wanted (schema change).
 
 ### Observability
 - [ ] Add logging for AI prompts/responses (viewable in Vercel function logs)
