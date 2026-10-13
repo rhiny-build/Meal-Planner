@@ -15,7 +15,7 @@ import type { EnrichContext } from '@/lib/agents/recipeImporter/enrichPrompt'
 import type { ImportResult } from '@/lib/agents/recipeImporter/types'
 import { findDuplicateGroups, mergeWarnings, quickReason, type DuplicateGroup } from './classify'
 import { describeChanges, hasChanges, planEnrichment } from './enrich'
-import type { BackfillAction, BackfillReport, RecipeSnapshot, ReportEntry } from './types'
+import type { BackfillAction, BackfillReport, RecipeSnapshot, ReportEntry, TokenTotals } from './types'
 
 export async function loadSnapshots(prisma: PrismaClient): Promise<RecipeSnapshot[]> {
   const [recipes, plans] = await Promise.all([
@@ -133,30 +133,17 @@ export async function buildBackfillPlan(
     const group = groupOf.get(recipe.id)
     let entry: ReportEntry
 
-    if (group && group.keeper.id !== recipe.id) {
-      entry = duplicateEntry(recipe, group)
-    } else if (recipe.recipeUrl) {
-      if (!isWebUrl(recipe.recipeUrl)) {
-        entry = leave(recipe, 'The recipe link is not a web address, so nothing could be read')
-      } else if (tokens.inputTokens + tokens.outputTokens >= deps.tokenBudget) {
+    if (needsAgent(recipe, group)) {
+      if (tokens.inputTokens + tokens.outputTokens >= deps.tokenBudget) {
         budgetExceeded = true
         entry = leave(recipe, `Not checked: the token budget (${deps.tokenBudget}) was used up. Re-run with a larger --token-budget`)
       } else {
         if (ranAgent) await deps.sleep(deps.delayMs)
         ranAgent = true
-        entry = await enrichEntry(recipe, deps, tokens)
+        entry = await planRecipe(recipe, group, deps, tokens)
       }
     } else {
-      const quick = quickReason(recipe)
-      entry = quick
-        ? {
-            recipeId: recipe.id,
-            name: recipe.name,
-            action: 'quick',
-            reason: quick,
-            summary: 'kind: full -> quick',
-          }
-        : leave(recipe, 'Family recipe with no link. Captured later through Claude.ai or as you cook')
+      entry = await planRecipe(recipe, group, deps, tokens)
     }
 
     if (group) entry.duplicateGroup = group.key
@@ -179,6 +166,32 @@ export async function buildBackfillPlan(
     summary,
     entries,
   }
+}
+
+/** True when planning this recipe means running the importer agent (and so spending tokens). */
+export function needsAgent(recipe: RecipeSnapshot, group: DuplicateGroup | undefined): boolean {
+  const isDuplicateCopy = !!group && group.keeper.id !== recipe.id
+  return !isDuplicateCopy && !!recipe.recipeUrl && isWebUrl(recipe.recipeUrl)
+}
+
+/**
+ * Decide what the backfill would do for ONE recipe. The dry-run loop and the admin page's
+ * one-recipe-per-request endpoint both call this, so they can never disagree.
+ */
+export async function planRecipe(
+  recipe: RecipeSnapshot,
+  group: DuplicateGroup | undefined,
+  deps: Pick<PlanDeps, 'runImporter' | 'runTokens'>,
+  tokens: TokenTotals
+): Promise<ReportEntry> {
+  if (group && group.keeper.id !== recipe.id) return duplicateEntry(recipe, group)
+  if (recipe.recipeUrl) {
+    if (!isWebUrl(recipe.recipeUrl)) return leave(recipe, 'The recipe link is not a web address, so nothing could be read')
+    return enrichEntry(recipe, deps, tokens)
+  }
+  const quick = quickReason(recipe)
+  if (!quick) return leave(recipe, 'Family recipe with no link. Captured later through Claude.ai or as you cook')
+  return { recipeId: recipe.id, name: recipe.name, action: 'quick', reason: quick, summary: 'kind: full -> quick' }
 }
 
 function leave(recipe: RecipeSnapshot, reason: string, runId?: string): ReportEntry {
@@ -213,8 +226,8 @@ function duplicateEntry(recipe: RecipeSnapshot, group: DuplicateGroup): ReportEn
 
 async function enrichEntry(
   recipe: RecipeSnapshot,
-  deps: PlanDeps,
-  tokens: { inputTokens: number; outputTokens: number; runs: number }
+  deps: Pick<PlanDeps, 'runImporter' | 'runTokens'>,
+  tokens: TokenTotals
 ): Promise<ReportEntry> {
   let result: AgentResult<ImportResult>
   try {

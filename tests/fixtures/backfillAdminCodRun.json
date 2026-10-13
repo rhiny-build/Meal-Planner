@@ -1,0 +1,127 @@
+{
+  "recipe": {
+    "id": "cmv6z0r9p002s35joy5gwtp6h",
+    "name": "Baked Cod with Tomatoes",
+    "recipeUrl": "http://localhost:4466/recipes/baked-cod-with-tomatoes.html",
+    "ingredients": [
+      {
+        "id": "cmv6z0r9p002t35jocmfjkyez",
+        "name": "cod fillets",
+        "quantity": "4",
+        "unit": null,
+        "order": 0
+      },
+      {
+        "id": "cmv6z0r9p002u35jojfc34j8i",
+        "name": "cherry tomatoes",
+        "quantity": "300",
+        "unit": "g",
+        "order": 1
+      },
+      {
+        "id": "cmv6z0r9p002v35jo1qlvxgx0",
+        "name": "garlic",
+        "quantity": "2",
+        "unit": "cloves",
+        "order": 2
+      },
+      {
+        "id": "cmv6z0r9p002w35joweof59y0",
+        "name": "olive oil",
+        "quantity": "1",
+        "unit": "tbsp",
+        "order": 3
+      },
+      {
+        "id": "cmv6z0r9p002x35jo6c42v1js",
+        "name": "handful basil",
+        "quantity": "1",
+        "unit": null,
+        "order": 4
+      }
+    ]
+  },
+  "run": {
+    "output": {
+      "draft": {
+        "kind": "full",
+        "name": "Baked Cod with Tomatoes",
+        "notes": null,
+        "steps": [
+          {
+            "text": "Heat oven to 200C.",
+            "timerSeconds": null
+          },
+          {
+            "text": "Tray the tomatoes with {ing:cmv6z0r9p002w35joweof59y0} and {ing:cmv6z0r9p002v35jo1qlvxgx0}, roast 10 minutes.",
+            "timerSeconds": 600
+          },
+          {
+            "text": "Add {ing:cmv6z0r9p002t35jocmfjkyez} and bake 12 minutes.",
+            "timerSeconds": 720
+          },
+          {
+            "text": "Scatter {ing:cmv6z0r9p002x35jo6c42v1js}.",
+            "timerSeconds": null
+          }
+        ],
+        "carbType": null,
+        "prepTime": "medium",
+        "servings": 4,
+        "sourceUrl": "http://localhost:4466/recipes/baked-cod-with-tomatoes.html",
+        "description": null,
+        "ingredients": [
+          {
+            "key": "cmv6z0r9p002t35jocmfjkyez",
+            "name": "cod fillets",
+            "unit": null,
+            "notes": null,
+            "amount": 4,
+            "quantity": "4"
+          },
+          {
+            "key": "cmv6z0r9p002u35jojfc34j8i",
+            "name": "cherry tomatoes",
+            "unit": "g",
+            "notes": null,
+            "amount": 300,
+            "quantity": "300"
+          },
+          {
+            "key": "cmv6z0r9p002v35jo1qlvxgx0",
+            "name": "garlic",
+            "unit": "cloves",
+            "notes": null,
+            "amount": 2,
+            "quantity": "2"
+          },
+          {
+            "key": "cmv6z0r9p002w35joweof59y0",
+            "name": "olive oil",
+            "unit": "tbsp",
+            "notes": null,
+            "amount": 1,
+            "quantity": "1"
+          },
+          {
+            "key": "cmv6z0r9p002x35jo6c42v1js",
+            "name": "basil",
+            "unit": "handful",
+            "notes": null,
+            "amount": 1,
+            "quantity": "1"
+          }
+        ],
+        "proteinType": "fish",
+        "totalTimeMinutes": 30,
+        "includesVegetables": true
+      },
+      "similarRecipes": []
+    },
+    "inputTokens": 6,
+    "outputTokens": 1151,
+    "cacheReadTokens": 3151,
+    "cacheCreationTokens": 3539
+  },
+  "_about": "Real importer run (Haiku, enrich mode) recorded once from the local synthetic book, replayed by tests/integration/recipe-backfill-admin.integration.test.ts. No model is called in tests."
+}
