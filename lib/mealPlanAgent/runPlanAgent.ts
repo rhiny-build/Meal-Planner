@@ -85,7 +85,7 @@ export async function runPlanAgent(params: PlanAgentParams): Promise<PlanAgentRe
       const usage = message.usage
       tokens.input += usage.input_tokens + (usage.cache_creation_input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0)
       tokens.output += usage.output_tokens
-      await run.step('model', { content: message.content, stop_reason: message.stop_reason }, {
+      await run.step('model', { content: message.content, stopReason: message.stop_reason }, {
         tokens: {
           inputTokens: usage.input_tokens, outputTokens: usage.output_tokens,
           cacheReadTokens: usage.cache_read_input_tokens ?? 0, cacheCreationTokens: usage.cache_creation_input_tokens ?? 0,

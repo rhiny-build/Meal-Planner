@@ -292,6 +292,7 @@ describe('Meal-plan agent (integration)', () => {
       const run = await testPrisma.agentRun.findUniqueOrThrow({ where: { id: result.runId }, include: { steps: { orderBy: { order: 'asc' } } } })
       expect(run).toMatchObject({ agent: 'meal-plan', status: 'succeeded' })
       expect(run.steps.filter(s => s.kind === 'model')).toHaveLength(3)
+      expect((run.steps.find(s => s.kind === 'model')?.payload as { stopReason?: string }).stopReason).toBe('tool_use') // what /agent-runs shows
       expect(run.steps.filter(s => s.kind === 'tool_call')).toHaveLength(6)
       expect(run.steps.filter(s => s.kind === 'tool_result')).toHaveLength(6)
       expect(run.inputTokens).toBe(300)

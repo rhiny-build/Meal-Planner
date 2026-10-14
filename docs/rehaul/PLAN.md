@@ -143,9 +143,9 @@ Detailed prompts exist for Waves 1–4. Prompts for later waves are written when
 
 | Session | Outcome |
 |---------|---------|
-| S11 Modify agent on SDK tool runner | "Swap Wednesday for fish" works through a tool-using agent (replaces `modifyMealPlan`). First use of the SDK tool runner. |
-| S12 Draft-week agent | From day notes + past plans + recipe tiers + recently cooked, drafts the week with a reason per day; accept/tweak. Button, plus optional Sunday schedule. |
-| S13 MCP plan tools | Draft or adjust the week from Claude.ai. |
+| S11 Modify agent on SDK tool runner | **Done (14 Oct, `rehaul_phase3_plan`).** "Swap Wednesday for fish" works through a tool-using agent (replaces `modifyMealPlan`). First use of the SDK tool runner. |
+| S12 Draft-week agent | **Done (14 Oct).** From day notes + past plans + recipe tiers + recently cooked, drafts the week with a reason per day; accept/tweak. Button only; no Sunday schedule for now. |
+| S13 MCP plan tools | **Done (14 Oct).** Draft or adjust the week from Claude.ai. |
 
 ### Phase 4 — Restock agent
 
@@ -171,5 +171,5 @@ Detailed prompts exist for Waves 1–4. Prompts for later waves are written when
 ## Open questions (answer when the relevant session starts)
 
 - Is historic Sainsbury's receipt data already in prod `PurchaseHistory`? (`npm run import:receipts` exists.) — S14
-- Sunday auto-draft of the meal plan: on or off by default? — S12
+- ~~Sunday auto-draft of the meal plan: on or off by default? — S12~~ **Answered (S12): off. Button only, for now.**
 - Email forwarding vs Gmail pull for receipts — S17

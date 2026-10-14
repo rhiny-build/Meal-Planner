@@ -59,7 +59,7 @@ export default function AskBox({ weekStart, beforeAsk, onChanged, recipeNames }:
   const name = (id: string | null) => (id ? recipeNames[id] ?? 'a recipe' : 'nothing')
 
   return (
-    <div className="mt-4 mb-2 flex flex-col gap-2">
+    <div className="mt-4 mb-28 md:mb-4 flex flex-col gap-2">
       <AiProgress active={isAsking} label="Working on your change" estimate={[5, 20]} />
       {error && <p role="alert" className="bg-danger-soft text-danger rounded-card px-4 py-3 text-sm">{error}</p>}
       {result && (

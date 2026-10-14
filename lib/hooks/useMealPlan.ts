@@ -40,8 +40,9 @@ export function useMealPlan(startDate: Date, weekStartDay: number = 1) {
   const [dirty, setDirty] = useState(false)
   const latestPlan = useRef<WeekPlan[]>([])
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true)
+  /** `quiet`: reload in place after a change (the page must not flash back to "Loading" and lose the Ask result) */
+  const fetchData = useCallback(async (quiet = false) => {
+    if (!quiet) setIsLoading(true)
     try {
       const [recipes, plan, pendingDraft] = await Promise.all([
         fetchAllRecipes(),
@@ -62,6 +63,7 @@ export function useMealPlan(startDate: Date, weekStartDay: number = 1) {
 
   useEffect(() => { fetchData() }, [fetchData])
   useAutoRefresh(fetchData)
+  const refresh = () => fetchData(true)
 
   /** An edit on screen: remember it is unsaved, and drop the agent's reason for the days it touched */
   const markEdited = (...dayIndexes: number[]) => {
@@ -96,7 +98,7 @@ export function useMealPlan(startDate: Date, weekStartDay: number = 1) {
     try {
       if (await accept(latestPlan.current)) {
         toast.success('Plan saved')
-        await fetchData()
+        await refresh()
       }
     } finally {
       setIsSaving(false)
@@ -106,7 +108,7 @@ export function useMealPlan(startDate: Date, weekStartDay: number = 1) {
   const handleDiscardDraft = async () => {
     if (!confirm('Throw away the draft?')) return
     await discard()
-    await fetchData()
+    await refresh()
   }
 
   /** Before the agent changes the plan on the server, make sure what is on screen is not lost */
@@ -164,7 +166,7 @@ export function useMealPlan(startDate: Date, weekStartDay: number = 1) {
     handleSwapRecipes,
     draft,
     reasons,
-    refresh: fetchData,
+    refresh,
     flushUnsaved,
     handleAcceptDraft,
     handleDiscardDraft,
