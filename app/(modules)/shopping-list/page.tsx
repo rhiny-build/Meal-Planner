@@ -11,6 +11,9 @@ import { getWeekStart, formatDateParam, parseDateParam } from '@/lib/dateUtils'
 import { getWeekStartDay } from '@/app/(modules)/settings/preferenceActions'
 import { ensureShoppingListExists } from './actions'
 import ShoppingListClient from './components/ShoppingListClient'
+import { loadNextWeek, nextWeekStart } from '@/lib/nextWeek/loadNextWeek'
+
+export const dynamic = 'force-dynamic'
 
 interface PageProps {
   searchParams: Promise<{ week?: string; tab?: string }>
@@ -48,12 +51,16 @@ async function ShoppingListContent({ searchParams }: PageProps) {
     },
   })
 
+  // The Next week view is the default tab; it is recomputed on every visit, never saved
+  const nextWeek = !tabParam || tabParam === 'next' ? await loadNextWeek(prisma, nextWeekStart(new Date(), startDay)) : null
+
   return (
     <ShoppingListClient
       initialList={shoppingList}
       initialWeekStart={formatDateParam(weekStart)}
       startDay={startDay}
-      initialTab={tabParam as 'meals' | 'staples' | 'restock' | 'list' | undefined}
+      initialTab={tabParam as 'next' | 'meals' | 'staples' | 'restock' | 'list' | undefined}
+      nextWeek={nextWeek}
       recipes={recipes as any}
       categories={categories}
     />

@@ -9,6 +9,7 @@
 import type { Tab } from '../hooks/useShoppingList'
 
 const TABS: { key: Tab; label: string }[] = [
+  { key: 'next', label: 'Next week' },
   { key: 'meals', label: "This Week's Meals" },
   { key: 'staples', label: 'Staples' },
   { key: 'restock', label: 'Restock' },
