@@ -3,6 +3,7 @@
 ## Non-Negotiables
 
 - Never leave DB and code out of sync — schema changes and code updates go in the same commit
+- Code must work on Vercel (serverless), not just locally. "Works on my machine" isn't done
 - When unsure, ask one specific question. Wait for the answer. Never proceed on an assumption
 - Always update relevant documentation on feature completion
 

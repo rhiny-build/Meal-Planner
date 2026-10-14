@@ -41,6 +41,12 @@ When you do interrupt, use the message format in `claude.md` and stop until he a
 - Run the app against local Postgres and exercise the feature the way a user would (Playwright, per the `ui` skill). For AI features, use real Claude at least once.
 - "I haven't tried it in the running app" is never an acceptable hand-over.
 
+## It must run on Vercel
+- Production is Vercel serverless functions, not a long-running Node server. Size, time and filesystem limits apply. Check Vercel's docs for the current figures; don't guess.
+- Nothing may load a file by path at runtime (e.g. a worker or data file from `node_modules`). Import it so the build includes it in the function.
+- Before handing over, run `npm run build && npm start` (production mode) and try the feature there, not only in `npm run dev`.
+- In the log, list anything you couldn't prove locally under "Try on the preview", so Ronen checks it first.
+
 ## Real Claude spend (dev key, capped)
 Real Claude calls cost money. Spend them only where they tell you something cheaper tests can't.
 1. **Logic: replayed responses (free).** Record real Claude responses once from a handful of runs, save them as test fixtures, and replay them in tests. Use them for the loop, tools, reports, apply/idempotency, and everything except Claude's judgement.
