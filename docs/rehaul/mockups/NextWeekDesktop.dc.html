@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Next week's list</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&amp;family=Figtree:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1F5C4A}a:hover{color:#143D31}
+</style>
+</helmet>
+<div style="box-sizing: border-box; min-height: 900px; background: #F3F5F2; font-family: Figtree, sans-serif; color: #1C221F; padding: 32px 24px 40px">
+  <div style="max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px">
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: flex-end">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <span style="font-size: 14px; color: #4F5A54">For delivery Tuesday 20 October</span>
+        <span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 34px; font-weight: 700">Next week's list</span>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: center">
+        <span style="font-size: 15px; font-weight: 600">{{count}} items ticked</span>
+        <button style="border: none; border-radius: 14px; background: #1F5C4A; color: #FFFFFF; font-family: Figtree, sans-serif; font-size: 16px; font-weight: 600; padding: 14px 20px; cursor: pointer; min-height: 48px">Copy for Sainsbury's</button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap">
+        <span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 24px; font-weight: 700">For this week's meals</span>
+        <a href="Week.dc.html" style="font-size: 14px; font-weight: 600">Change meals</a>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px">
+        <sc-for list="{{meals}}" as="m" hint-placeholder-count="4">
+          <div style="background: #FFFFFF; border-radius: 18px; padding: 14px 16px 8px; border: 2px solid #1F5C4A">
+            <span style="display: block; font-size: 12px; font-weight: 600; color: #1F5C4A; text-transform: uppercase; letter-spacing: 0.06em">{{m.day}}</span>
+            <span style="display: block; font-family: 'Bricolage Grotesque', sans-serif; font-size: 18px; font-weight: 700; padding: 2px 0 6px">{{m.name}}</span>
+            <sc-for list="{{m.items}}" as="it" hint-placeholder-count="3">
+              <button onClick="{{it.toggle}}" style="width: 100%; display: flex; align-items: center; gap: 10px; border: none; background: transparent; padding: 7px 0; min-height: 44px; font-family: Figtree, sans-serif; text-align: left; cursor: pointer; color: #1C221F">
+                <span style="{{it.box}}"></span>
+                <span style="flex: 1; display: flex; flex-direction: column; gap: 1px">
+                  <span style="font-size: 15px; font-weight: 500">{{it.name}}</span>
+                  <span style="font-size: 12px; color: #4F5A54">{{it.why}}</span>
+                </span>
+              </button>
+            </sc-for>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+      <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+        <span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 22px; font-weight: 700">Your usual weekly items</span>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px">
+          <sc-for list="{{aisles}}" as="a" hint-placeholder-count="6">
+            <div style="background: #FFFFFF; border-radius: 16px; padding: 8px 14px 6px">
+              <span style="display: block; padding: 8px 0 2px; font-size: 12px; font-weight: 600; color: #4F5A54; text-transform: uppercase; letter-spacing: 0.06em">{{a.name}}</span>
+              <sc-for list="{{a.items}}" as="it" hint-placeholder-count="3">
+                <button onClick="{{it.toggle}}" style="width: 100%; display: flex; align-items: center; gap: 10px; border: none; background: transparent; padding: 8px 0; min-height: 44px; font-family: Figtree, sans-serif; font-size: 15px; text-align: left; cursor: pointer; color: #1C221F">
+                  <span style="{{it.box}}"></span>
+                  <span style="flex: 1">{{it.name}}</span>
+                  <span style="font-size: 12px; color: #1F5C4A">{{it.note}}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+        <span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 22px; font-weight: 700">Do you need these?</span>
+        <div style="background: #FFFFFF; border-radius: 16px; padding: 6px 14px">
+          <sc-for list="{{suggested}}" as="s" hint-placeholder-count="8">
+            <button onClick="{{s.toggle}}" style="width: 100%; display: flex; align-items: center; gap: 12px; border: none; border-bottom: 1px solid #EEF1EE; background: transparent; padding: 10px 0; min-height: 52px; font-family: Figtree, sans-serif; text-align: left; cursor: pointer; color: #1C221F">
+              <span style="{{s.box}}"></span>
+              <span style="flex: 1; display: flex; flex-direction: column; gap: 2px">
+                <span style="font-size: 15px; font-weight: 500">{{s.name}}</span>
+                <span style="font-size: 13px; color: #4F5A54">{{s.why}}</span>
+              </span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { flip: {} };
+  }
+  renderVals() {
+    const s = this.state;
+    const meals = [
+      ['Mon', 'Salmon Pea Pasta', [
+        ['Salmon fillets x4', 'Fresh, for this meal', true],
+        ['Lemons', 'Fresh, for this meal', true],
+        ['Frozen peas', 'Freezer: bought 3 weeks ago, probably have', false],
+        ['Pasta', 'Cupboard: Fusilli 1kg bought 6 Oct, lasts ~3 weeks', false]
+      ]],
+      ['Tue', 'Turkey Fajitas', [
+        ['Turkey mince 2%', 'Fresh, for this meal (you buy it most weeks)', true],
+        ['Old El Paso fajita kit', 'For this meal', true],
+        ['Red pepper', 'For this meal, also in your weekly items', true]
+      ]],
+      ['Wed', 'Beef Keema with Peas', [
+        ['Beef mince 500g', 'Fresh, for this meal', true],
+        ['Onions', 'Fresh, for this meal', true],
+        ['Garam masala', 'Cupboard: not bought in the last year, check', false]
+      ]],
+      ['Thu', 'Oven Baked Chicken Schnitzel', [
+        ['Chicken breasts', 'Fresh, for this meal', true],
+        ['Golden breadcrumbs', 'Cupboard, but likely out: usually every 6 weeks, last 10 weeks ago', true],
+        ['Eggs', 'For this meal, also in your weekly items', true]
+      ]]
+    ];
+    const usual = [
+      ['Fresh produce', [['Cucumber', ''], ['Round tomatoes x6', ''], ['Strawberries 250g', ''], ['Bananas x5', ''], ['Red pepper', 'Tue']]],
+      ['Dairy and eggs', [['Free range eggs x12', 'Thu'], ['Semi skimmed milk 4 pint', ''], ['Müller Light strawberry', ''], ['Grated mozzarella 250g', '']]],
+      ['Bakery', [['Fitzgeralds sourdough bagels', ''], ['Warburtons white pittas x4', '']]],
+      ['Meat and deli', [['Bavarian smoked ham slices', '']]],
+      ['Cupboard', [['Jordans apple and berry granola', '']]],
+      ['Drinks and snacks', [['Pepsi Max 2L', ''], ['Pepsi Max Lime 2L', ''], ['Blue Riband hazelnut x6', '']]]
+    ];
+    const sugg = [
+      ['Baby plum tomatoes', 'In every recent order, but a summer favourite'],
+      ['White seedless grapes', 'In 7 of your last 10 orders'],
+      ['Sabra houmous', 'In 7 of your last 10 orders'],
+      ['Nurofen 200mg x16', 'In 8 of your last 10 orders'],
+      ['Summer fruits squash', 'Usually every 2 weeks, last bought 4 weeks ago'],
+      ['Carrots 500g', 'Usually every 3–4 weeks, last bought 6 weeks ago'],
+      ['Toilet tissue x16', 'Usually every 2 weeks, last bought 3 weeks ago'],
+      ['Nutella 350g', 'Usually every 2 weeks, last bought 2 weeks ago'],
+      ['Olive oil, extra virgin 1L', 'Usually every 6 weeks, last bought 6 weeks ago']
+    ];
+    const box = (on) => 'width: 22px; height: 22px; border-radius: 7px; flex: none; box-sizing: border-box; ' + (on ? 'background: #1F5C4A; border: 2px solid #1F5C4A' : 'background: #FFFFFF; border: 2px solid #8FA398');
+    let count = 0;
+    const tick = (key, def) => { const on = s.flip[key] ? !def : def; if (on) count += 1; return on; };
+    const flip = (key) => () => this.setState({ flip: { ...s.flip, [key]: !s.flip[key] } });
+    const inMeal = new Set(['Red pepper', 'Free range eggs x12']);
+    return {
+      meals: meals.map(([day, name, items]) => ({ day, name, items: items.map(([n, why, def]) => { const k = day + n; const on = tick(k, def); return { name: n, why, box: box(on), toggle: flip(k) }; }) })),
+      aisles: usual.map(([name, items]) => ({ name, items: items.map(([n, d]) => { const k = 'u' + n; const on = inMeal.has(n) ? false : tick(k, true); return { name: n, note: d ? 'see ' + d : '', box: inMeal.has(n) ? box(true) + '; opacity: 0.35' : box(on), toggle: inMeal.has(n) ? (() => {}) : flip(k) }; }) })),
+      suggested: sugg.map(([n, why]) => { const k = 's' + n; const on = tick(k, false); return { name: n, why, box: box(on), toggle: flip(k) }; }),
+      count
+    };
+  }
+}
+</script>
+</body>
+</html>

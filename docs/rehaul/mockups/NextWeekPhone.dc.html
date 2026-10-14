@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Next week's list, phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&amp;family=Figtree:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1F5C4A}a:hover{color:#143D31}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F5F2; font-family: Figtree, sans-serif; color: #1C221F; display: flex; flex-direction: column">
+  <div style="padding: 26px 20px 10px; display: flex; flex-direction: column; gap: 2px">
+    <span style="font-size: 14px; color: #4F5A54">For Tuesday 20 October</span>
+    <span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 28px; font-weight: 700">Next week's list</span>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 0 16px; background: #E3E8E3; padding: 4px; border-radius: 14px">
+    <button onClick="{{showLikely}}" style="{{tabLikely}}">Likely ({{likelyCount}})</button>
+    <button onClick="{{showSugg}}" style="{{tabSugg}}">Need these? ({{suggCount}})</button>
+  </div>
+
+  <div style="flex: 1; overflow: hidden; margin: 12px 16px 0; display: flex; flex-direction: column; gap: 10px">
+    <sc-if value="{{isLikely}}" hint-placeholder-val="{{true}}">
+      <sc-for list="{{aisles}}" as="a" hint-placeholder-count="3">
+        <div style="background: #FFFFFF; border-radius: 16px; padding: 4px 14px">
+          <span style="display: block; padding: 8px 0 0; font-size: 12px; font-weight: 600; color: #4F5A54; text-transform: uppercase; letter-spacing: 0.06em">{{a.name}}</span>
+          <sc-for list="{{a.items}}" as="it" hint-placeholder-count="3">
+            <button onClick="{{it.toggle}}" style="width: 100%; display: flex; align-items: center; gap: 10px; border: none; background: transparent; padding: 8px 0; min-height: 44px; font-family: Figtree, sans-serif; font-size: 16px; text-align: left; cursor: pointer; color: #1C221F">
+              <span style="{{it.box}}"></span>
+              <span style="{{it.text}}">{{it.name}}</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-for>
+    </sc-if>
+    <sc-if value="{{isSugg}}" hint-placeholder-val="{{false}}">
+      <div style="background: #FFFFFF; border-radius: 16px; padding: 4px 14px">
+        <sc-for list="{{suggested}}" as="s" hint-placeholder-count="6">
+          <button onClick="{{s.toggle}}" style="width: 100%; display: flex; align-items: center; gap: 12px; border: none; border-bottom: 1px solid #EEF1EE; background: transparent; padding: 9px 0; min-height: 52px; font-family: Figtree, sans-serif; text-align: left; cursor: pointer; color: #1C221F">
+            <span style="{{s.box}}"></span>
+            <span style="flex: 1; display: flex; flex-direction: column; gap: 2px">
+              <span style="font-size: 15px; font-weight: 500">{{s.name}}</span>
+              <span style="font-size: 13px; color: #4F5A54">{{s.why}}</span>
+            </span>
+          </button>
+        </sc-for>
+      </div>
+    </sc-if>
+  </div>
+
+  <div style="padding: 12px 16px 18px">
+    <button style="width: 100%; border: none; border-radius: 16px; background: #1F5C4A; color: #FFFFFF; font-family: Figtree, sans-serif; font-size: 17px; font-weight: 600; padding: 16px 0; cursor: pointer">Copy {{count}} items for Sainsbury's</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tab: 0, off: {}, on: {} };
+  }
+  renderVals() {
+    const s = this.state;
+    const likely = [
+      ['Fresh produce', ['Cucumber', 'Red pepper', 'Round tomatoes x6', 'Strawberries 250g', 'Bananas x5']],
+      ['Dairy and eggs', ['Free range eggs x12', 'Semi skimmed milk 4 pint', 'Müller Light strawberry', 'Grated mozzarella 250g']],
+      ['Bakery', ['Fitzgeralds sourdough bagels', 'Warburtons white pittas x4']],
+      ['Meat and deli', ['Bavarian smoked ham slices']],
+      ['Cupboard', ['Jordans apple and berry granola', 'Old El Paso fajita kit']],
+      ['Drinks and snacks', ['Pepsi Max 2L', 'Pepsi Max Lime 2L', 'Blue Riband hazelnut x6']]
+    ];
+    const sugg = [
+      ['Baby plum tomatoes', 'Every recent order, but a summer favourite'],
+      ['White seedless grapes', '7 of your last 10 orders'],
+      ['Turkey mince 2%', '7 of your last 10 orders'],
+      ['Salmon fillets x4', '7 of your last 10 orders'],
+      ['Sabra houmous', '7 of your last 10 orders'],
+      ['Lemons', '7 of your last 10 orders'],
+      ['Nurofen 200mg x16', '8 of your last 10 orders'],
+      ['Summer fruits squash', 'Every ~2 weeks, last 4 weeks ago'],
+      ['Carrots 500g', 'Every ~3–4 weeks, last 6 weeks ago'],
+      ['Golden breadcrumbs', 'Every ~6 weeks, last 10 weeks ago'],
+      ['Toilet tissue x16', 'Every ~2 weeks, last 3 weeks ago'],
+      ['Nutella 350g', 'Every ~2 weeks, last 2 weeks ago'],
+      ['Olive oil, extra virgin 1L', 'Every ~6 weeks, last 6 weeks ago']
+    ];
+    const box = (on) => 'width: 22px; height: 22px; border-radius: 7px; flex: none; box-sizing: border-box; ' + (on ? 'background: #1F5C4A; border: 2px solid #1F5C4A' : 'background: #FFFFFF; border: 2px solid #8FA398');
+    const tab = (on) => 'border: none; border-radius: 11px; min-height: 44px; font-family: Figtree, sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; ' + (on ? 'background: #FFFFFF; color: #1C221F' : 'background: transparent; color: #4F5A54');
+    let likelyCount = 0, suggCount = 0;
+    const aisles = likely.map(([name, items]) => ({
+      name,
+      items: items.map((n) => {
+        const on = !s.off[n]; if (on) likelyCount += 1;
+        return { name: n, box: box(on), text: 'flex: 1; ' + (on ? '' : 'color: #7C8781; text-decoration: line-through'), toggle: () => this.setState({ off: { ...s.off, [n]: on } }) };
+      })
+    }));
+    const suggested = sugg.map(([n, why]) => {
+      const on = !!s.on[n]; if (on) suggCount += 1;
+      return { name: n, why, box: box(on), toggle: () => this.setState({ on: { ...s.on, [n]: !on } }) };
+    });
+    return {
+      aisles, suggested, likelyCount, suggCount: sugg.length, count: likelyCount + suggCount,
+      isLikely: s.tab === 0, isSugg: s.tab === 1,
+      tabLikely: tab(s.tab === 0), tabSugg: tab(s.tab === 1),
+      showLikely: () => this.setState({ tab: 0 }), showSugg: () => this.setState({ tab: 1 })
+    };
+  }
+}
+</script>
+</body>
+</html>

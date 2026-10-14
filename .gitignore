@@ -56,3 +56,4 @@ next-env.d.ts
 backfill-report.md
 backfill-report.json
 backfill-report*/
+.receipts-dev/

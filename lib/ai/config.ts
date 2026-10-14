@@ -26,6 +26,12 @@ export const AI_CONFIG = {
     model: CLAUDE_MODELS.cheap,
     maxTokens: 300,
   },
+  classifyProducts: {
+    /** Receipt product name -> item, aisle, cupboard flag; once per new product name (cached in ProductMapping) */
+    model: CLAUDE_MODELS.cheap,
+    /** About 65 output tokens per product, 30 products per call */
+    maxTokens: 6000,
+  },
   recipeImporter: {
     /** Haiku: about 10x cheaper than Sonnet with matching quality on the 5-case comparison (docs/rehaul/logs/RUN-cost-caching-haiku.md). Also used by the backfill. */
     model: CLAUDE_MODELS.cheap,

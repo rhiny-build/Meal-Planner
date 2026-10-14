@@ -24,7 +24,7 @@ import type { EmbeddingSuggestion } from '../actions'
 import type { ShoppingList, ShoppingListItem, Category, MasterListItem } from '@prisma/client'
 import type { PendingSuggestion } from '../components/SuggestionRow'
 
-export type Tab = 'meals' | 'staples' | 'restock' | 'list'
+export type Tab = 'next' | 'meals' | 'staples' | 'restock' | 'list'
 type ShoppingListWithItems = ShoppingList & { items: ShoppingListItem[] }
 type CategoryWithItems = Category & { items: MasterListItem[] }
 
@@ -40,7 +40,7 @@ export function useShoppingList({
   initialList,
   initialWeekStart,
   startDay,
-  initialTab = 'meals',
+  initialTab = 'next',
   categories,
 }: UseShoppingListOptions) {
   const router = useRouter()
@@ -73,7 +73,7 @@ export function useShoppingList({
   // Navigation
   const setActiveTab = (tab: Tab) => {
     const params = new URLSearchParams(searchParams.toString())
-    if (tab === 'meals') {
+    if (tab === 'next') {
       params.delete('tab')
     } else {
       params.set('tab', tab)

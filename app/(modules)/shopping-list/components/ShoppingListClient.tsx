@@ -23,6 +23,8 @@ import MasterListTab from './MasterListTab'
 import DeleteItemModal from './DeleteItemModal'
 import EmbeddingReviewModal from './EmbeddingReviewModal'
 import StaleBanner from './StaleBanner'
+import NextWeekTab from './nextWeek/NextWeekTab'
+import type { NextWeekData } from '@/lib/nextWeek/loadNextWeek'
 
 type ShoppingListWithItems = ShoppingList & { items: ShoppingListItem[] }
 type CategoryWithItems = Category & { items: MasterListItem[] }
@@ -32,6 +34,7 @@ interface ShoppingListClientProps {
   initialWeekStart: string
   startDay: number
   initialTab?: Tab
+  nextWeek: NextWeekData | null
   recipes: Recipe[]
   categories: CategoryWithItems[]
 }
@@ -40,7 +43,8 @@ export default function ShoppingListClient({
   initialList,
   initialWeekStart,
   startDay,
-  initialTab = 'meals',
+  initialTab = 'next',
+  nextWeek,
   recipes,
   categories,
 }: ShoppingListClientProps) {
@@ -88,6 +92,9 @@ export default function ShoppingListClient({
         estimate={[5, 20]}
         className="mb-4"
       />
+
+      {/* Next week: predicted order from real receipts + next week's meals */}
+      {activeTab === 'next' && nextWeek && <NextWeekTab data={nextWeek} />}
 
       {/* This Week's Meals Tab */}
       {activeTab === 'meals' && (

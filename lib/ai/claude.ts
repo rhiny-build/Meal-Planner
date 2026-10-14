@@ -29,6 +29,8 @@ export interface ForcedToolCall {
   toolDescription: string
   /** JSON schema for the tool input (i.e. the shape of the result) */
   schema: Anthropic.Tool.InputSchema
+  /** Called with the token usage of the response, for callers that track spend */
+  onUsage?: (usage: Anthropic.Usage) => void
 }
 
 /**
@@ -53,6 +55,7 @@ export async function callForcedTool<T>(params: ForcedToolCall): Promise<T> {
     tool_choice: { type: 'auto' },
   })
 
+  params.onUsage?.(message.usage)
   const block = message.content.find(
     (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use' && b.name === params.toolName
   )
