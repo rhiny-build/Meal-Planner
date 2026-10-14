@@ -9,28 +9,6 @@ import type Anthropic from '@anthropic-ai/sdk'
 
 type Schema = Anthropic.Tool.InputSchema
 
-export const MODIFY_MEAL_PLAN_SCHEMA: Schema = {
-  type: 'object',
-  properties: {
-    modifiedPlan: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          date: { type: 'string', description: 'The YYYY-MM-DD date of the day, exactly as written in the current plan' },
-          lunchRecipeId: { type: 'string' },
-          proteinRecipeId: { type: 'string' },
-          carbRecipeId: { type: 'string' },
-          vegetableRecipeId: { type: 'string' },
-        },
-        required: ['date', 'lunchRecipeId', 'proteinRecipeId', 'carbRecipeId', 'vegetableRecipeId'],
-      },
-    },
-    explanation: { type: 'string' },
-  },
-  required: ['modifiedPlan', 'explanation'],
-}
-
 export const NORMALISE_ITEMS_SCHEMA: Schema = {
   type: 'object',
   properties: {

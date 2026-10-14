@@ -90,20 +90,6 @@ export interface StructuredIngredientData {
   order: number
 }
 
-// Lightweight plan entry for AI requests (doesn't require full DB fields)
-export interface PlanEntryForAI {
-  date: string // calendar date as "YYYY-MM-DD" (no time zone)
-  dayOfWeek: string
-  lunchRecipeId: string | null
-  proteinRecipeId: string | null
-  carbRecipeId: string | null
-  vegetableRecipeId: string | null
-  lunchRecipe?: Recipe | null
-  proteinRecipe?: Recipe | null
-  carbRecipe?: Recipe | null
-  vegetableRecipe?: Recipe | null
-}
-
 // Request body for creating/saving a week of meal plans
 export interface BulkMealPlanRequest {
   startDate: string
@@ -114,26 +100,6 @@ export interface BulkMealPlanRequest {
     carbRecipeId?: string | null
     vegetableRecipeId?: string | null
   }[]
-}
-
-// Request to modify a meal plan using natural language
-export interface MealPlanModificationRequest {
-  instruction: string // e.g., "swap Tuesday for something faster"
-  currentPlan: PlanEntryForAI[] // The current week's plan
-  availableRecipes: Recipe[] // All recipes to choose from
-}
-
-// Response from AI after modifying the meal plan
-export interface MealPlanModificationResult {
-  modifiedPlan: {
-    date: string // "YYYY-MM-DD", one entry per day of the request, in order
-    dayOfWeek: string
-    lunchRecipeId: string
-    proteinRecipeId: string
-    carbRecipeId: string
-    vegetableRecipeId: string
-  }[]
-  explanation: string // What the AI changed and why
 }
 
 // Shopping List types

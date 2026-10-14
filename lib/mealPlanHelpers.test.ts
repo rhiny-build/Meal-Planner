@@ -6,7 +6,6 @@ import { describe, it, expect } from 'vitest'
 import {
   getOrderedDays,
   swapRecipesInPlan,
-  applyGeneratedPlanToWeek,
   createEmptyWeekPlan,
   validateWeekStart,
   parseStartDate,
@@ -141,73 +140,6 @@ describe('swapRecipesInPlan', () => {
   })
 })
 
-
-describe('applyGeneratedPlanToWeek', () => {
-  it('should apply modifications to matching days', () => {
-    const plan = makeWeekPlan()
-    const monday = plan[0].date
-
-    const result = applyGeneratedPlanToWeek(plan, [
-      { date: monday, proteinRecipeId: 'p1', carbRecipeId: 'c1', vegetableRecipeId: 'v1' },
-    ])
-
-    expect(result[0].proteinRecipeId).toBe('p1')
-    expect(result[0].carbRecipeId).toBe('c1')
-    expect(result[0].vegetableRecipeId).toBe('v1')
-  })
-
-  it('should leave unmodified days unchanged', () => {
-    const plan = makeWeekPlan([
-      { proteinRecipeId: 'existing' },
-    ])
-
-    const result = applyGeneratedPlanToWeek(plan, [
-      { date: plan[1].date, proteinRecipeId: 'new', carbRecipeId: '', vegetableRecipeId: '' },
-    ])
-
-    expect(result[0].proteinRecipeId).toBe('existing')
-    expect(result[1].proteinRecipeId).toBe('new')
-  })
-
-  it('should handle lunchRecipeId when provided', () => {
-    const plan = makeWeekPlan()
-
-    const result = applyGeneratedPlanToWeek(plan, [
-      { date: plan[0].date, lunchRecipeId: 'lunch1', proteinRecipeId: '', carbRecipeId: '', vegetableRecipeId: '' },
-    ])
-
-    expect(result[0].lunchRecipeId).toBe('lunch1')
-  })
-
-  it('should default lunchRecipeId to empty string when not provided', () => {
-    const plan = makeWeekPlan([{ lunchRecipeId: 'old-lunch' }])
-
-    const result = applyGeneratedPlanToWeek(plan, [
-      { date: plan[0].date, proteinRecipeId: 'p1', carbRecipeId: '', vegetableRecipeId: '' },
-    ])
-
-    expect(result[0].lunchRecipeId).toBe('')
-  })
-
-  it('should handle string dates from AI responses', () => {
-    const plan = makeWeekPlan()
-
-    const result = applyGeneratedPlanToWeek(plan, [
-      { date: plan[2].date.toISOString(), proteinRecipeId: 'p1', carbRecipeId: 'c1', vegetableRecipeId: 'v1' },
-    ])
-
-    expect(result[2].proteinRecipeId).toBe('p1')
-  })
-
-  it('should not mutate the original plan', () => {
-    const plan = makeWeekPlan()
-    applyGeneratedPlanToWeek(plan, [
-      { date: plan[0].date, proteinRecipeId: 'new', carbRecipeId: '', vegetableRecipeId: '' },
-    ])
-
-    expect(plan[0].proteinRecipeId).toBe('')
-  })
-})
 
 describe('createEmptyWeekPlan', () => {
   it('should create a 7-day plan starting from the given date (Monday)', () => {

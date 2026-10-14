@@ -346,3 +346,16 @@ model AgentStep {
 
   @@index([runId, order])
 }
+
+// PlanDraft: a drafted (not yet accepted) week of the meal plan. Nothing here counts as the plan until it is
+// accepted, which writes it to MealPlan and deletes the draft. `days` holds the whole week as it will become the
+// plan: [{ date, dayOfWeek, lunchRecipeId, proteinRecipeId, carbRecipeId, vegetableRecipeId, reason, locked }]
+// where `locked` lists the slots Ronen had already filled (the draft never changes those).
+model PlanDraft {
+  id        String   @id @default(cuid())
+  weekStart DateTime @unique @db.Date // first day of the week this draft is for
+  days      Json
+  summary   String?  // the agent's one-line description of the draft
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

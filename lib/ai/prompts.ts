@@ -13,8 +13,6 @@
 // ---------------------------------------------------------------------------
 
 export const SYSTEM_PROMPTS = {
-  modifyMealPlan:
-    'You are a helpful meal planning assistant. Submit your answer using the provided tool.',
   normaliseIngredients:
     'You are a helpful assistant that normalises grocery product names to their base ingredient concept. Submit your answer using the provided tool.',
   normaliseIngredientSingle: `You are an expert chef and recipe analyst. Your job is to normalise ingredient names to canonical British English form for use in a shopping list deduplication system.
@@ -43,83 +41,6 @@ For each recipe:
 // ---------------------------------------------------------------------------
 // User prompt builders
 // ---------------------------------------------------------------------------
-
-/**
- * Build the prompt for modifying / generating a weekly meal plan.
- *
- * Expected JSON response shape:
- * {
- *   modifiedPlan: { date: string (YYYY-MM-DD, as given), lunchRecipeId: string, proteinRecipeId: string, carbRecipeId: string, vegetableRecipeId: string }[]
- *   explanation: string
- * }
- */
-export function buildModifyMealPlanPrompt(params: {
-  currentPlanText: string
-  lunchRecipes: string
-  proteinRecipes: string
-  carbRecipes: string
-  vegetableRecipes: string
-  instruction: string
-}): string {
-  return `You are a meal planning assistant.
-
-Your task is to generate a COMPLETE weekly meal plan with ALL 28 slots filled.
-
-IMPORTANT RULES:
-
-1) The weekly plan has 7 days × 4 slots per day:
-   - lunch
-   - protein
-   - carb
-   - vegetable
-
-2) Some slots in the current plan already have a recipe name.
-   These are LOCKED and MUST NOT be changed.
-   - If a slot contains a recipe name → keep it exactly as is.
-
-3) You MUST fill every empty slot using ONLY recipes from the available recipes list.
-
-4) No recipe may appear more than once in the entire week. Locked meals are automatically considered "used" and do not count as repetition.
-
-5) Maintain a "used recipe ID list" as you fill the plan:
-   - Initialize it with the IDs of all locked meals.
-   - For each empty slot:
-     1) Pick a recipe ID that is NOT in the used list.
-     2) Assign it to the slot.
-     3) Add the recipe ID to the used list.
-   - Repeat until all empty slots are filled.
-
-6) Each slot MUST use a recipe from that slot's list below. A recipe not in the list is INVALID for that slot.
-7) If multiple valid recipes are available for a slot, prioritize variety over tier or prep time.
-
-
-Current meal plan:
-${params.currentPlanText}
-
-Available LUNCH recipes (use ONLY these for lunch slots):
-${params.lunchRecipes}
-
-Available PROTEIN recipes (use ONLY these for protein slots):
-${params.proteinRecipes}
-
-Available CARB recipes (use ONLY these for carb slots):
-${params.carbRecipes}
-
-Available VEGETABLE recipes (use ONLY these for vegetable slots):
-${params.vegetableRecipes}
-
-User instruction: "${params.instruction}"
-
-
-Submit with the tool:
-- "modifiedPlan": array of {date: the YYYY-MM-DD date exactly as written in the current plan, lunchRecipeId, proteinRecipeId, carbRecipeId, vegetableRecipeId} for ALL days in the plan
-- "explanation": explain briefly how you ensured all slots were filled and locked meals preserved.
-
-CRITICAL:
-- Return ALL 7 days.
-- Every slot must contain a valid recipe ID.
-- Do not leave any slot empty.`
-}
 
 /**
  * Build the prompt for normalising grocery product names.

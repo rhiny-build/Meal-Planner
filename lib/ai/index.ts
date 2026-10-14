@@ -9,6 +9,5 @@
  * so the rest of the app doesn't depend on the provider.
  */
 
-export { modifyMealPlan } from './modifyMealPlan'
 export { normaliseMasterItems } from '../shopping-list/normaliseMasterItem'
 export type { NormalisationInput, NormalisationResult } from '../shopping-list/normaliseMasterItem'

@@ -14,10 +14,6 @@ export const CLAUDE_MODELS = {
 } as const
 
 export const AI_CONFIG = {
-  modifyMealPlan: {
-    model: CLAUDE_MODELS.agent,
-    maxTokens: 4000,
-  },
   normaliseIngredients: {
     model: CLAUDE_MODELS.cheap,
     maxTokens: 4000,
@@ -44,6 +40,13 @@ export const AI_CONFIG = {
     model: CLAUDE_MODELS.cheap,
     maxTokens: 3000,
     maxTurns: 4,
+  },
+  mealPlanAgent: {
+    /** Ask box ("swap Wednesday for fish") and Draft my week. Model chosen from the real-run sample in docs/rehaul/logs/RUN-phase-3.md */
+    model: CLAUDE_MODELS.agent,
+    maxTokens: 4000,
+    /** Guard for the tool runner: a draft is read + search + one round of set_meal_slot, plus slack */
+    maxIterations: 8,
   },
   discoverRecipes: {
     model: CLAUDE_MODELS.agent,

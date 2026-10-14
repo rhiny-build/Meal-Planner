@@ -19,6 +19,8 @@ import DaySwapSheet from './DaySwapSheet'
 interface WeekListProps {
   weekPlan: WeekPlan[]
   dayNotes: Record<string, string>
+  /** Draft reasons by date (YYYY-MM-DD) */
+  reasons?: Record<string, string>
   lunchRecipes: RecipeWithIngredients[]
   proteinRecipes: RecipeWithIngredients[]
   carbRecipes: RecipeWithIngredients[]
@@ -31,6 +33,7 @@ interface WeekListProps {
 export default function WeekList({
   weekPlan,
   dayNotes,
+  reasons = {},
   lunchRecipes,
   proteinRecipes,
   carbRecipes,
@@ -72,6 +75,7 @@ export default function WeekList({
               isToday={formatDateParam(dayPlan.date) === todayKey}
               slots={slots}
               note={dayNotes[dayPlan.day] ?? ''}
+              reason={reasons[formatDateParam(dayPlan.date)]}
               onSwap={() => setOpenDayIndex(index)}
             />
           )
