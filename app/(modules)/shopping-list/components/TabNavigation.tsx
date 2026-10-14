@@ -3,17 +3,17 @@
 /**
  * Tab Navigation for the Shopping List page.
  *
- * Renders the tab bar (Meals / Staples / Restock / Shopping List).
+ * Renders the tab bar (Next week / Meals / Staples / Restock / Shopping List). Two labels are shortened on a phone so all five tabs fit.
  */
 
 import type { Tab } from '../hooks/useShoppingList'
 
-const TABS: { key: Tab; label: string }[] = [
+const TABS: { key: Tab; label: string; short?: string }[] = [
   { key: 'next', label: 'Next week' },
-  { key: 'meals', label: "This Week's Meals" },
+  { key: 'meals', label: "This Week's Meals", short: 'Meals' },
   { key: 'staples', label: 'Staples' },
   { key: 'restock', label: 'Restock' },
-  { key: 'list', label: 'Shopping List' },
+  { key: 'list', label: 'Shopping List', short: 'List' },
 ]
 
 interface TabNavigationProps {
@@ -24,7 +24,7 @@ interface TabNavigationProps {
 export default function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
   return (
     <div className="flex gap-1.5 bg-sunken p-1 rounded-card mb-5 overflow-x-auto" role="tablist">
-      {TABS.map(({ key, label }) => (
+      {TABS.map(({ key, label, short }) => (
         <button
           key={key}
           onClick={() => onTabChange(key)}
@@ -34,7 +34,14 @@ export default function TabNavigation({ activeTab, onTabChange }: TabNavigationP
             activeTab === key ? 'bg-surface text-ink' : 'text-ink-soft'
           }`}
         >
-          {label}
+          {short ? (
+            <>
+              <span className="sm:hidden">{short}</span>
+              <span className="hidden sm:inline">{label}</span>
+            </>
+          ) : (
+            label
+          )}
         </button>
       ))}
     </div>
