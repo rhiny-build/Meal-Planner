@@ -9,6 +9,11 @@ type TextItem = { str: string; transform: number[] }
 
 export async function pdfToText(data: Buffer): Promise<string> {
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
+  // In Node pdf.js finds its worker by file path at run time, and Vercel's deploy bundle does not include a file that is only
+  // named by a path ("Setting up fake worker failed"). Importing the worker ourselves puts it in the bundle, and pdf.js
+  // uses globalThis.pdfjsWorker when it is set instead of looking for the file.
+  const g = globalThis as { pdfjsWorker?: unknown }
+  g.pdfjsWorker ??= await import('pdfjs-dist/legacy/build/pdf.worker.mjs')
   // pdf.js takes ownership of the memory it is given, and a Buffer can be a slice of Node's shared pool: give it its own copy.
   const own = new Uint8Array(data.byteLength)
   own.set(data)
