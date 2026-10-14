@@ -19,6 +19,8 @@ Work on **`rehaul_phase4_list`** (it exists). First merge the latest `main` into
    - a product name that wraps its weight onto its own line, e.g. "0.42kg £8.50", is a continuation, not a new item;
    - each receipt's parsed count must equal its "Groceries (N items)". Report any receipt where it doesn't.
    Store the items in `PurchaseHistory`. Uploading the same receipt twice must not duplicate anything.
+   **Keep the raw receipts:** store every uploaded PDF unchanged in Vercel Blob (already a dependency), private, keyed by Sainsbury's order number. Store the zip's individual PDFs, not the zip. This is the permanent source of truth.
+   **Rebuild from raw:** an admin button that re-parses **all** stored receipts and rebuilds `PurchaseHistory` from them, e.g. after a parser fix or a method change. It must be safe to run any time, and must report receipts parsed, items, and any count mismatches.
 2. **Product → item:** each distinct product name gets an **item** ("JS Whole Cucumber" and "Sainsbury's Whole Cucumber" are both "cucumber"), an **aisle**, and a **cupboard** flag (pasta, spices, oil: yes; fresh food: no). Use the cheap model **once per new product name** and cache the result in a new table. Adding tables is fine; database changes only add. Ronen can correct an item or aisle; corrections stick.
 3. **Prediction** (as in `prediction_reference.py`, but at item level):
    - **Usual weekly items:** items in **≥80% of the last 10 orders**. Ticked.
@@ -35,7 +37,8 @@ Work on **`rehaul_phase4_list`** (it exists). First merge the latest `main` into
    - **No match to a known item:** show the plain ingredient name, unticked, "check".
 5. **Copy for Sainsbury's:** one tap puts every ticked line on the clipboard, one product name per line.
 6. **Where it lives:** a new "Next week" view as the first thing in the Shopping tab. The old shopping list stays reachable, unchanged, until Ronen decides to retire it.
-7. **No learning from ticks** in this version. New receipts are the only feedback.
+7. **Recalculate:** the prediction is always computed from the current `PurchaseHistory` and next week's meal plan. It updates straight after an upload or rebuild, and when the meal plan changes; there's no stale saved list. Ticks Ronen changes on the page are kept until the order date passes.
+8. **No learning from ticks** in this version. New receipts are the only feedback.
 
 ## Testing
 - Port the method's backtest as a test. Using receipt fixtures from the parser, the usual weekly items must be right **≥80% of the time** across the last 8 orders. Use anonymised or synthetic receipt fixtures; never commit Ronen's real receipts to the repo, which is public.
