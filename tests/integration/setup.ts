@@ -79,6 +79,10 @@ export async function clearTestDatabase() {
   // Delete in order to respect foreign key constraints
   await testPrisma.agentRun.deleteMany() // cascades to AgentStep
   await testPrisma.dayNote.deleteMany()
+  await testPrisma.purchaseHistory.deleteMany()
+  await testPrisma.receipt.deleteMany()
+  await testPrisma.productMapping.deleteMany()
+  await testPrisma.nextWeekTick.deleteMany()
   await testPrisma.rejectedSuggestion.deleteMany()
   await testPrisma.ingredientMapping.deleteMany()
   await testPrisma.shoppingListItem.deleteMany()

@@ -110,6 +110,10 @@ export default function SettingsClient({
           <span className="font-semibold">Recipe backfill</span>
           <span className="text-sm text-ink-soft">Admin: tidy up older recipes</span>
         </Link>
+        <Link href="/admin/receipts" className="min-h-14 bg-surface rounded-card px-4 py-3 flex flex-col justify-center">
+          <span className="font-semibold">Receipts</span>
+          <span className="text-sm text-ink-soft">Admin: upload Sainsbury&apos;s receipts for Next week</span>
+        </Link>
       </section>
     </div>
   )

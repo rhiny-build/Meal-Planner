@@ -6,6 +6,8 @@ const nextConfig = {
       bodySizeLimit: '2mb',
     },
   },
+  // pdf.js loads its own worker file at run time, so it stays out of the bundle
+  serverExternalPackages: ['pdfjs-dist'],
 }
 
 module.exports = nextConfig

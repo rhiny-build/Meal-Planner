@@ -224,13 +224,58 @@ model PurchaseHistory {
   rawName      String   // exact product name from receipt e.g. "Sainsbury's Whole Milk 2 Litres"
   purchaseDate DateTime // date of the receipt
   masterItemId String?  // nullable FK - populated later via mapping
-  source       String   @default("batch_import") // "batch_import" | "email_agent" etc.
+  source       String   @default("batch_import") // "batch_import" | "email_agent" | "receipt_upload" etc.
+  orderNumber  String?  // Sainsbury's order number; set on rows that come from an uploaded receipt PDF
+  lineIndex    Int?     // position of the line on that receipt (with orderNumber: one row per line, so re-uploads never duplicate)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   masterItem MasterListItem? @relation(fields: [masterItemId], references: [id])
 
+  @@unique([orderNumber, lineIndex])
   @@index([purchaseDate])
+}
+
+// Receipt: one row per uploaded Sainsbury's receipt PDF. The PDF itself is kept unchanged in private
+// Vercel Blob (blobPath) and is the permanent source of truth; PurchaseHistory can be rebuilt from it.
+model Receipt {
+  id            String   @id @default(cuid())
+  orderNumber   String   @unique
+  purchaseDate  DateTime
+  blobPath      String   // private Blob pathname, receipts/<orderNumber>.pdf
+  expectedCount Int?     // N from "Groceries (N items)"
+  lineCount     Int      // product lines parsed
+  unitCount     Int      // product lines parsed, counting quantities (2 x milk = 2)
+  countMatches  Boolean  // parsed count equals expectedCount
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// ProductMapping: one row per distinct receipt product name -> the "item" it is a version of
+// ("JS Whole Cucumber" and "Sainsbury's Whole Cucumber" are both "cucumber"), its aisle, and
+// whether it is a cupboard item. Filled once by the cheap model; corrected rows are never overwritten.
+model ProductMapping {
+  id          String   @id @default(cuid())
+  productName String   @unique
+  itemName    String
+  aisle       String
+  cupboard    Boolean  @default(false)
+  corrected   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([itemName])
+}
+
+// NextWeekTick: a tick Ronen changed on the "Next week" list; kept until that order date has passed
+model NextWeekTick {
+  id        String   @id @default(cuid())
+  orderDate DateTime
+  key       String   // "item:<item>" or "raw:<ingredient>"
+  ticked    Boolean
+  updatedAt DateTime @updatedAt
+
+  @@unique([orderDate, key])
 }
 
 // SystemSetting stores key-value application preferences (e.g., weekStartDay)
