@@ -8,11 +8,11 @@ description: Rules and validation process for all UI work — fixes and new feat
 Check if dev server is running before starting:
 `curl -s -o /dev/null -w "%{http_code}" http://localhost:3000`
 
-If not running, start it: `npm run dev`
+If not running, start it: `npm run dev`. Before handing over, also run it the way Vercel does (`npm run build && npm start`) and check there. In a cloud session use a local Postgres, never production data.
 
 ## MCP Tools
 
-**Playwright MCP** — for end-to-end UI validation
+**Playwright** (the Playwright MCP, or the Playwright library with the pre-installed Chromium in cloud sessions) — for end-to-end UI validation. Check at phone width (about 390px) and desktop width.
 - Always reference it explicitly as "use Playwright MCP"
 - Navigate to affected pages and verify behaviour works end-to-end
 

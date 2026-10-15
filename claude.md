@@ -5,7 +5,8 @@
 - Never leave DB and code out of sync — schema changes and code updates go in the same commit
 - Code must work on Vercel (serverless), not just locally. "Works on my machine" isn't done
 - When unsure, ask one specific question. Wait for the answer. Never proceed on an assumption
-- Always update relevant documentation on feature completion
+- Always update relevant documentation on feature completion. If you change structure (tables, agents, flows, deploys), update the matching diagram in `ARCHITECTURE.md`. (Rehaul build sessions are the exception: they write only their own log, and a docs-sync run updates the shared docs.)
+- Never push to `main`. All work reaches `main` through a pull request that Ronen merges (merging **is** a production deploy)
 
 ## User Interaction
 
@@ -45,8 +46,12 @@ Applies to environments, secrets, CI, deployments and databases.
 - Extract logic to utility functions early — don't wait until a file is too long
 - If a file is approaching its size limit, decompose first, then continue
 
+## Branches and previews
+
+- One short-lived branch per piece of work, one PR to `main`
+- Vercel only builds `main` and branches matching the allow-list in `vercel.json` (`rehaul_phase*`). A branch with another name gets no preview: either use a matching name or add its pattern to `vercel.json` in the same PR
+- Preview deployments get their own copy of the data (a Neon branch), so try features there, not in production
+
 ## Architecture
 
-Always refer to ARCHITECTURE.md before making structural decisions.
-
-Note: current state of play of Architecture.md is stale. When in doubt, review the codebase as the source of truth.
+Refer to ARCHITECTURE.md (diagrams of the system, data model, agents, receipts flow, planning flows and deploys) before making structural decisions. It was rewritten from the code in the clean-up run; when in doubt, the code is the source of truth, and a diagram that disagrees with it is a bug to fix.

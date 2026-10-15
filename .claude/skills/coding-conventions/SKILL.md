@@ -63,6 +63,7 @@ JavaScript's `new Date(string)` treats bare date strings (`YYYY-MM-DD`) as **UTC
 
 ## Code Style
 
-- ESLint enforced — run `npm run lint` before committing
+- Before committing run `npx tsc --noEmit` and `npm test`. (`npm run lint` is currently broken, see BACKLOG; don't rely on it.)
+- AI code: models and limits come from `lib/ai/config.ts` only; prompts live next to their agent; agents record runs through `lib/agents/runLog.ts`
 - Follow Next.js and React best practices
 - No `helpers`, `utils`, `misc` file suffixes — if a file needs a vague name it's doing too many things
