@@ -23,7 +23,7 @@ Read this together with the data-model diagram in [ARCHITECTURE.md](../ARCHITECT
 |---|---|
 | Embeddings | OpenAI `text-embedding-3-small` (`lib/ai/openaiEmbeddings.ts`); this is the only place OpenAI is called |
 | Normalising | Claude Haiku (`AI_CONFIG.normaliseIngredients`, `normaliseIngredientSingle`) |
-| Tables | `ShoppingList`, `ShoppingListItem`, `Category`, `MasterListItem`, `IngredientMapping`, `RejectedSuggestion`, `NormalisationCache`; `PurchaseHistory.masterItemId` is an optional link |
+| Tables | `ShoppingList`, `ShoppingListItem`, `Category`, `MasterListItem`, `IngredientMapping`, `RejectedSuggestion`, `NormalisationCache`; `PurchaseHistory.masterItemId` is an optional link that nothing uses now |
 | Screens | `app/(modules)/shopping-list/*`, `app/(modules)/settings/components/MasterListsTab.tsx` and `CategoriesTab.tsx` |
 
 Known quirks are in [BACKLOG.md](../BACKLOG.md) under "Old shopping list".

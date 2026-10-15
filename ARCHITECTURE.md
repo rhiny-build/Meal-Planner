@@ -156,7 +156,7 @@ erDiagram
 - **Old shopping list** (still working, hidden by default): `ShoppingList` and items, matched against `MasterListItem` (staples and restock items in `Category` groups, with embeddings), `IngredientMapping`, `RejectedSuggestion` and `NormalisationCache` (table name; the Prisma model is `RecipeIngredientNormalisationCache`).
 - **Agent runs**: every agent run is one `AgentRun` with ordered `AgentStep` rows.
 
-`PurchaseHistory.masterItemId` is the one link between the new receipts data and the old list. `DishType` and `SystemSetting` are small lookups.
+The only database link between the receipts data and the old list is the optional `PurchaseHistory.masterItemId`, and nothing in the app reads or writes it any more. `DishType` and `SystemSetting` are small lookups.
 
 ---
 
