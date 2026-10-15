@@ -8,9 +8,10 @@
 import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
 import { getWeekStart, formatDateParam, parseDateParam } from '@/lib/dateUtils'
-import { getWeekStartDay } from '@/app/(modules)/settings/preferenceActions'
+import { getWeekStartDay, getShowOldShoppingList } from '@/app/(modules)/settings/preferenceActions'
 import { ensureShoppingListExists } from './actions'
 import ShoppingListClient from './components/ShoppingListClient'
+import NextWeekOnly from './components/nextWeek/NextWeekOnly'
 import { loadNextWeek, nextWeekStart } from '@/lib/nextWeek/loadNextWeek'
 
 export const dynamic = 'force-dynamic'
@@ -28,6 +29,12 @@ async function ShoppingListContent({ searchParams }: PageProps) {
   const startDay = await getWeekStartDay()
   const weekStart = weekParam ? getWeekStart(parseDateParam(weekParam), startDay) : getWeekStart(new Date(), startDay)
   weekStart.setHours(0, 0, 0, 0)
+
+  // Old shopping list switched off (Settings): only the Next week view
+  if (!(await getShowOldShoppingList())) {
+    const nextWeekData = await loadNextWeek(prisma, nextWeekStart(new Date(), startDay))
+    return <NextWeekOnly data={nextWeekData} />
+  }
 
   // Ensure shopping list exists (auto-creates with staples if first visit)
   const shoppingList = await ensureShoppingListExists(weekStart)

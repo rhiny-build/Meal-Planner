@@ -26,39 +26,42 @@ interface SettingsClientProps {
   proteinTypes: DishType[]
   carbTypes: DishType[]
   weekStartDay: number
+  showOldShoppingList: boolean
 }
 
 export default function SettingsClient({
-  initialTab = 'master-lists',
+  initialTab,
   initialType = 'staple',
   categories,
   proteinTypes,
   carbTypes,
   weekStartDay,
+  showOldShoppingList,
 }: SettingsClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-
-  // Current tab is derived from URL or initial props
-  const tabParam = searchParams.get('tab') as Tab | null
-  const activeTab = tabParam || initialTab
-
-  const setActiveTab = (tab: Tab) => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (tab === 'master-lists') {
-      params.delete('tab')
-    } else {
-      params.set('tab', tab)
-    }
-    router.push(`/settings?${params.toString()}`)
-  }
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'master-lists', label: 'Master Lists' },
     { key: 'categories', label: 'Categories' },
     { key: 'dish-types', label: 'Dish Types' },
     { key: 'preferences', label: 'Preferences' },
-  ]
+  ].filter(t => showOldShoppingList || (t.key !== 'master-lists' && t.key !== 'categories')) as { key: Tab; label: string }[]
+
+  // Current tab is derived from URL or initial props; a hidden tab falls back to the first visible one
+  const requestedTab = (searchParams.get('tab') as Tab | null) || initialTab
+  const activeTab = tabs.some(t => t.key === requestedTab) ? requestedTab! : tabs[0].key
+  const defaultTab = tabs[0].key
+
+  const setActiveTab = (tab: Tab) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (tab === defaultTab) {
+      params.delete('tab')
+    } else {
+      params.set('tab', tab)
+    }
+    router.push(`/settings?${params.toString()}`)
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4">
@@ -95,7 +98,7 @@ export default function SettingsClient({
         <DishTypesTab proteinTypes={proteinTypes} carbTypes={carbTypes} />
       )}
       {activeTab === 'preferences' && (
-        <PreferencesTab weekStartDay={weekStartDay} />
+        <PreferencesTab weekStartDay={weekStartDay} showOldShoppingList={showOldShoppingList} />
       )}
 
       <section aria-labelledby="more-heading" className="mt-10 flex flex-col gap-2">
