@@ -20,7 +20,7 @@ const FALLBACK_AFTER_MS = 10_000
 
 function send(body: Record<string, unknown>): void {
   try {
-    const payload = new Blob([JSON.stringify(body)], { type: 'application/json' })
+    const payload = JSON.stringify(body) // sent as plain text; the endpoint reads it as JSON either way
     if (!navigator.sendBeacon?.('/api/timing', payload)) {
       void fetch('/api/timing', { method: 'POST', body: payload, keepalive: true })
     }
