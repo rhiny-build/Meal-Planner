@@ -32,6 +32,8 @@ export const metadata: Metadata = {
   description: 'Plan your family meals for the week',
   // iPhone: opens full screen from the home screen (the manifest covers Android and desktop)
   appleWebApp: { capable: true, title: 'Meals', statusBarStyle: 'default' },
+  // Older iPhones only read this tag (Next writes the newer mobile-web-app-capable one)
+  other: { 'apple-mobile-web-app-capable': 'yes' },
   formatDetection: { telephone: false },
 }
 

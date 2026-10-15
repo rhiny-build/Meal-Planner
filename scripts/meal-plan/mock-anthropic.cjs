@@ -75,6 +75,7 @@ http.createServer((req, res) => {
     if (turn === 0) return reply(res, body.model, [{ type: 'tool_use', id: id(), name: 'search_recipes', input: { slot: 'protein', query: 'sea bass' } }])
     if (turn === 1) {
       const hit = (toolResults(body)[0] || {}).recipes
+      if (!hit || hit.length === 0) return reply(res, body.model, [{ type: 'text', text: 'Nothing in the book matches that.' }])
       return reply(res, body.model, [{ type: 'tool_use', id: id(), name: 'set_meal_slot', input: { date: addDays(start, 2), slot: 'protein', recipe_id: hit[0].id } }])
     }
     return reply(res, body.model, [{ type: 'text', text: 'Swapped Wednesday for Pan Fried Sea Bass: fish, and quick.' }])

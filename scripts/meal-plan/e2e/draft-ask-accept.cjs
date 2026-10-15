@@ -31,7 +31,7 @@ const OUT = 'docs/rehaul/logs/phase3-screens'
 
     // change a day before accepting: swap Thursday (empty, "out") with Monday's dinner
     const mon = (await page.locator('[data-testid=week-day-row]').nth(0).innerText()).split('\n')[2]
-    await page.getByRole('button', { name: 'Change Thursday' }).click()
+    await page.getByRole('button', { name: 'Edit Thursday' }).click()
     await page.getByLabel('Swap with day').selectOption('0')
     await page.getByRole('button', { name: 'Swap', exact: true }).click()
     await page.getByRole('button', { name: 'Done' }).click()
