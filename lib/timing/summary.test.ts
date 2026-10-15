@@ -65,6 +65,15 @@ describe('summariseTimings', () => {
     expect(summaries[0]).toMatchObject({ medianDbMs: null, medianQueries: null, medianTtfbMs: 300 })
   })
 
+  it('keeps a full page load and moving between pages inside the app apart', () => {
+    const summaries = summariseTimings([
+      row({ source: 'browser', kind: 'load', totalMs: 900 }),
+      row({ source: 'browser', kind: 'nav', totalMs: 120 }),
+    ])
+
+    expect(summaries.map((s) => [s.kind, s.medianMs])).toEqual([['load', 900], ['nav', 120]])
+  })
+
   it('is empty for no rows', () => {
     expect(summariseTimings([])).toEqual([])
   })

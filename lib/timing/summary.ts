@@ -41,7 +41,7 @@ const present = (values: (number | null)[]): number[] => values.filter((value): 
 export function summariseTimings(rows: TimingRow[]): TimingSummary[] {
   const groups = new Map<string, TimingRow[]>()
   for (const row of rows) {
-    const key = `${row.source}|${row.route}`
+    const key = `${row.source}|${row.kind}|${row.route}`
     groups.set(key, [...(groups.get(key) ?? []), row])
   }
   return [...groups.values()]

@@ -44,7 +44,14 @@ export default function TimingTable({ title, note, summaries, isBrowser = false 
             <tbody>
               {summaries.map((summary) => (
                 <tr key={`${summary.kind}-${summary.route}`} className="border-t border-line">
-                  <td className="px-2 py-1.5 text-left font-medium">{summary.route}</td>
+                  <td className="px-2 py-1.5 text-left font-medium">
+                    {summary.route}
+                    {isBrowser && (
+                      <span className="block text-xs font-normal text-ink-soft">
+                        {summary.kind === 'load' ? 'opening the app' : 'tapping to this page'}
+                      </span>
+                    )}
+                  </td>
                   <td className={cell}>{summary.count}</td>
                   <td className={cell}>{ms(summary.medianMs)}</td>
                   <td className={cell}>{ms(summary.slowestTenthMs)}</td>
