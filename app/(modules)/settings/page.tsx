@@ -7,7 +7,7 @@
 
 import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
-import { getWeekStartDay } from './preferenceActions'
+import { getWeekStartDay, getShowOldShoppingList } from './preferenceActions'
 import SettingsClient from './components/SettingsClient'
 
 interface PageProps {
@@ -19,15 +19,19 @@ async function SettingsContent({ searchParams }: PageProps) {
   const tabParam = params.tab
   const typeParam = params.type
 
-  // Fetch categories with their master list items
-  const categories = await prisma.category.findMany({
-    orderBy: { order: 'asc' },
-    include: {
-      items: {
+  const showOldShoppingList = await getShowOldShoppingList()
+
+  // Categories and master list items belong to the old shopping list: only load them when it is shown
+  const categories = showOldShoppingList
+    ? await prisma.category.findMany({
         orderBy: { order: 'asc' },
-      },
-    },
-  })
+        include: {
+          items: {
+            orderBy: { order: 'asc' },
+          },
+        },
+      })
+    : []
 
   // Fetch dish types
   const dishTypes = await prisma.dishType.findMany({
@@ -47,6 +51,7 @@ async function SettingsContent({ searchParams }: PageProps) {
       proteinTypes={proteinTypes}
       carbTypes={carbTypes}
       weekStartDay={weekStartDay}
+      showOldShoppingList={showOldShoppingList}
     />
   )
 }

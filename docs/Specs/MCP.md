@@ -1,8 +1,8 @@
 # Meal Planner MCP — Specification
 
-**Version:** 0.2  
-**Status:** Implemented (tools 4.1 to 4.6); authentication still open (OQ-5)  
-**Scope:** Read queries + recipe write operations (create, edit) via Claude chat
+**Version:** 0.3  
+**Status:** Implemented (tools 4.1 to 4.7); authentication still open (OQ-5)  
+**Scope:** Read queries, recipe write operations (create, edit) and meal-plan tools via Claude chat
 
 ---
 
@@ -271,6 +271,18 @@ Changes an existing recipe. Only called after Claude has told the user exactly w
 - It is a patch: omitted means unchanged, `null` clears (servings, description, totalTimeMinutes, notes, metadata fields).
 - `{ing:N}` in `steps` refers to the position in the final ingredient list. When ingredients are replaced and no new steps are sent, existing step references are re-pointed to the new ingredient with the same name (case-insensitive); if that ingredient was dropped, the reference becomes its plain name.
 - Runs in one transaction: a bad reference changes nothing. Errors return `success: false` with `isError: true`.
+
+### 4.7 Meal-plan tools (`lib/mcp/tools/planTools.ts`)
+
+Five tools let Claude.ai read and adjust the week. There is no agent code in the app for this: Claude.ai is the agent, the server only exposes tools. These writes are not recorded as agent runs.
+
+| Tool | What it does |
+|------|--------------|
+| `get_plan_days` | Read the saved plan for a date range (at most 60 days): lunch, protein, carb and vegetable recipes per day (id and name; empty slots null). Read-only. |
+| `get_day_notes` | Read the notes written on days (e.g. "football till 7") for a date range. Read-only. |
+| `set_day_note` | Write, or with an empty note clear, the note on one day. Applies straight away. |
+| `search_recipes` | Find plan candidates by slot, kind, tier and name words, ordered longest-since-planned first (`daysSinceOnPlan`; `notOnPlanInLastDays` avoids repeats). Read-only. |
+| `set_meal_slot` | Set (or clear with `recipe_id: null`) one slot of one day in the saved plan. No draft step. If the week has a draft waiting in the app, the result carries a warning that accepting that draft will replace the change. |
 
 ---
 

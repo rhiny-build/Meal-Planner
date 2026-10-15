@@ -5,7 +5,7 @@ description: Process for planning and executing features, especially multi-file 
 
 ## Before Writing Any Code
 
-For anything beyond a simple fix, create a design doc in `/docs/` covering:
+For anything beyond a simple fix, create a design doc in `/docs/` (or, for a rehaul session, follow its session prompt in `docs/rehaul/sessions/`) covering:
 - Overview and data model
 - User workflow
 - Architecture approach (how it fits the module pattern)

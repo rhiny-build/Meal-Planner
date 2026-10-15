@@ -15,7 +15,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
   { href: '/', label: 'Tonight', matchPrefixes: [] },
   { href: '/recipes', label: 'Recipes', matchPrefixes: ['/recipes'] },
   { href: '/meal-plan', label: 'Week', matchPrefixes: ['/meal-plan'] },
-  { href: '/shopping-list', label: 'Shopping', matchPrefixes: ['/shopping-list', '/purchase-history'] },
+  { href: '/shopping-list', label: 'Shopping', matchPrefixes: ['/shopping-list'] },
 ]
 
 export const SETTINGS_NAV_ITEM: NavItem = {

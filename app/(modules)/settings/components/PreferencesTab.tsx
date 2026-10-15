@@ -2,7 +2,7 @@
 
 import { useTransition } from 'react'
 import { toast } from 'sonner'
-import { setWeekStartDay } from '../preferenceActions'
+import { setWeekStartDay, setShowOldShoppingList } from '../preferenceActions'
 
 const DAY_OPTIONS = [
   { value: 0, label: 'Sunday' },
@@ -16,9 +16,10 @@ const DAY_OPTIONS = [
 
 interface PreferencesTabProps {
   weekStartDay: number
+  showOldShoppingList: boolean
 }
 
-export default function PreferencesTab({ weekStartDay }: PreferencesTabProps) {
+export default function PreferencesTab({ weekStartDay, showOldShoppingList }: PreferencesTabProps) {
   const [isPending, startTransition] = useTransition()
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -29,6 +30,19 @@ export default function PreferencesTab({ weekStartDay }: PreferencesTabProps) {
         toast.success(`Week now starts on ${DAY_OPTIONS.find(d => d.value === newDay)?.label}`)
       } catch (error) {
         console.error('Error updating week start day:', error)
+        toast.error('Failed to update setting')
+      }
+    })
+  }
+
+  const handleToggleOldList = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const show = e.target.checked
+    startTransition(async () => {
+      try {
+        await setShowOldShoppingList(show)
+        toast.success(show ? 'Old shopping list shown' : 'Old shopping list hidden')
+      } catch (error) {
+        console.error('Error updating old shopping list setting:', error)
         toast.error('Failed to update setting')
       }
     })
@@ -69,6 +83,26 @@ export default function PreferencesTab({ weekStartDay }: PreferencesTabProps) {
         <p className="mt-2 text-sm text-ink-soft">
           Controls which day the meal plan and shopping list weeks begin on.
           Existing weeks will keep their original start day.
+        </p>
+      </div>
+
+      <div>
+        <h2 className="text-lg font-semibold text-ink mb-4">
+          Shopping
+        </h2>
+        <label className="flex items-center gap-3 min-h-11 text-sm font-medium text-ink">
+          <input
+            type="checkbox"
+            checked={showOldShoppingList}
+            onChange={handleToggleOldList}
+            disabled={isPending}
+            className="h-5 w-5"
+          />
+          Show old shopping list
+        </label>
+        <p className="mt-2 text-sm text-ink-soft">
+          Off: the Shopping tab shows only Next week. On: the older Meals, Staples, Restock and List tabs come back,
+          with the Master Lists and Categories settings.
         </p>
       </div>
     </div>

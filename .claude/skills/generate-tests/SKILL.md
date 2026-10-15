@@ -44,6 +44,11 @@ npm run test:coverage             # Coverage report
 npm test -- lib/dateUtils.test.ts # Single file
 ```
 
+## Other kinds of test
+
+- Integration tests (`tests/integration/`, `npm run test:integration`) run against a real local Postgres. Add one whenever a change writes to the database. See `docs/Testing.md`.
+- Tests never call Claude. Replay recorded responses (`tests/helpers/scriptedClaude.ts`); real Claude calls are for the occasional hand check with the capped dev key.
+
 ## Hard Rule
 
 Tests must pass before committing. If they fail after a change, fix the failure — do not comment out or delete tests to make the suite pass.

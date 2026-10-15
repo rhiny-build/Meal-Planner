@@ -108,8 +108,7 @@ Always use these exact terms consistently across code, comments, and variable na
 |------|---------|-----|
 | `recipeIngredient` | Raw ingredient string from a recipe | `ingredient`, `item`, `name` |
 | `masterItem` | A row in MasterListItem table | `masterListItem`, `item` |
-| `normalisedName` | The normalised matching key e.g. "garlic (fresh)" | `canonical`, `normalisedName` |
-| `baseIngredient` | The semantic base e.g. "garlic" — **deprecated, use normalisedName** | |
+| `normalisedName` | The normalised matching key e.g. "garlic (fresh)" | `canonical`, `baseIngredient` (both retired) |
 | `shoppingListItem` | A row in ShoppingListItem table | `item`, `listItem` |
 | `purchaseHistory` | Records from receipt imports | `receipts`, `purchases` |
 | `rawName` | Exact string from a receipt e.g. "Sainsbury's Garlic x4" | `name`, `productName` |

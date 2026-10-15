@@ -1,313 +1,42 @@
-# Testing Guide
+# Testing
 
-This document describes the testing approach, structure, and commands for the Meal Planner application.
+Vitest runs everything. There are two kinds of test.
 
-## Overview
+| Type | Where | Database | Command |
+|---|---|---|---|
+| Unit | `*.test.ts(x)` next to the code | None (Prisma and Claude are mocked) | `npm test` |
+| Integration | `tests/integration/*.integration.test.ts` | Real local Postgres, database `mealplanner_test` | `npm run test:integration` |
 
-The project uses **Vitest** as the test runner with two types of tests:
+`npm run test:all` runs both. CI (GitHub Actions, `.github/workflows/ci.yml`) runs the type check and the unit tests on every PR. It has no database, so integration tests run locally.
 
-| Type | Purpose | Database | Speed |
-|------|---------|----------|-------|
-| Unit Tests | Test isolated functions/components with mocks | Mocked | Fast |
-| Integration Tests | Test real database operations | Separate test DB | Slower |
-
-## Test Commands
+## Integration tests: one-time setup
 
 ```bash
-# Unit tests only (excludes integration tests)
-npm test
-
-# Unit tests in watch mode
-npm run test:watch
-
-# Unit tests with coverage report
-npm run test:coverage
-
-# Integration tests only (uses test database)
-npm run test:integration
-
-# All tests (unit + integration)
-npm run test:all
-```
-
-## Directory Structure
-
-```
-/
-├── lib/
-│   ├── dateUtils.test.ts           # Pure function tests
-│   ├── shoppingListHelpers.test.ts # Business logic tests
-│   ├── ingredientParser.test.ts    # Parser tests
-│   └── hooks/
-│       ├── useMealPlan.test.ts     # Hook tests
-│       └── useRecipes.test.ts      # Hook tests
-├── app/
-│   ├── (modules)/
-│   │   └── shopping-list/
-│   │       └── actions.test.ts     # Server action tests (mocked DB)
-│   ├── api/
-│   │   └── recipes/
-│   │       └── recipes.test.ts     # API route tests
-│   └── meal-plan/
-│       └── components/
-│           └── MealPlanDrawer.test.tsx  # Component tests
-├── components/
-│   └── RecipeCard.test.tsx         # Component tests
-├── tests/
-│   └── integration/
-│       ├── setup.ts                # Test database utilities
-│       ├── shopping-list.integration.test.ts
-│       └── recipes.integration.test.ts
-├── vitest.config.ts                # Vitest configuration
-├── vitest.setup.ts                 # Global test setup
-└── .env.test                       # Test database configuration
-```
-
-## Unit Tests
-
-### Testing Pattern: Arrange-Act-Assert
-
-All unit tests follow the AAA pattern:
-
-```typescript
-it('should do something', () => {
-  // Arrange: Set up test data
-  const input = { name: 'test' }
-
-  // Act: Call the function
-  const result = myFunction(input)
-
-  // Assert: Verify the result
-  expect(result).toBe('expected')
-})
-```
-
-### Mocking Prisma
-
-For server actions and API routes, we mock Prisma to avoid database dependencies:
-
-```typescript
-// Mock Prisma before imports
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    recipe: {
-      findMany: vi.fn(),
-      create: vi.fn(),
-      // ... other methods
-    },
-  },
-}))
-
-// Import after mocking
-import { myAction } from './actions'
-import { prisma } from '@/lib/prisma'
-
-// Type assertion for mocked prisma
-const mockPrisma = prisma as unknown as {
-  recipe: {
-    findMany: ReturnType<typeof vi.fn>
-    // ... other methods
-  }
-}
-
-// Use in tests
-it('should fetch recipes', async () => {
-  mockPrisma.recipe.findMany.mockResolvedValue([{ id: '1', name: 'Test' }])
-
-  const result = await myAction()
-
-  expect(mockPrisma.recipe.findMany).toHaveBeenCalled()
-  expect(result).toHaveLength(1)
-})
-```
-
-### Mocking Next.js
-
-For server actions that use `revalidatePath`:
-
-```typescript
-vi.mock('next/cache', () => ({
-  revalidatePath: vi.fn(),
-}))
-```
-
-### Testing React Components
-
-Use React Testing Library with jsdom environment:
-
-```typescript
-import { render, screen, fireEvent } from '@testing-library/react'
-import { MyComponent } from './MyComponent'
-
-it('should render and respond to clicks', async () => {
-  const onClickMock = vi.fn()
-
-  render(<MyComponent onClick={onClickMock} />)
-
-  const button = screen.getByRole('button', { name: /submit/i })
-  fireEvent.click(button)
-
-  expect(onClickMock).toHaveBeenCalled()
-})
-```
-
-## Integration Tests
-
-### Test Database Setup
-
-Integration tests use a **separate PostgreSQL database** (`mealplanner_test`) to avoid affecting development data.
-
-**Configuration:** `.env.test`
-```
-DATABASE_URL="postgresql://postgres:localdev@localhost:5432/mealplanner_test"
-```
-
-### Creating the Test Database
-
-Before running integration tests for the first time:
-
-```bash
-# Create the test database (one-time setup)
+# a local Postgres with user postgres / password localdev (see .env.test)
 psql "postgresql://postgres:localdev@localhost:5432/postgres" -c "CREATE DATABASE mealplanner_test;"
-
-# Run migrations on test database
-DATABASE_URL="postgresql://postgres:localdev@localhost:5432/mealplanner_test" npx prisma migrate deploy
+npx dotenv -e .env.test -- npx prisma migrate deploy
 ```
 
-### Test Database Utilities
+Run them with `npm run test:integration` (it loads `.env.test` and runs files one at a time with `--no-file-parallelism`, because they share one database). Each file clears the database before every test with the helpers in `tests/integration/setup.ts`. If a test fails after a schema change, re-run the `migrate deploy` line above. Never point these at a real database: they empty tables.
 
-Located in `tests/integration/setup.ts`:
+## Claude in tests
 
-```typescript
-import { testPrisma, setupTestDatabase, teardownTestDatabase, clearTestDatabase } from './setup'
+Tests never call Claude. Agent logic is tested by replaying recorded responses (`tests/helpers/scriptedClaude.ts` and fixtures next to each agent). Real Claude calls are made by hand, with the capped dev key, only to check judgement (see `docs/rehaul/sessions/_common.md`).
 
-describe('My Integration Tests', () => {
-  beforeAll(async () => {
-    await setupTestDatabase()  // Connect and run migrations
-  })
+## Patterns
 
-  afterAll(async () => {
-    await teardownTestDatabase()  // Disconnect
-  })
+- Arrange, act, assert; one behaviour per test.
+- Pure logic (`lib/`) is tested directly: dates, ingredient parsing, scaling, prediction, receipt parsing, step tokens.
+- Server actions and API routes: mock `@/lib/prisma` and `next/cache` with `vi.mock`.
+- Components and hooks: React Testing Library with jsdom (see `components/*.test.tsx`, `lib/hooks/*.test.ts`).
+- Anything that changes the database (merge, backfill, apply, receipts ingest) also gets an integration test, so the SQL is exercised for real.
 
-  beforeEach(async () => {
-    await clearTestDatabase()  // Clear all data between tests
-  })
+## Try it in the running app
 
-  it('should work with real database', async () => {
-    const recipe = await testPrisma.recipe.create({
-      data: { name: 'Test', ingredients: 'test', tier: 'regular' }
-    })
-
-    expect(recipe.id).toBeDefined()
-  })
-})
-```
-
-### What to Test in Integration Tests
-
-Integration tests verify:
-- Database constraints and relationships
-- Cascade delete behavior
-- Unique constraints
-- Foreign key relationships
-- Complex queries with joins/includes
-- Transaction behavior
-
-**Example: Testing cascade delete**
-```typescript
-it('should cascade delete ingredients when recipe is deleted', async () => {
-  // Create recipe with ingredients
-  const recipe = await testPrisma.recipe.create({
-    data: {
-      name: 'Test',
-      ingredients: 'test',
-      tier: 'regular',
-      structuredIngredients: {
-        create: [{ name: 'ingredient 1', order: 0 }],
-      },
-    },
-  })
-
-  // Verify ingredients exist
-  const before = await testPrisma.ingredient.count({ where: { recipeId: recipe.id } })
-  expect(before).toBe(1)
-
-  // Delete recipe
-  await testPrisma.recipe.delete({ where: { id: recipe.id } })
-
-  // Verify ingredients are also deleted
-  const after = await testPrisma.ingredient.count({ where: { recipeId: recipe.id } })
-  expect(after).toBe(0)
-})
-```
-
-### Running Integration Tests Sequentially
-
-Integration tests run with `--no-file-parallelism` to prevent race conditions when multiple test files access the same database.
-
-## Test Coverage
-
-Current test counts:
-- **Unit tests:** 132
-- **Integration tests:** 18
-- **Total:** 150
-
-### Covered Areas
-
-| Area | File | Tests |
-|------|------|-------|
-| Shopping List Actions | `actions.test.ts` | 18 |
-| Shopping List Helpers | `shoppingListHelpers.test.ts` | 31 |
-| Date Utilities | `dateUtils.test.ts` | 10 |
-| Ingredient Parser | `ingredientParser.test.ts` | 12 |
-| useMealPlan Hook | `useMealPlan.test.ts` | 16 |
-| useRecipes Hook | `useRecipes.test.ts` | 11 |
-| Recipe API | `recipes.test.ts` | 8 |
-| RecipeCard Component | `RecipeCard.test.tsx` | 8 |
-| MealPlanDrawer | `MealPlanDrawer.test.tsx` | 13 |
-| AI Functions | `ai.test.ts` | 5 |
-| Shopping List Integration | `shopping-list.integration.test.ts` | 9 |
-| Recipe Integration | `recipes.integration.test.ts` | 9 |
-
-## Best Practices
-
-### Do
-
-- Use descriptive test names: `should [expected behavior] when [condition]`
-- Test edge cases (empty arrays, null values, boundary conditions)
-- Clear mocks between tests with `beforeEach(() => vi.clearAllMocks())`
-- Use `expect.objectContaining()` for partial object matching
-- Keep tests focused on one behavior
-
-### Don't
-
-- Don't test implementation details (test behavior, not how it works)
-- Don't share state between tests
-- Don't use the dev database for integration tests
-- Don't skip the `beforeEach` cleanup in integration tests
+Tests are not enough for UI or Vercel behaviour. Run `npm run build && npm start` against a local database and use the feature in a browser at phone and desktop widths (the `ui` skill describes the Playwright flow).
 
 ## Troubleshooting
 
-### Integration tests fail with connection errors
-
-Ensure PostgreSQL is running:
-```bash
-# If using Docker
-docker ps  # Check if postgres container is running
-```
-
-### Tests fail due to schema mismatch
-
-Run migrations on the test database:
-```bash
-DATABASE_URL="postgresql://postgres:localdev@localhost:5432/mealplanner_test" npx prisma migrate deploy
-```
-
-### Flaky integration tests
-
-Check if tests are running in parallel. Integration tests should use `--no-file-parallelism`.
-
----
-
-*Last updated: 2026-02-05*
+- **Connection refused:** start Postgres (`service postgresql start`) and check the URL in `.env.test`.
+- **Missing table or column:** run the `migrate deploy` line above against the test database.
+- **Flaky integration test:** almost always two files running in parallel; use `npm run test:integration`, not plain `vitest`.

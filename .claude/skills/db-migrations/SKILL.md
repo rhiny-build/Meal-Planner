@@ -21,7 +21,7 @@ Never leave DB and code out of sync. Schema changes and the code that uses them 
 Use descriptive names that explain what changed:
 - `add_purchase_history_table`
 - `add_master_item_embedding`
-- `remove_canonical_name_field`
+- `add_recipe_step_timer`
 
 Not: `update_schema`, `migration_1`, `fix`
 
@@ -43,7 +43,11 @@ npx prisma migrate reset
 
 ## Production
 
-Always use `npx prisma migrate deploy` in production, never `migrate dev`.
+Always use `npx prisma migrate deploy` in production, never `migrate dev`. The Vercel build runs it: on a preview it changes only that preview's own Neon branch, on `main` it changes live data.
+
+## Add-only rule
+
+Migrations only **add**: new tables, new nullable columns, new columns with a default. Renames and drops go in a separate, later PR, once nothing reads the old shape. That keeps a code rollback (Vercel Instant Rollback) safe. Before merging a schema PR, create a Neon backup branch `backup/<YYYYMMDD>-<name>`. Never run a migration, seed or test against the production database.
 
 ## When Unsure
 

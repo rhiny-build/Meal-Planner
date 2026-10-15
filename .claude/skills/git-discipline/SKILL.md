@@ -5,8 +5,10 @@ description: Commit and branching rules for all work on this project
 
 ## Branching
 
-Always create a feature branch before making any changes:
+Always create a branch before making any changes:
 `git checkout -b feature_short_descriptive_name`
+
+Vercel only builds `main` and branches on the allow-list in `vercel.json` (currently `rehaul_phase*`). Any other branch name gets no preview deploy. If you need a preview, use a matching name or add the pattern to `vercel.json` in the same PR. Rehaul sessions use the branch name in their session prompt.
 
 Good names: `feature_receipt_ingestion`, `fix_navigation_bug`
 Bad names: `feature_1`, `fix`, `update`
@@ -45,7 +47,6 @@ When unsure, ask one specific question. Wait for the answer. Never proceed on an
 
 ## Completing Work
 
-When feature is complete and tested, ask the user to run `/push-to-prod` and follow the directions there.
+When the work is complete and tested: update documentation, push the branch, and open a pull request to `main`. Do **not** merge it and never push to `main`: merging is a production deploy and Ronen does it after checking the preview. Before every push, check the branch's PR is not already merged or closed (see `claude.md`).
 
-After approval: merge to main, update documentation, commit, push, delete the feature branch:
-`git branch -d feature_branch_name`
+Note: the `push-to-prod` skill still describes a direct merge to `main`; it is flagged for Ronen to decide and is not to be followed.
