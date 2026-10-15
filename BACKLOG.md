@@ -1,26 +1,19 @@
 # Product Backlog
 
-Living document for tracking features, bugs, and improvements.
+One backlog for the whole project: open items only. Finished work lives in git history and `docs/rehaul/logs/`.
 
 
 ---
 
-### Priority 1.8: P1 Bugs (2026-02-09)
+## P1
 
-- [x] **URL extraction returning wrong recipe** — Superseded: the old `/api/recipes/extract` route, `extractIngredientsFromURL` and `AIImportSection` were removed. The Import agent (S05) reads the page's own recipe data (JSON-LD) or its visible text and validates the draft; the user reviews it before saving. (2026-10-12)
 - [ ] **`/api/mcp` has no authentication (P1, security)** — anyone with the production URL can read recipes, meal plans and shopping history, create recipes, and (since `update_recipe`) overwrite or wipe the method and ingredients of any recipe. Decide on a minimum: a long random token in the path or a header check from an env var (e.g. `MCP_SECRET`), or OAuth (claude.ai custom connectors support both). Decision for Ronen.
-- [x] **Meal plan completion overwrites user selections** — Fixed: grouped available recipes by slot type in the prompt so the AI can only pick valid recipes per column (lunch/protein/carb/vegetable). (2026-02-11)
 
----
-
-## Next Tier
-
-### UX Improvements
-- 
+## Next tier
 
 ### Bugs
 - [ ] Inspire Me reject marks two recipes instead of one (investigate)
-- [ ] **Shopping list shows raw recipe text instead of clean ingredient name** — e.g. "½ small red onion very thinly sliced, about ⅛-inch wide" instead of "red onion". The pipeline writes `item.name` (the original aggregated recipe ingredient string) to `ShoppingListItem.name`. Should use the normalised base ingredient name for display.
+- [ ] **Old shopping list shows raw recipe text instead of clean ingredient name** — e.g. "½ small red onion very thinly sliced, about ⅛-inch wide" instead of "red onion". The pipeline writes `item.name` (the original aggregated recipe ingredient string) to `ShoppingListItem.name`. Should use the normalised base ingredient name for display.
 
 ### Recipe book and import
 - [ ] **Import prompt can invent a method.** The enrich prompt (S07) says a one-line remark such as "Combine and enjoy" is not a method. The normal Import screen prompt (`buildSystemPrompt` in `lib/agents/recipeImporter/prompt.ts`) lacks that sentence, so a page with no real method may come back with a one-line invented step (breaks D3). Add the sentence and test with a no-method page.
@@ -40,27 +33,24 @@ Living document for tracking features, bugs, and improvements.
 
 ### Observability
 - [ ] Add logging for AI prompts/responses (viewable in Vercel function logs)
-- 
 
-## Later / UX Pass
+## Later
 
-
-### Shopping List Enhancements
+### Old shopping list (hidden by default; see docs/Old-Shopping-List.md)
+- [ ] **Decide whether to remove it** (master items, categories, mappings, embeddings, OpenAI). Needs a schema PR that drops tables, so it comes after the old list has stayed hidden for a while. Removing it also removes the only OpenAI use.
 - [ ] Lazy normalisedName computation — In Step 4 of the sync pipeline, if a MasterListItem has no normalisedName, compute it on the fly and save it. Makes the system self-healing.
-- [ ] Remove backfill script from deploy — Once lazy computation is in place, remove `scripts/backfill-canonical-names.ts` from the build pipeline and delete the script.
+- [ ] Delete `scripts/shopping-list/backfillNormalisedNames.ts` once lazy computation is in place.
 - [ ] Reorder items within categories (drag-and-drop)
-
 
 ### AI Quality
 - [ ] Improve ingredient extraction quality (incomplete items like "boneless", "Dressing")
 
-### Tech Debt
+### Tech debt
 - [ ] **Remove `lib/hooks/migrateLocalStorageNotes.ts`** (plus its call in `useDayNotes.ts` and its test) about 2-3 weeks after the S02 deploy (around early November 2026), once both devices have loaded the app. It is the one-off move of day notes from localStorage to the DB.
 - [ ] **Drop the legacy `Recipe.ingredients` text column** in a clean-up PR once nothing reads it (write paths still keep it in step).
 - [ ] **Delete the one-off backfill** (`scripts/rehaul/`, `lib/agents/recipeBackfill/`) and any generated `backfill-report*` files once it has been applied in production.
 - [ ] **Move pending suggestions out of ShoppingListItem** — `matchConfidence`, `masterItemId`, and `similarityScore` on `ShoppingListItem` are almost always null/unmatched. The only useful state is `pending` (for the review modal). Consider a dedicated `PendingSuggestion` table or transient in-memory state, and remove these columns from `ShoppingListItem`.
-- [x] **lib/ and scripts/ restructuring** — Shopping list files reorganised into `lib/shopping-list/` and `scripts/shopping-list/` with descriptive names. `lib/normalisation/` merged and removed. (2026-03-20)
-- [x] **Timezone bug in date string parsing** — `new Date('YYYY-MM-DD')` parsed as UTC midnight caused off-by-one calendar day in non-UTC timezones (broken in production on Vercel). Added `parseDateParam`/`formatDateParam` helpers to `lib/dateUtils.ts`. Applied to shopping list navigation, meal plan week parsing, and API payloads. (2026-05-07)
-
----
+- [ ] **Unused database tables or columns** found in the clean-up run are listed in `docs/rehaul/logs/RUN-cleanup-docs.md` for a decision.
+- [ ] **`scripts/`** holds one-off and demo tools that nothing imports (see the clean-up log); delete the ones that are no longer useful.
+- [ ] **Add `knip`** (unused-code finder) as a dev dependency if it should be rerun regularly; this run used it through `npx`.
 
