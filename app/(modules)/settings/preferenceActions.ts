@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import { measured } from '@/lib/timing/measure'
 
 const WEEK_START_DAY_KEY = 'weekStartDay'
 const DEFAULT_WEEK_START_DAY = 1 // Monday
@@ -10,7 +11,7 @@ const SHOW_OLD_SHOPPING_LIST_KEY = 'showOldShoppingList'
 /**
  * Get the configured week start day (0=Sunday, 1=Monday, ..., 6=Saturday)
  */
-export async function getWeekStartDay(): Promise<number> {
+async function getWeekStartDayImpl(): Promise<number> {
   const setting = await prisma.systemSetting.findUnique({
     where: { key: WEEK_START_DAY_KEY },
   })
@@ -40,7 +41,7 @@ export async function setWeekStartDay(day: number): Promise<void> {
  * Whether the old shopping list (Meals / Staples / Restock / List tabs and the
  * master-list and category settings) is visible. Off by default.
  */
-export async function getShowOldShoppingList(): Promise<boolean> {
+async function getShowOldShoppingListImpl(): Promise<boolean> {
   const setting = await prisma.systemSetting.findUnique({
     where: { key: SHOW_OLD_SHOPPING_LIST_KEY },
   })
@@ -57,3 +58,7 @@ export async function setShowOldShoppingList(show: boolean): Promise<void> {
   revalidatePath('/settings')
   revalidatePath('/shopping-list')
 }
+
+export const getWeekStartDay = measured('action', 'action getWeekStartDay', getWeekStartDayImpl)
+
+export const getShowOldShoppingList = measured('action', 'action getShowOldShoppingList', getShowOldShoppingListImpl)

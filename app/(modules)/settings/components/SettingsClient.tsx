@@ -117,6 +117,10 @@ export default function SettingsClient({
           <span className="font-semibold">Receipts</span>
           <span className="text-sm text-ink-soft">Admin: upload Sainsbury&apos;s receipts for Next week</span>
         </Link>
+        <Link href="/admin/timings" className="min-h-14 bg-surface rounded-card px-4 py-3 flex flex-col justify-center">
+          <span className="font-semibold">Timings</span>
+          <span className="text-sm text-ink-soft">Admin: how long each page takes</span>
+        </Link>
       </section>
     </div>
   )

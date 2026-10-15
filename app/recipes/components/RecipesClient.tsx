@@ -16,6 +16,7 @@ import { useRef, useState } from 'react'
 import type { RecipeWithIngredients, RecipeFormData } from '@/types'
 import type { DishTypeOption } from '@/lib/dishTypeConfig'
 import { useRecipes } from '@/lib/hooks/useRecipes'
+import { usePageReady } from '@/lib/timing/usePageReady'
 import RecipeCard from '@/components/RecipeCard'
 import Button from '@/components/Button'
 import PageHeader from '@/components/PageHeader'
@@ -49,6 +50,7 @@ export default function RecipesClient({
     handleUpdate,
     handleDelete,
   } = useRecipes()
+  usePageReady(!isLoading)
 
   // State for add/edit modal
   const [showForm, setShowForm] = useState(false)

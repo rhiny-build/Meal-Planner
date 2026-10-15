@@ -7,11 +7,14 @@
 
 import { getWeekStartDay } from '@/app/(modules)/settings/preferenceActions'
 import TonightClient from '@/components/tonight/TonightClient'
+import { measured } from '@/lib/timing/measure'
 
 export const dynamic = 'force-dynamic'
 
-export default async function HomePage() {
+async function HomePage() {
   const weekStartDay = await getWeekStartDay()
 
   return <TonightClient weekStartDay={weekStartDay} />
 }
+
+export default measured('page', '/', HomePage)

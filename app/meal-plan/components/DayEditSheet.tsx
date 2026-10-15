@@ -1,9 +1,9 @@
 /**
- * DaySwapSheet
+ * DayEditSheet
  *
- * The existing way of changing a day: a searchable dropdown for each meal
- * slot (lunch, protein, carb, vegetable) plus the day's note, shown as a
- * bottom sheet on phones and a dialog on desktop. It also swaps a slot (or the
+ * The day editor: a searchable dropdown for each meal slot (lunch, protein,
+ * carb, vegetable) plus the day's note, shown as a bottom sheet on phones and
+ * a dialog on desktop. "Swap with another day" in words swaps a slot (or the
  * whole dinner) with another day. Changes apply to the week plan straight
  * away; "Save plan" on the page stores them.
  */
@@ -21,7 +21,7 @@ type SwapSlot = MealSlotColumn | 'dinner'
 
 const DINNER_SLOTS: MealSlotColumn[] = ['protein', 'carb', 'vegetable']
 
-interface DaySwapSheetProps {
+interface DayEditSheetProps {
   dayIndex: number
   dayPlan: WeekPlan
   note: string
@@ -37,7 +37,7 @@ interface DaySwapSheetProps {
   onClose: () => void
 }
 
-export default function DaySwapSheet({
+export default function DayEditSheet({
   dayIndex,
   dayPlan,
   note,
@@ -50,7 +50,7 @@ export default function DaySwapSheet({
   onSwapRecipes,
   dayNames,
   onClose,
-}: DaySwapSheetProps) {
+}: DayEditSheetProps) {
   const [swapSlot, setSwapSlot] = useState<SwapSlot>('dinner')
   const [swapDayIndex, setSwapDayIndex] = useState<number | null>(null)
 
@@ -70,12 +70,12 @@ export default function DaySwapSheet({
   ]
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" data-testid="day-swap-sheet">
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" data-testid="day-edit-sheet">
       <button type="button" aria-label="Close" className="absolute inset-0 bg-ink/40" onClick={onClose} />
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={`Change ${dayPlan.day}`}
+        aria-label={`Edit ${dayPlan.day}`}
         className="relative w-full md:max-w-lg bg-surface rounded-t-panel md:rounded-panel p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] flex flex-col gap-4 max-h-[90vh] overflow-y-auto"
       >
         <h2 className="font-display text-2xl font-bold text-ink">{dayPlan.day}</h2>

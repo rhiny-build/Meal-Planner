@@ -2,10 +2,10 @@
  * Meal Plan Client Component
  *
  * Features:
- * - The week as one row per day, each with a swap button
+ * - The week as one row per day: tap a day to edit it, type its note in the row
  * - Draft my week (next week, from day notes and recent weeks) with Accept all
  * - Ask box: change the plan in plain words
- * - Changing a day's meals and note in a sheet (dropdowns per slot)
+ * - Changing a day's meals in the day editor (dropdowns per slot) and swapping days
  * - Save/load from database
  * - Navigate between weeks
  */
@@ -16,6 +16,8 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { getWeekStart, formatDateParam, parseDateParam } from '@/lib/dateUtils'
 import { useMealPlan } from '@/lib/hooks/useMealPlan'
+import { usePageReady } from '@/lib/timing/usePageReady'
+import { useNextWeekGaps } from '@/lib/hooks/useNextWeekGaps'
 import PageHeader from '@/components/PageHeader'
 import WeekToolbar from './WeekToolbar'
 import WeekList from './WeekList'
@@ -62,6 +64,9 @@ export default function MealPlanClient({ weekStartDay }: MealPlanClientProps) {
     handleAcceptDraft,
     handleDiscardDraft,
   } = useMealPlan(startDate, weekStartDay)
+
+  usePageReady(!isLoading)
+  const emptyDaysNextWeek = useNextWeekGaps(weekStartDay, startDate, weekPlan, !isLoading)
 
   const handlePreviousWeek = () => {
     const newDate = new Date(startDate)
@@ -119,6 +124,7 @@ export default function MealPlanClient({ weekStartDay }: MealPlanClientProps) {
 
       <WeekToolbar
         isDrafting={isDrafting}
+        showNotesHint={(emptyDaysNextWeek ?? 0) > 0}
         isSaving={isSaving}
         onPreviousWeek={handlePreviousWeek}
         onNextWeek={handleNextWeek}

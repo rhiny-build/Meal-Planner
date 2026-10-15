@@ -9,6 +9,8 @@ import Button from '@/components/Button'
 
 interface WeekToolbarProps {
   isDrafting: boolean
+  /** Next week has empty days: remind that Draft my week reads the notes */
+  showNotesHint?: boolean
   isSaving: boolean
   onPreviousWeek: () => void
   onNextWeek: () => void
@@ -22,6 +24,7 @@ const navButton =
 
 export default function WeekToolbar({
   isDrafting,
+  showNotesHint = false,
   isSaving,
   onPreviousWeek,
   onNextWeek,
@@ -66,6 +69,11 @@ export default function WeekToolbar({
           Clear all
         </Button>
       </div>
+      {showNotesHint && (
+        <p className="text-[13px] text-ink-soft px-1" data-testid="draft-notes-hint">
+          Add notes first, Draft my week uses them
+        </p>
+      )}
     </div>
   )
 }

@@ -27,7 +27,10 @@ const recipe: CookRecipeData = {
 }
 
 describe('CookScreen', () => {
-  beforeEach(() => vi.useFakeTimers())
+  beforeEach(() => {
+    window.localStorage.clear()
+    vi.useFakeTimers()
+  })
   afterEach(() => {
     vi.useRealTimers()
     vi.clearAllMocks()

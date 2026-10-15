@@ -14,24 +14,25 @@ import { getCookIngredients } from '@/lib/cook/getCookIngredients'
 import RecipePages from './RecipePages'
 import RecipeActions from './RecipeActions'
 import { getRecipeOverview } from './recipeOverview'
+import { measured } from '@/lib/timing/measure'
 
 export const dynamic = 'force-dynamic'
 
-export default async function RecipePage({ params }: { params: Promise<{ id: string }> }) {
+async function RecipePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const recipe = await prisma.recipe.findUnique({
-    where: { id },
-    include: {
-      structuredIngredients: { orderBy: { order: 'asc' } },
-      steps: { orderBy: { order: 'asc' } },
-    },
-  })
-  if (!recipe) notFound()
-
-  const [proteinOptions, carbOptions] = await Promise.all([
+  // The recipe and the dish-type lists are independent: ask for them together
+  const [recipe, proteinOptions, carbOptions] = await Promise.all([
+    prisma.recipe.findUnique({
+      where: { id },
+      include: {
+        structuredIngredients: { orderBy: { order: 'asc' } },
+        steps: { orderBy: { order: 'asc' } },
+      },
+    }),
     getProteinOptions(),
     getCarbOptions(),
   ])
+  if (!recipe) notFound()
 
   return (
     <div className="max-w-xl md:max-w-2xl mx-auto px-4 pt-5 pb-4">
@@ -74,3 +75,5 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
     </div>
   )
 }
+
+export default measured('page', '/recipes/:id', RecipePage)

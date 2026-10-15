@@ -9,13 +9,14 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { formatDuration, formatTokens, formatWhen } from '@/lib/agents/runView'
 import StatusBadge from './StatusBadge'
+import { measured } from '@/lib/timing/measure'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Agent runs' }
 
 const LIMIT = 100
 
-export default async function AgentRunsPage() {
+async function AgentRunsPage() {
   const runs = await prisma.agentRun.findMany({
     orderBy: { startedAt: 'desc' },
     take: LIMIT,
@@ -74,3 +75,5 @@ function summariseInput(input: unknown): string {
   }
   return typeof input === 'string' ? input : JSON.stringify(input).slice(0, 140)
 }
+
+export default measured('page', '/agent-runs', AgentRunsPage)

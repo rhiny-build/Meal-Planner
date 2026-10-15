@@ -9,10 +9,11 @@ import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { getCookIngredients } from '@/lib/cook/getCookIngredients'
 import CookScreen from '@/components/cook/CookScreen'
+import { measured } from '@/lib/timing/measure'
 
 export const dynamic = 'force-dynamic'
 
-export default async function CookPage({ params }: { params: Promise<{ id: string }> }) {
+async function CookPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const recipe = await prisma.recipe.findUnique({
     where: { id },
@@ -41,3 +42,5 @@ export default async function CookPage({ params }: { params: Promise<{ id: strin
     />
   )
 }
+
+export default measured('page', '/recipes/:id/cook', CookPage)

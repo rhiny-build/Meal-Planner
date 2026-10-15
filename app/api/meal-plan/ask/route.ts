@@ -10,11 +10,12 @@ import { getDraft } from '@/lib/mealPlanAgent/draft'
 import { validDateKey } from '@/lib/mealPlanAgent/dates'
 import { createDraftStore, createPlanStore } from '@/lib/mealPlanAgent/planStore'
 import { runPlanAgent } from '@/lib/mealPlanAgent/runPlanAgent'
+import { measured } from '@/lib/timing/measure'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-export async function POST(request: Request) {
+async function handlePOST(request: Request) {
   const { instruction, weekStart } = (await request.json()) as { instruction?: string; weekStart?: string }
   if (!instruction?.trim() || instruction.length > 500 || !weekStart || !validDateKey(weekStart)) {
     return NextResponse.json({ error: 'Send an instruction and the week start (YYYY-MM-DD)' }, { status: 400 })
@@ -31,3 +32,5 @@ export async function POST(request: Request) {
   if (!result.ok) return NextResponse.json({ error: 'That did not work, please try again.', runId: result.runId }, { status: 502 })
   return NextResponse.json({ message: result.message, changes: result.changes, runId: result.runId, onDraft: hasDraft })
 }
+
+export const POST = measured('api', 'POST /api/meal-plan/ask', handlePOST)

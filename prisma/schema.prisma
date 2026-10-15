@@ -359,3 +359,23 @@ model PlanDraft {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// RequestTiming: one measured request, for the admin timings page (/admin/timings). Rows older than 30 days are deleted.
+// source 'server': kind page | api | action, totalMs = time in our code, dbMs/queryCount = database share, coldStart = first
+// request handled by a fresh function instance. source 'browser': kind load (full page load, ttfbMs set) | nav (moving
+// between pages inside the app), totalMs = time until the page was usable.
+model RequestTiming {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  source     String   // server | browser
+  kind       String   // page | api | action | load | nav
+  route      String   // e.g. /meal-plan, GET /api/meal-plan, /recipes/:id
+  totalMs    Int
+  dbMs       Int?
+  queryCount Int?
+  coldStart  Boolean  @default(false)
+  ttfbMs     Int?
+
+  @@index([createdAt])
+  @@index([source, route, createdAt])
+}

@@ -7,12 +7,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import type { RecipeFilters } from '@/types'
+import { measured } from '@/lib/timing/measure'
 
 /**
  * GET /api/recipes
  * Fetches all recipes, optionally filtered by tier, protein, carb, or prep time
  */
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
     // Extract filter parameters from URL search params
     const searchParams = request.nextUrl.searchParams
@@ -25,6 +26,8 @@ export async function GET(request: NextRequest) {
       kind: (searchParams.get('kind') as any) || undefined,
       isLunchAppropriate: lunchParam === 'true' ? true : lunchParam === 'false' ? false : undefined,
     }
+
+    const withSteps = searchParams.get('steps') !== 'none'
 
     // Build the where clause based on filters
     // Only include filters that are actually provided
@@ -41,7 +44,8 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         structuredIngredients: { orderBy: { order: 'asc' } },
-        steps: { orderBy: { order: 'asc' } },
+        // The Week page only needs names and ingredients: ?steps=none leaves the method out of the response
+        ...(withSteps ? { steps: { orderBy: { order: 'asc' as const } } } : {}),
       },
       orderBy: [
         { tier: 'asc' }, // Favorites first
@@ -58,3 +62,5 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+export const GET = measured('api', 'GET /api/recipes', handleGET)

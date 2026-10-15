@@ -11,6 +11,7 @@ import './globals.css'
 import Header from '@/components/Header'
 import TabBar from '@/components/TabBar'
 import { Toaster } from 'sonner'
+import TimingReporter from '@/components/TimingReporter'
 
 const displayFont = Bricolage_Grotesque({
   subsets: ['latin'],
@@ -29,12 +30,18 @@ const bodyFont = Figtree({
 export const metadata: Metadata = {
   title: 'Family Meal Planner',
   description: 'Plan your family meals for the week',
+  // iPhone: opens full screen from the home screen (the manifest covers Android and desktop)
+  appleWebApp: { capable: true, title: 'Meals', statusBarStyle: 'default' },
+  // Older iPhones only read this tag (Next writes the newer mobile-web-app-capable one)
+  other: { 'apple-mobile-web-app-capable': 'yes' },
+  formatDetection: { telephone: false },
 }
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
+  viewportFit: 'cover',
   themeColor: '#F3F5F2',
 }
 
@@ -55,6 +62,7 @@ export default function RootLayout({
 
         <TabBar />
         <Toaster position="top-center" />
+        <TimingReporter />
       </body>
     </html>
   )

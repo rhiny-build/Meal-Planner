@@ -13,6 +13,7 @@ import { ensureShoppingListExists } from './actions'
 import ShoppingListClient from './components/ShoppingListClient'
 import NextWeekOnly from './components/nextWeek/NextWeekOnly'
 import { loadNextWeek, nextWeekStart } from '@/lib/nextWeek/loadNextWeek'
+import { measured } from '@/lib/timing/measure'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,18 +21,18 @@ interface PageProps {
   searchParams: Promise<{ week?: string; tab?: string }>
 }
 
-async function ShoppingListContent({ searchParams }: PageProps) {
+async function ShoppingListContentImpl({ searchParams }: PageProps) {
   const params = await searchParams
   const weekParam = params.week
   const tabParam = params.tab
 
   // Determine the week to display
-  const startDay = await getWeekStartDay()
+  const [startDay, showOldShoppingList] = await Promise.all([getWeekStartDay(), getShowOldShoppingList()])
   const weekStart = weekParam ? getWeekStart(parseDateParam(weekParam), startDay) : getWeekStart(new Date(), startDay)
   weekStart.setHours(0, 0, 0, 0)
 
   // Old shopping list switched off (Settings): only the Next week view
-  if (!(await getShowOldShoppingList())) {
+  if (!showOldShoppingList) {
     const nextWeekData = await loadNextWeek(prisma, nextWeekStart(new Date(), startDay))
     return <NextWeekOnly data={nextWeekData} />
   }
@@ -81,3 +82,5 @@ export default function ShoppingListPage(props: PageProps) {
     </Suspense>
   )
 }
+
+const ShoppingListContent = measured('page', '/shopping-list', ShoppingListContentImpl)

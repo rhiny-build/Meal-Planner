@@ -9,6 +9,7 @@
  */
 
 import { prisma } from '@/lib/prisma'
+import { measured } from '@/lib/timing/measure'
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 
@@ -34,7 +35,7 @@ function fromStoredDate(date: Date): string {
  * Get the notes for the 7 days starting at weekStart.
  * Returns a map of 'YYYY-MM-DD' -> note text (days without a note are absent).
  */
-export async function getDayNotesForWeek(weekStart: string): Promise<Record<string, string>> {
+async function getDayNotesForWeekImpl(weekStart: string): Promise<Record<string, string>> {
   const from = toStoredDate(weekStart)
   const to = new Date(from)
   to.setUTCDate(to.getUTCDate() + 6)
@@ -49,7 +50,7 @@ export async function getDayNotesForWeek(weekStart: string): Promise<Record<stri
 /**
  * Save the note for one day. Empty (or whitespace-only) text deletes the note.
  */
-export async function saveDayNote(date: string, text: string): Promise<void> {
+async function saveDayNoteImpl(date: string, text: string): Promise<void> {
   const stored = toStoredDate(date)
 
   if (!text.trim()) {
@@ -63,3 +64,7 @@ export async function saveDayNote(date: string, text: string): Promise<void> {
     update: { text },
   })
 }
+
+export const getDayNotesForWeek = measured('action', 'action getDayNotesForWeek', getDayNotesForWeekImpl)
+
+export const saveDayNote = measured('action', 'action saveDayNote', saveDayNoteImpl)

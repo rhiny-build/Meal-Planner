@@ -84,8 +84,8 @@ async function run(browser, { name, width, height, isTouch }) {
   await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle' })
   await page.getByTestId('tonight-main').waitFor()
   await page.getByRole('link', { name: "Swap tonight's meal" }).click()
-  await page.getByTestId('day-swap-sheet').waitFor()
-  check(await page.getByTestId('day-swap-sheet').isVisible(), "Tonight's swap opens that day's change sheet")
+  await page.getByTestId('day-edit-sheet').waitFor()
+  check(await page.getByTestId('day-edit-sheet').isVisible(), "Tonight's swap opens that day's change sheet")
   const dayLabel = await page.getByRole('dialog').getByRole('heading').innerText()
   await page.getByRole('dialog').getByLabel(`Protein for ${dayLabel}`).click()
   await page.locator('[id*="-listbox"]').getByRole('option').nth(1).click()
@@ -99,7 +99,7 @@ async function run(browser, { name, width, height, isTouch }) {
 
   // Put the original back through the same sheet
   await page.getByRole('link', { name: "Swap tonight's meal" }).click()
-  await page.getByTestId('day-swap-sheet').waitFor()
+  await page.getByTestId('day-edit-sheet').waitFor()
   await page.getByRole('dialog').getByLabel(`Protein for ${dayLabel}`).click()
   await page.getByRole('dialog').getByLabel(`Protein for ${dayLabel}`).fill(mainName)
   await page.locator('[id*="-listbox"]').getByRole('option', { name: mainName }).first().click()
@@ -118,7 +118,7 @@ async function run(browser, { name, width, height, isTouch }) {
   await page.getByRole('button', { name: `Show ${dayLabel} details` }).click()
   check(await page.getByTestId('week-day-details').isVisible(), "Tapping a day shows that day's recipes and ingredients")
   const rowBefore = await page.locator(`[data-day="${dayLabel}"]`).innerText()
-  await page.getByRole('button', { name: `Change ${dayLabel}` }).click()
+  await page.getByRole('button', { name: `Edit ${dayLabel}` }).click()
   await page.getByLabel('Swap with day').selectOption({ index: 1 })
   await page.getByRole('button', { name: 'Swap', exact: true }).click()
   await page.getByRole('button', { name: 'Done' }).click()

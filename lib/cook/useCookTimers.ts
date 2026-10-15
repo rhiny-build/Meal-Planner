@@ -63,9 +63,15 @@ export function useCookTimers() {
     setTimers((current) => resetCookTimer(current, stepId))
   }, [])
 
+  /** Put back timers saved by an earlier visit (see cookSession.ts). Ones that ended meanwhile finish on the next tick. */
+  const restoreTimers = useCallback((saved: CookTimerMap) => {
+    setNow(Date.now())
+    setTimers(saved)
+  }, [])
+
   const dismissFinished = useCallback((stepId: string) => {
     setFinishedStepIds((previous) => previous.filter((id) => id !== stepId))
   }, [])
 
-  return { timers, now, finishedStepIds, startTimer, pauseTimer, resetTimer, dismissFinished }
+  return { timers, now, finishedStepIds, startTimer, pauseTimer, resetTimer, restoreTimers, dismissFinished }
 }

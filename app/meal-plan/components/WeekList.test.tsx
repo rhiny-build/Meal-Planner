@@ -69,8 +69,9 @@ describe('WeekList', () => {
     expect(rows[0]).toHaveTextContent('12')
     expect(rows[0]).toHaveTextContent('Sea Bass')
     expect(rows[0]).toHaveTextContent('Steamed Rice')
-    expect(rows[1]).toHaveTextContent('Note: Football till 7')
-    expect(rows[2]).toHaveTextContent('Nothing planned')
+    expect(within(rows[1]).getByLabelText('Note for Tuesday')).toHaveValue('Football till 7')
+    expect(rows[2]).toHaveTextContent('Plan this day')
+    expect(rows[2]).not.toHaveTextContent('Nothing planned')
   })
 
   it('shows lunch as a small second line and keeps it out of the dinner', () => {
@@ -102,22 +103,22 @@ describe('WeekList', () => {
     expect(within(monday).queryByTestId('week-day-details')).toBeNull()
   })
 
-  it('has a swap button for each day', () => {
+  it('has an edit button for each day (not a swap icon)', () => {
     renderList()
 
-    expect(screen.getByRole('button', { name: 'Change Monday' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Change Tuesday' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Change Wednesday' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Edit Monday' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Edit Tuesday' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Edit Wednesday' })).toBeInTheDocument()
   })
 
-  it("opens that day's change sheet from the swap button and closes it with Done", async () => {
+  it("opens that day's editor from the edit button and closes it with Done", async () => {
     const user = userEvent.setup()
     renderList()
 
-    expect(screen.queryByTestId('day-swap-sheet')).toBeNull()
-    await user.click(screen.getByRole('button', { name: 'Change Tuesday' }))
+    expect(screen.queryByTestId('day-edit-sheet')).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Edit Tuesday' }))
 
-    const dialog = screen.getByRole('dialog', { name: 'Change Tuesday' })
+    const dialog = screen.getByRole('dialog', { name: 'Edit Tuesday' })
     expect(within(dialog).getByText('Protein', { selector: 'span' })).toBeInTheDocument()
     expect(within(dialog).getByText('Carb', { selector: 'span' })).toBeInTheDocument()
     expect(within(dialog).getByText('Vegetable', { selector: 'span' })).toBeInTheDocument()
@@ -125,14 +126,34 @@ describe('WeekList', () => {
     expect(within(dialog).getByLabelText('Note')).toHaveValue('Football till 7')
 
     await user.click(within(dialog).getByRole('button', { name: 'Done' }))
-    expect(screen.queryByTestId('day-swap-sheet')).toBeNull()
+    expect(screen.queryByTestId('day-edit-sheet')).toBeNull()
+  })
+
+  it('types a note in the row itself, no editor needed', async () => {
+    const user = userEvent.setup()
+    const props = renderList()
+
+    await user.type(screen.getByLabelText('Note for Wednesday'), 'x')
+
+    expect(screen.queryByTestId('day-edit-sheet')).toBeNull()
+    expect(screen.getByLabelText('Note for Wednesday')).toHaveAttribute('placeholder', 'Add note')
+    expect(props.onNoteChange).toHaveBeenCalledWith('Wednesday', 'x')
+  })
+
+  it('opens the editor when the day itself is tapped', async () => {
+    const user = userEvent.setup()
+    renderList()
+
+    await user.click(screen.getByText('Plan this day'))
+
+    expect(screen.getByRole('dialog', { name: 'Edit Wednesday' })).toBeInTheDocument()
   })
 
   it('changes the day through the existing handlers', async () => {
     const user = userEvent.setup()
     const props = renderList()
 
-    await user.click(screen.getByRole('button', { name: 'Change Wednesday' }))
+    await user.click(screen.getByRole('button', { name: 'Edit Wednesday' }))
     await user.type(screen.getByLabelText('Note'), 'x')
 
     expect(props.onNoteChange).toHaveBeenCalledWith('Wednesday', 'x')
@@ -142,7 +163,7 @@ describe('WeekList', () => {
     const user = userEvent.setup()
     const props = renderList()
 
-    await user.click(screen.getByRole('button', { name: 'Change Tuesday' }))
+    await user.click(screen.getByRole('button', { name: 'Edit Tuesday' }))
     expect(screen.getByRole('button', { name: 'Swap' })).toBeDisabled()
     await user.selectOptions(screen.getByLabelText('Swap with day'), 'Wednesday')
     await user.click(screen.getByRole('button', { name: 'Swap' }))
@@ -158,7 +179,7 @@ describe('WeekList', () => {
     const user = userEvent.setup()
     const props = renderList()
 
-    await user.click(screen.getByRole('button', { name: 'Change Tuesday' }))
+    await user.click(screen.getByRole('button', { name: 'Edit Tuesday' }))
     await user.selectOptions(screen.getByLabelText('What to swap'), 'carb')
     const dayChoices = within(screen.getByLabelText('Swap with day')).getAllByRole('option').map((option) => option.textContent)
     expect(dayChoices).toEqual(['Day...', 'Monday', 'Wednesday'])
@@ -172,10 +193,10 @@ describe('WeekList', () => {
     const user = userEvent.setup()
     renderList()
 
-    await user.click(screen.getByRole('button', { name: 'Change Monday' }))
+    await user.click(screen.getByRole('button', { name: 'Edit Monday' }))
     await user.keyboard('{Escape}')
 
-    expect(screen.queryByTestId('day-swap-sheet')).toBeNull()
+    expect(screen.queryByTestId('day-edit-sheet')).toBeNull()
   })
 
   it('opens the sheet for the day named in ?day= (where Tonight sends you)', () => {
@@ -183,7 +204,7 @@ describe('WeekList', () => {
 
     renderList()
 
-    expect(screen.getByRole('dialog', { name: 'Change Tuesday' })).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: 'Edit Tuesday' })).toBeInTheDocument()
   })
 
   it('ignores an unknown ?day=', () => {
@@ -191,6 +212,6 @@ describe('WeekList', () => {
 
     renderList()
 
-    expect(screen.queryByTestId('day-swap-sheet')).toBeNull()
+    expect(screen.queryByTestId('day-edit-sheet')).toBeNull()
   })
 })
