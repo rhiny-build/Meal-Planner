@@ -17,6 +17,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useCookTimers } from '@/lib/cook/useCookTimers'
+import { useCookSession } from '@/lib/cook/useCookSession'
 import { useScreenWakeLock } from '@/lib/cook/useScreenWakeLock'
 import { useSwipe } from '@/lib/cook/useSwipe'
 import { getServingsScale } from '@/lib/cook/scaleServings'
@@ -62,6 +63,19 @@ export default function CookScreen({
   const [isIngredientsOpen, setIsIngredientsOpen] = useState(false)
   const timers = useCookTimers()
   const isAwake = useScreenWakeLock(isActive)
+  const { endSession } = useCookSession({
+    recipeId: recipe.id,
+    recipeName: recipe.name,
+    stepIndex,
+    servings,
+    timers: timers.timers,
+    isEmbedded,
+    onRestore: (saved) => {
+      setStepIndex(saved.stepIndex)
+      setServings(saved.servings)
+      timers.restoreTimers(saved.timers)
+    },
+  })
 
   const stepCount = recipe.steps.length
   const scale = getServingsScale(servings, recipe.servings)
@@ -102,6 +116,7 @@ export default function CookScreen({
             href={`/recipes/${recipe.id}`}
             className="flex-none min-h-11 px-3 inline-flex items-center rounded-card bg-sunken font-semibold"
             aria-label="Leave cook mode"
+            onClick={endSession}
           >
             &times; Close
           </Link>
@@ -202,6 +217,7 @@ export default function CookScreen({
             {isLast ? (
               <Link
                 href={isEmbedded ? '/' : `/recipes/${recipe.id}`}
+                onClick={endSession}
                 className={`${bottomButton} flex-1 inline-flex items-center justify-center bg-primary text-white`}
               >
                 {isEmbedded ? 'Done, back to tonight' : 'Finish'}
@@ -219,6 +235,7 @@ export default function CookScreen({
         ) : (
           <Link
             href={`/recipes/${recipe.id}`}
+            onClick={endSession}
             className={`${bottomButton} flex-1 inline-flex items-center justify-center bg-primary text-white`}
           >
             Done

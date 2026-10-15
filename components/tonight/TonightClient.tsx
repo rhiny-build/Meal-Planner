@@ -2,7 +2,7 @@
  * TonightClient
  *
  * The home page: today's dinner with a Start cooking button and a swap button,
- * today's note, the rest of the week, and shortcuts to the shopping list and
+ * today's note, a Resume cooking card while a cook session is in progress, the rest of the week, and shortcuts to the shopping list and
  * the meal plan. With nothing planned it shows one action to plan tonight.
  */
 
@@ -15,6 +15,7 @@ import { getWeekdayName } from '@/lib/tonight'
 import TonightDinnerCard from './TonightDinnerCard'
 import TonightEmpty from './TonightEmpty'
 import RestOfWeekList from './RestOfWeekList'
+import ResumeCookingCard from './ResumeCookingCard'
 
 interface TonightClientProps {
   weekStartDay: number
@@ -41,6 +42,8 @@ export default function TonightClient({ weekStartDay }: TonightClientProps) {
           ) : null
         }
       />
+
+      <ResumeCookingCard />
 
       {isLoading ? (
         <div className="h-52 rounded-panel bg-sunken animate-pulse" aria-label="Loading tonight" />

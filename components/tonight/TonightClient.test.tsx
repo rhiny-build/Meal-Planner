@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react'
 import TonightClient from './TonightClient'
 import type { TonightState } from '@/lib/hooks/useTonight'
 import type { TonightRecipe } from '@/lib/tonight'
+import { COOK_SESSION_MAX_AGE_MS, saveCookSession } from '@/lib/cook/cookSession'
 
 const mockTonight = vi.fn<() => TonightState>()
 vi.mock('@/lib/hooks/useTonight', () => ({ useTonight: () => mockTonight() }))
@@ -25,7 +26,10 @@ const baseState: TonightState = {
 }
 
 describe('TonightClient', () => {
-  beforeEach(() => mockTonight.mockReset())
+  beforeEach(() => {
+    mockTonight.mockReset()
+    window.localStorage.clear()
+  })
 
   it("shows today's dinner with its sides and time", () => {
     mockTonight.mockReturnValue({
@@ -125,5 +129,38 @@ describe('TonightClient', () => {
 
     expect(screen.getByRole('link', { name: /Shopping list/ })).toHaveAttribute('href', '/shopping-list')
     expect(screen.getByRole('link', { name: /Meal plan/ })).toHaveAttribute('href', '/meal-plan')
+  })
+})
+
+describe('TonightClient resume cooking', () => {
+  beforeEach(() => {
+    mockTonight.mockReset()
+    mockTonight.mockReturnValue(baseState)
+    window.localStorage.clear()
+  })
+
+  it('shows nothing while no cook session is in progress', () => {
+    render(<TonightClient weekStartDay={1} />)
+    expect(screen.queryByTestId('resume-cooking')).toBeNull()
+  })
+
+  it('shows Resume cooking, linking to that recipe, while a session is in progress', () => {
+    saveCookSession({ recipeId: 'keema', recipeName: 'Beef Keema', servings: 4, stepIndex: 1, timers: {}, updatedAt: Date.now() })
+
+    render(<TonightClient weekStartDay={1} />)
+
+    const card = screen.getByTestId('resume-cooking')
+    expect(card).toHaveTextContent('Resume cooking')
+    expect(card).toHaveTextContent('Beef Keema')
+    expect(card).toHaveAttribute('href', '/recipes/keema/cook')
+  })
+
+  it('hides it once the session is more than 12 hours old', () => {
+    saveCookSession({
+      recipeId: 'keema', recipeName: 'Beef Keema', servings: 4, stepIndex: 1, timers: {},
+      updatedAt: Date.now() - COOK_SESSION_MAX_AGE_MS - 1000,
+    })
+    render(<TonightClient weekStartDay={1} />)
+    expect(screen.queryByTestId('resume-cooking')).toBeNull()
   })
 })
