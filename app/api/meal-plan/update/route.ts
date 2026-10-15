@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getWeekStart } from '@/lib/dateUtils'
 import { getWeekStartDay } from '@/app/(modules)/settings/preferenceActions'
+import { measured } from '@/lib/timing/measure'
 
 /**
  * PATCH /api/meal-plan/update
@@ -18,7 +19,7 @@ import { getWeekStartDay } from '@/app/(modules)/settings/preferenceActions'
  * - carbRecipeId?: new carb recipe ID (or null to clear)
  * - vegetableRecipeId?: new vegetable recipe ID (or null to clear)
  */
-export async function PATCH(request: NextRequest) {
+async function handlePATCH(request: NextRequest) {
   try {
     const body = await request.json()
     const { id, ...updateData } = body
@@ -81,3 +82,5 @@ export async function PATCH(request: NextRequest) {
     )
   }
 }
+
+export const PATCH = measured('api', 'PATCH /api/meal-plan/update', handlePATCH)

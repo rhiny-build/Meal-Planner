@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getWeekBounds } from '@/lib/mealPlanHelpers'
 import type { BulkMealPlanRequest } from '@/types'
+import { measured } from '@/lib/timing/measure'
 
 /**
  * POST /api/meal-plan/create
@@ -16,7 +17,7 @@ import type { BulkMealPlanRequest } from '@/types'
  * - startDate: ISO date string (must be the configured week start day)
  * - mealPlans: Array of { dayOfWeek, proteinRecipeId?, carbRecipeId?, vegetableRecipeId? }
  */
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const body = (await request.json()) as BulkMealPlanRequest
 
@@ -87,3 +88,5 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export const POST = measured('api', 'POST /api/meal-plan/create', handlePOST)

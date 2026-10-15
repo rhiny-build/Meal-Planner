@@ -9,12 +9,13 @@ import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
 import { getWeekStartDay, getShowOldShoppingList } from './preferenceActions'
 import SettingsClient from './components/SettingsClient'
+import { measured } from '@/lib/timing/measure'
 
 interface PageProps {
   searchParams: Promise<{ tab?: string; type?: string }>
 }
 
-async function SettingsContent({ searchParams }: PageProps) {
+async function SettingsContentImpl({ searchParams }: PageProps) {
   const params = await searchParams
   const tabParam = params.tab
   const typeParam = params.type
@@ -63,3 +64,5 @@ export default function SettingsPage(props: PageProps) {
     </Suspense>
   )
 }
+
+const SettingsContent = measured('page', '/settings', SettingsContentImpl)

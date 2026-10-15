@@ -11,6 +11,7 @@ import './globals.css'
 import Header from '@/components/Header'
 import TabBar from '@/components/TabBar'
 import { Toaster } from 'sonner'
+import TimingReporter from '@/components/TimingReporter'
 
 const displayFont = Bricolage_Grotesque({
   subsets: ['latin'],
@@ -59,6 +60,7 @@ export default function RootLayout({
 
         <TabBar />
         <Toaster position="top-center" />
+        <TimingReporter />
       </body>
     </html>
   )

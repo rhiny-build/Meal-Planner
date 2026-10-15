@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { parseStartDate, getWeekBounds, getOrderedDays } from '@/lib/mealPlanHelpers'
 import { getWeekStartDay } from '@/app/(modules)/settings/preferenceActions'
+import { measured } from '@/lib/timing/measure'
 
 /**
  * GET /api/meal-plan
@@ -16,7 +17,7 @@ import { getWeekStartDay } from '@/app/(modules)/settings/preferenceActions'
  * Query params:
  * - startDate (optional): ISO date string for the start of the week
  */
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const startDateParam = searchParams.get('startDate')
@@ -56,3 +57,5 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+export const GET = measured('api', 'GET /api/meal-plan', handleGET)

@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getWeekBounds } from '@/lib/mealPlanHelpers'
+import { measured } from '@/lib/timing/measure'
 
 /**
  * DELETE /api/meal-plan/delete
@@ -14,7 +15,7 @@ import { getWeekBounds } from '@/lib/mealPlanHelpers'
  * Request body:
  * - startDate: ISO date string (must be the configured week start day)
  */
-export async function DELETE(request: NextRequest) {
+async function handleDELETE(request: NextRequest) {
   try {
     const body = await request.json()
     const { startDate: startDateStr } = body
@@ -57,3 +58,5 @@ export async function DELETE(request: NextRequest) {
     )
   }
 }
+
+export const DELETE = measured('api', 'DELETE /api/meal-plan/delete', handleDELETE)

@@ -12,8 +12,9 @@ import {
   getCarbFilterOptions,
 } from '@/lib/dishTypeConfig'
 import RecipesClient from './components/RecipesClient'
+import { measured } from '@/lib/timing/measure'
 
-async function RecipesContent() {
+async function RecipesContentImpl() {
   // Fetch all dish type options in parallel
   const [proteinOptions, carbOptions, proteinFilterOptions, carbFilterOptions] = await Promise.all([
     getProteinOptions(),
@@ -39,3 +40,5 @@ export default function RecipesPage() {
     </Suspense>
   )
 }
+
+const RecipesContent = measured('page', '/recipes', RecipesContentImpl)

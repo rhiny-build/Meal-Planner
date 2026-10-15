@@ -13,6 +13,7 @@ import { ensureShoppingListExists } from './actions'
 import ShoppingListClient from './components/ShoppingListClient'
 import NextWeekOnly from './components/nextWeek/NextWeekOnly'
 import { loadNextWeek, nextWeekStart } from '@/lib/nextWeek/loadNextWeek'
+import { measured } from '@/lib/timing/measure'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,7 +21,7 @@ interface PageProps {
   searchParams: Promise<{ week?: string; tab?: string }>
 }
 
-async function ShoppingListContent({ searchParams }: PageProps) {
+async function ShoppingListContentImpl({ searchParams }: PageProps) {
   const params = await searchParams
   const weekParam = params.week
   const tabParam = params.tab
@@ -81,3 +82,5 @@ export default function ShoppingListPage(props: PageProps) {
     </Suspense>
   )
 }
+
+const ShoppingListContent = measured('page', '/shopping-list', ShoppingListContentImpl)

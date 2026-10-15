@@ -6,9 +6,12 @@
 
 import { getWeekStartDay } from '@/app/(modules)/settings/preferenceActions'
 import MealPlanClient from './components/MealPlanClient'
+import { measured } from '@/lib/timing/measure'
 
-export default async function MealPlanPage() {
+async function MealPlanPage() {
   const weekStartDay = await getWeekStartDay()
 
   return <MealPlanClient weekStartDay={weekStartDay} />
 }
+
+export default measured('page', '/meal-plan', MealPlanPage)

@@ -14,10 +14,11 @@ import { getCookIngredients } from '@/lib/cook/getCookIngredients'
 import RecipePages from './RecipePages'
 import RecipeActions from './RecipeActions'
 import { getRecipeOverview } from './recipeOverview'
+import { measured } from '@/lib/timing/measure'
 
 export const dynamic = 'force-dynamic'
 
-export default async function RecipePage({ params }: { params: Promise<{ id: string }> }) {
+async function RecipePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const recipe = await prisma.recipe.findUnique({
     where: { id },
@@ -74,3 +75,5 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
     </div>
   )
 }
+
+export default measured('page', '/recipes/:id', RecipePage)

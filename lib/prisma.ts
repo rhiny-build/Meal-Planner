@@ -10,6 +10,7 @@
  */
 
 import { PrismaClient } from '@prisma/client'
+import { recordQuery } from '@/lib/timing/requestContext'
 
 // Extend the global type to include our prisma property
 const globalForPrisma = globalThis as unknown as {
@@ -21,7 +22,22 @@ const globalForPrisma = globalThis as unknown as {
  * In development, store it on globalThis to survive hot reloads
  * In production, create a new instance each time
  */
-export const prisma = globalForPrisma.prisma ?? new PrismaClient()
+function createClient(): PrismaClient {
+  const client = new PrismaClient()
+  // Count and time every query for the request being measured (lib/timing). Free outside a measured request.
+  client.$use(async (params, next) => {
+    if (params.model === 'RequestTiming') return next(params)
+    const startedAt = performance.now()
+    try {
+      return await next(params)
+    } finally {
+      recordQuery(performance.now() - startedAt)
+    }
+  })
+  return client
+}
+
+export const prisma = globalForPrisma.prisma ?? createClient()
 
 // In development, save the client to globalThis to reuse across hot reloads
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma

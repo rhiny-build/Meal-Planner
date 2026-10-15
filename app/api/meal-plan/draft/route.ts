@@ -12,17 +12,18 @@ import { validDateKey, getWeekStartDay } from '@/lib/mealPlanAgent/dates'
 import { createDraftStore } from '@/lib/mealPlanAgent/planStore'
 import { runPlanAgent } from '@/lib/mealPlanAgent/runPlanAgent'
 import { nextWeekStart } from '@/lib/nextWeek/loadNextWeek'
+import { measured } from '@/lib/timing/measure'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-export async function GET(request: Request) {
+async function handleGET(request: Request) {
   const startDate = new URL(request.url).searchParams.get('startDate') ?? ''
   if (!validDateKey(startDate)) return NextResponse.json({ error: 'startDate must be YYYY-MM-DD' }, { status: 400 })
   return NextResponse.json({ draft: await getDraft(prisma, startDate) })
 }
 
-export async function POST() {
+async function handlePOST() {
   const now = new Date()
   const weekStart = formatDateParam(nextWeekStart(now, await getWeekStartDay(prisma)))
   await createDraft(prisma, weekStart)
@@ -40,3 +41,6 @@ export async function POST() {
   await setDraftSummary(prisma, weekStart, result.message)
   return NextResponse.json({ weekStart, summary: result.message, changes: result.changes, runId: result.runId })
 }
+
+export const GET = measured('api', 'GET /api/meal-plan/draft', handleGET)
+export const POST = measured('api', 'POST /api/meal-plan/draft', handlePOST)

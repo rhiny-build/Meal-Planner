@@ -16,6 +16,7 @@ import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { getWeekStart, formatDateParam, parseDateParam } from '@/lib/dateUtils'
 import { useMealPlan } from '@/lib/hooks/useMealPlan'
+import { usePageReady } from '@/lib/timing/usePageReady'
 import { useNextWeekGaps } from '@/lib/hooks/useNextWeekGaps'
 import PageHeader from '@/components/PageHeader'
 import WeekToolbar from './WeekToolbar'
@@ -64,6 +65,7 @@ export default function MealPlanClient({ weekStartDay }: MealPlanClientProps) {
     handleDiscardDraft,
   } = useMealPlan(startDate, weekStartDay)
 
+  usePageReady(!isLoading)
   const emptyDaysNextWeek = useNextWeekGaps(weekStartDay, startDate, weekPlan)
 
   const handlePreviousWeek = () => {

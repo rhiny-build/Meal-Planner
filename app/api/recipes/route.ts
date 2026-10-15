@@ -7,12 +7,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import type { RecipeFilters } from '@/types'
+import { measured } from '@/lib/timing/measure'
 
 /**
  * GET /api/recipes
  * Fetches all recipes, optionally filtered by tier, protein, carb, or prep time
  */
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
     // Extract filter parameters from URL search params
     const searchParams = request.nextUrl.searchParams
@@ -58,3 +59,5 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+export const GET = measured('api', 'GET /api/recipes', handleGET)
