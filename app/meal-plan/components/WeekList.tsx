@@ -1,9 +1,9 @@
 /**
  * WeekList
  *
- * The week as one row per day (see Week mockup), each with a swap button.
- * Owns which day's change sheet is open; `?day=Tuesday` opens it on arrival
- * (that is where Tonight's swap button goes).
+ * The week as one row per day (see Week mockup). Tapping a day opens its
+ * editor; the note is typed in the row. Owns which day's editor is open;
+ * `?day=Tuesday` opens it on arrival (that is where Tonight's swap button goes).
  */
 
 'use client'
@@ -14,7 +14,7 @@ import type { MealSlotColumn } from '@/lib/mealPlanHelpers'
 import { formatDateParam } from '@/lib/dateUtils'
 import WeekDayRow from './WeekDayRow'
 import type { DaySlots } from './WeekDayDetails'
-import DaySwapSheet from './DaySwapSheet'
+import DayEditSheet from './DayEditSheet'
 
 interface WeekListProps {
   weekPlan: WeekPlan[]
@@ -76,14 +76,15 @@ export default function WeekList({
               slots={slots}
               note={dayNotes[dayPlan.day] ?? ''}
               reason={reasons[formatDateParam(dayPlan.date)]}
-              onSwap={() => setOpenDayIndex(index)}
+              onEdit={() => setOpenDayIndex(index)}
+              onNoteChange={(text) => onNoteChange(dayPlan.day, text)}
             />
           )
         })}
       </ul>
 
       {openDayIndex !== null && weekPlan[openDayIndex] && (
-        <DaySwapSheet
+        <DayEditSheet
           dayIndex={openDayIndex}
           dayPlan={weekPlan[openDayIndex]}
           note={dayNotes[weekPlan[openDayIndex].day] ?? ''}
