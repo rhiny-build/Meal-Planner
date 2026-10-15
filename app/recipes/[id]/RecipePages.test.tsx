@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import RecipePages from './RecipePages'
 import type { CookRecipeData } from '@/components/cook/cookTypes'
@@ -36,6 +36,8 @@ const overview: RecipeOverviewData = {
 const isShown = (name: string) => !document.getElementById(`recipe-panel-${name}`)!.hasAttribute('hidden')
 
 describe('RecipePages', () => {
+  beforeEach(() => window.localStorage.clear())
+
   it('opens on Overview and flips with the tabs', () => {
     render(<RecipePages recipe={recipe} overview={overview} />)
 
