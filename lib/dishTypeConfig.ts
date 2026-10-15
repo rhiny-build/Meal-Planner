@@ -71,17 +71,3 @@ export async function getCarbFilterOptions(): Promise<DishTypeOption[]> {
     ...types.map(t => ({ value: t.value, label: t.label })),
   ]
 }
-
-/**
- * Get all dish types for settings page
- */
-export async function getAllDishTypes() {
-  const types = await prisma.dishType.findMany({
-    orderBy: [{ category: 'asc' }, { order: 'asc' }],
-  })
-
-  return {
-    proteinTypes: types.filter(t => t.category === 'protein'),
-    carbTypes: types.filter(t => t.category === 'carb'),
-  }
-}

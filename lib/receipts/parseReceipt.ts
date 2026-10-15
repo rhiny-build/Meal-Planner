@@ -1,7 +1,7 @@
 /**
  * Sainsbury's receipt parser (text of the order PDF -> order number, date, product lines).
  *
- * Ported from restock-agent/lib/parseReceipt.ts with three changes:
+ * Ported from the old restock-agent sandbox (removed) with three changes:
  *  - a line that only carries a weight and price ("0.42kg £8.50") is a continuation of the product above it;
  *  - variable weights ("0.42kg") are stripped from product names, so the same product has the same name every week;
  *  - every receipt reports its parsed count next to its "Groceries (N items)" count, so a mis-parse is visible.

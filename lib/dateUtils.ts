@@ -60,16 +60,3 @@ export const isWeekStartDay = (date: Date, startDay: number = 1): boolean => {
 /** @deprecated Use isWeekStartDay instead */
 export const isMonday = (date: Date): boolean => isWeekStartDay(date, 1)
 
-/**
- * Check if a week has passed (current date is on or after the following week's start)
- */
-export const isWeekPast = (weekStart: Date, startDay: number = 1): boolean => {
-  const nextWeekStart = new Date(weekStart)
-  nextWeekStart.setDate(nextWeekStart.getDate() + 7)
-  nextWeekStart.setHours(0, 0, 0, 0)
-
-  const today = getWeekStart(new Date(), startDay)
-  today.setHours(0, 0, 0, 0)
-
-  return today >= nextWeekStart
-}
