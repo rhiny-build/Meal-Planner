@@ -58,12 +58,23 @@ function recipeIngredientNames(recipe: { ingredients: string; structuredIngredie
 }
 
 export async function loadNextWeek(prisma: PrismaClient, weekStart: Date, today = new Date()): Promise<NextWeekData> {
-  const [rows, mappings] = await Promise.all([
+  // Everything that does not depend on the receipts is asked for at the same time as the receipts
+  const { startDate, endDate } = getWeekBounds(weekStart)
+  const [rows, mappings, plan] = await Promise.all([
     prisma.purchaseHistory.findMany({
       where: { orderNumber: { not: null } },
       select: { rawName: true, purchaseDate: true },
     }),
     prisma.productMapping.findMany(),
+    prisma.mealPlan.findMany({
+      where: { date: { gte: startDate, lte: endDate } },
+      orderBy: { date: 'asc' },
+      include: {
+        proteinRecipe: { include: { structuredIngredients: { orderBy: { order: 'asc' } } } },
+        carbRecipe: { include: { structuredIngredients: { orderBy: { order: 'asc' } } } },
+        vegetableRecipe: { include: { structuredIngredients: { orderBy: { order: 'asc' } } } },
+      },
+    }),
   ])
   const mappingByProduct = new Map(mappings.map(m => [m.productName, m]))
   const itemOf = (product: string) => mappingByProduct.get(product)?.itemName ?? fallbackItemName(product)
@@ -82,16 +93,6 @@ export async function loadNextWeek(prisma: PrismaClient, weekStart: Date, today 
   }
 
   const orderDate = orderDateInWeek(weekStart, usualOrderWeekday(history.orders))
-  const { startDate, endDate } = getWeekBounds(weekStart)
-  const plan = await prisma.mealPlan.findMany({
-    where: { date: { gte: startDate, lte: endDate } },
-    orderBy: { date: 'asc' },
-    include: {
-      proteinRecipe: { include: { structuredIngredients: { orderBy: { order: 'asc' } } } },
-      carbRecipe: { include: { structuredIngredients: { orderBy: { order: 'asc' } } } },
-      vegetableRecipe: { include: { structuredIngredients: { orderBy: { order: 'asc' } } } },
-    },
-  })
   const meals: MealInput[] = plan
     .map(day => {
       const recipes = [day.proteinRecipe, day.carbRecipe, day.vegetableRecipe].filter(r => r !== null)
@@ -105,8 +106,13 @@ export async function loadNextWeek(prisma: PrismaClient, weekStart: Date, today 
 
   // Ticks only live until the order date has passed
   const todayKey = formatDateParam(today)
-  await prisma.nextWeekTick.deleteMany({ where: { orderDate: { lt: tickDate(todayKey) } } })
-  const ticks = await prisma.nextWeekTick.findMany({ where: { orderDate: tickDate(orderDate) } })
+  // The clean-up and the read run together; a tick for a past order date is ignored here either way
+  const firstLiveDate = tickDate(todayKey)
+  const [, found] = await Promise.all([
+    prisma.nextWeekTick.deleteMany({ where: { orderDate: { lt: firstLiveDate } } }),
+    prisma.nextWeekTick.findMany({ where: { orderDate: tickDate(orderDate) } }),
+  ])
+  const ticks = found.filter(t => t.orderDate >= firstLiveDate)
   const overrides = Object.fromEntries(ticks.map(t => [t.key, t.ticked]))
 
   return {

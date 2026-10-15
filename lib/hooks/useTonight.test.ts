@@ -2,11 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { useTonight } from './useTonight'
 
-const mockGetDayNotesForWeek = vi.fn()
-vi.mock('@/app/meal-plan/dayNoteActions', () => ({
-  getDayNotesForWeek: (weekStart: string) => mockGetDayNotesForWeek(weekStart),
-}))
-
 const recipe = (id: string, name: string) => ({ id, name, kind: 'full', totalTimeMinutes: null })
 
 const weekRows = [
@@ -23,8 +18,10 @@ describe('useTonight', () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date(2026, 9, 13, 18, 30)) // Tuesday evening
     vi.stubGlobal('fetch', fetchMock)
-    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ mealPlans: weekRows }) })
-    mockGetDayNotesForWeek.mockResolvedValue({ '2026-10-13': 'Football till 7' })
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ mealPlans: weekRows, dayNotes: { '2026-10-13': 'Football till 7' } }),
+    })
   })
 
   afterEach(() => {
@@ -50,7 +47,7 @@ describe('useTonight', () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalled())
 
     expect(fetchMock).toHaveBeenCalledWith('/api/meal-plan?startDate=2026-10-12')
-    expect(mockGetDayNotesForWeek).toHaveBeenCalledWith('2026-10-12')
+    expect(fetchMock).toHaveBeenCalledTimes(1) // the plan and its day notes come in one request
   })
 
   it('has no dinner (the empty state) when nothing is planned for today', async () => {

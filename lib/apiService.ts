@@ -59,7 +59,7 @@ export const fetchMealPlan = async (startDate: Date, days: string[]): Promise<We
 export const fetchAllRecipes = async (): Promise<RecipeWithIngredients[]> => {
 
     try {
-      const response = await fetch('/api/recipes')
+      const response = await fetch('/api/recipes?steps=none')
       const json = await response.json()
       return json as RecipeWithIngredients[];
     }

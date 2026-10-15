@@ -27,6 +27,8 @@ async function handleGET(request: NextRequest) {
       isLunchAppropriate: lunchParam === 'true' ? true : lunchParam === 'false' ? false : undefined,
     }
 
+    const withSteps = searchParams.get('steps') !== 'none'
+
     // Build the where clause based on filters
     // Only include filters that are actually provided
     const where: any = {}
@@ -42,7 +44,8 @@ async function handleGET(request: NextRequest) {
       where,
       include: {
         structuredIngredients: { orderBy: { order: 'asc' } },
-        steps: { orderBy: { order: 'asc' } },
+        // The Week page only needs names and ingredients: ?steps=none leaves the method out of the response
+        ...(withSteps ? { steps: { orderBy: { order: 'asc' as const } } } : {}),
       },
       orderBy: [
         { tier: 'asc' }, // Favorites first

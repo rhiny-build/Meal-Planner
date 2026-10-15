@@ -27,12 +27,12 @@ async function ShoppingListContentImpl({ searchParams }: PageProps) {
   const tabParam = params.tab
 
   // Determine the week to display
-  const startDay = await getWeekStartDay()
+  const [startDay, showOldShoppingList] = await Promise.all([getWeekStartDay(), getShowOldShoppingList()])
   const weekStart = weekParam ? getWeekStart(parseDateParam(weekParam), startDay) : getWeekStart(new Date(), startDay)
   weekStart.setHours(0, 0, 0, 0)
 
   // Old shopping list switched off (Settings): only the Next week view
-  if (!(await getShowOldShoppingList())) {
+  if (!showOldShoppingList) {
     const nextWeekData = await loadNextWeek(prisma, nextWeekStart(new Date(), startDay))
     return <NextWeekOnly data={nextWeekData} />
   }

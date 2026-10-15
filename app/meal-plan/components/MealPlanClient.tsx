@@ -66,7 +66,7 @@ export default function MealPlanClient({ weekStartDay }: MealPlanClientProps) {
   } = useMealPlan(startDate, weekStartDay)
 
   usePageReady(!isLoading)
-  const emptyDaysNextWeek = useNextWeekGaps(weekStartDay, startDate, weekPlan)
+  const emptyDaysNextWeek = useNextWeekGaps(weekStartDay, startDate, weekPlan, !isLoading)
 
   const handlePreviousWeek = () => {
     const newDate = new Date(startDate)

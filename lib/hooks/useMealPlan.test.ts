@@ -148,7 +148,7 @@ describe('useMealPlan', () => {
 
     // Default: recipes fetch and meal plan fetch
     global.fetch = vi.fn().mockImplementation((url: string) => {
-      if (url === '/api/recipes') {
+      if (url.startsWith('/api/recipes')) {
         return createMockFetchResponse(mockRecipes)
       }
       if (url.startsWith('/api/meal-plan')) {

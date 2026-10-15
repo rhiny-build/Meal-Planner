@@ -20,29 +20,22 @@ async function SettingsContentImpl({ searchParams }: PageProps) {
   const tabParam = params.tab
   const typeParam = params.type
 
-  const showOldShoppingList = await getShowOldShoppingList()
-
-  // Categories and master list items belong to the old shopping list: only load them when it is shown
+  // Independent reads, asked for together. Categories and master list items belong to the old shopping
+  // list, so they are only loaded when it is shown.
+  const [showOldShoppingList, dishTypes, weekStartDay] = await Promise.all([
+    getShowOldShoppingList(),
+    prisma.dishType.findMany({ orderBy: [{ category: 'asc' }, { order: 'asc' }] }),
+    getWeekStartDay(),
+  ])
   const categories = showOldShoppingList
     ? await prisma.category.findMany({
         orderBy: { order: 'asc' },
-        include: {
-          items: {
-            orderBy: { order: 'asc' },
-          },
-        },
+        include: { items: { orderBy: { order: 'asc' } } },
       })
     : []
 
-  // Fetch dish types
-  const dishTypes = await prisma.dishType.findMany({
-    orderBy: [{ category: 'asc' }, { order: 'asc' }],
-  })
-
   const proteinTypes = dishTypes.filter(t => t.category === 'protein')
   const carbTypes = dishTypes.filter(t => t.category === 'carb')
-
-  const weekStartDay = await getWeekStartDay()
 
   return (
     <SettingsClient

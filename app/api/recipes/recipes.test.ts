@@ -94,6 +94,18 @@ describe('GET /api/recipes', () => {
     vi.clearAllMocks()
   })
 
+  it('leaves the method out when asked (?steps=none), and keeps it by default', async () => {
+    vi.mocked(prisma.recipe.findMany).mockResolvedValue(mockRecipes)
+
+    await GET(createMockRequest('/api/recipes?steps=none'))
+    await GET(createMockRequest('/api/recipes'))
+
+    const [lean, full] = vi.mocked(prisma.recipe.findMany).mock.calls.map(([args]) => (args as any).include)
+    expect(lean.steps).toBeUndefined()
+    expect(lean.structuredIngredients).toBeDefined()
+    expect(full.steps).toBeDefined()
+  })
+
   it('should return all recipes when no filters provided', async () => {
     vi.mocked(prisma.recipe.findMany).mockResolvedValue(mockRecipes)
 
