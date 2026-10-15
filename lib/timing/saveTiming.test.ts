@@ -27,6 +27,13 @@ describe('timing records', () => {
     expect(create).not.toHaveBeenCalled()
   })
 
+  it('records nothing while next build prerenders pages', async () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    vi.stubEnv('NEXT_PHASE', 'phase-production-build')
+    await saveTiming({ source: 'server', kind: 'page', route: '/', totalMs: 5 })
+    expect(create).not.toHaveBeenCalled()
+  })
+
   it('saves a record and never throws when the database fails', async () => {
     vi.stubEnv('NODE_ENV', 'production')
     create.mockRejectedValueOnce(new Error('db down'))

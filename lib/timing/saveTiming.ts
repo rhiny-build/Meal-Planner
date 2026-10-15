@@ -25,8 +25,11 @@ export type TimingRecord = {
 
 let lastCleanup = 0
 
-/** Recording is off in tests, and can be switched off with TIMING_ENABLED=false. */
-export const isTimingEnabled = () => process.env.NODE_ENV !== 'test' && process.env.TIMING_ENABLED !== 'false'
+/** Off in tests, while `next build` prerenders pages (that is not a visit), and with TIMING_ENABLED=false. */
+export const isTimingEnabled = () =>
+  process.env.NODE_ENV !== 'test' &&
+  process.env.NEXT_PHASE !== 'phase-production-build' &&
+  process.env.TIMING_ENABLED !== 'false'
 
 export async function deleteOldTimings(now = Date.now()): Promise<void> {
   const cutoff = new Date(now - TIMING_RETENTION_DAYS * 24 * 60 * 60 * 1000)
