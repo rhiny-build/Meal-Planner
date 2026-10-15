@@ -2,17 +2,17 @@
  * WeekToolbar
  *
  * Week navigation (previous / next) and the plan actions: fill empty days
- * with AI, save and clear.
+ * with a draft, save and clear.
  */
 
 import Button from '@/components/Button'
 
 interface WeekToolbarProps {
-  isGenerating: boolean
+  isDrafting: boolean
   isSaving: boolean
   onPreviousWeek: () => void
   onNextWeek: () => void
-  onGenerate: () => void
+  onDraft: () => void
   onSave: () => void
   onClear: () => void
 }
@@ -21,11 +21,11 @@ const navButton =
   'w-11 h-11 rounded-card bg-surface text-ink text-xl font-semibold flex items-center justify-center'
 
 export default function WeekToolbar({
-  isGenerating,
+  isDrafting,
   isSaving,
   onPreviousWeek,
   onNextWeek,
-  onGenerate,
+  onDraft,
   onSave,
   onClear,
 }: WeekToolbarProps) {
@@ -57,10 +57,10 @@ export default function WeekToolbar({
         <Button
           variant="secondary"
           size="sm"
-          onClick={onGenerate}
-          disabled={isGenerating}
+          onClick={onDraft}
+          disabled={isDrafting}
         >
-          {isGenerating ? 'Generating...' : 'Generate with AI'}
+          {isDrafting ? 'Drafting...' : 'Draft my week'}
         </Button>
         <Button variant="secondary" size="sm" onClick={onClear}>
           Clear all

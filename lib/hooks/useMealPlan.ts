@@ -5,18 +5,21 @@
  * Pure logic lives in mealPlanHelpers; refresh logic in useAutoRefresh.
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { toast } from 'sonner'
 import type { RecipeWithIngredients, WeekPlan } from '@/types'
 import { fetchMealPlan as fetchMealPlanService, fetchAllRecipes, saveMealPlan } from '@/lib/apiService'
 import { useDayNotes } from './useDayNotes'
 import { useAutoRefresh } from './useAutoRefresh'
+import { useWeekDraft } from './useWeekDraft'
+import { overlayDraft, reasonsByDate } from '@/lib/mealPlanAgent/weekPlanDraft'
+import { formatDateParam } from '@/lib/dateUtils'
 import {
   getOrderedDays,
   filterRecipesByType,
   calculateSelectedCount,
   getRecipeKeyFromColumn,
   swapRecipesInPlan,
-  applyGeneratedPlanToWeek,
   createEmptyWeekPlan,
 } from '@/lib/mealPlanHelpers'
 import type { MealSlotColumn } from '@/lib/mealPlanHelpers'
@@ -30,27 +33,50 @@ export function useMealPlan(startDate: Date, weekStartDay: number = 1) {
 
   const days = getOrderedDays(weekStartDay)
   const { dayNotes, handleNoteChange } = useDayNotes(startDate, days)
+  const { draft, loadDraft, persistEdits, accept, discard } = useWeekDraft(startDate)
+  /** The agent's reason per day (YYYY-MM-DD), for the days of a pending draft Ronen has not changed since */
+  const [reasons, setReasons] = useState<Record<string, string>>({})
+  /** Edits made on screen that are not saved yet (to the plan, or to the draft) */
+  const [dirty, setDirty] = useState(false)
+  const latestPlan = useRef<WeekPlan[]>([])
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true)
+  /** `quiet`: reload in place after a change (the page must not flash back to "Loading" and lose the Ask result) */
+  const fetchData = useCallback(async (quiet = false) => {
+    if (!quiet) setIsLoading(true)
     try {
-      const [recipes, plan] = await Promise.all([
+      const [recipes, plan, pendingDraft] = await Promise.all([
         fetchAllRecipes(),
-        fetchMealPlanService(startDate, days)
+        fetchMealPlanService(startDate, days),
+        loadDraft(),
       ])
       setAllRecipes(recipes)
-      setWeekPlan(plan)
+      // A pending draft is what the week looks like until it is accepted or thrown away
+      setWeekPlan(pendingDraft ? overlayDraft(plan, pendingDraft.days) : plan)
+      setReasons(pendingDraft ? reasonsByDate(pendingDraft.days) : {})
+      setDirty(false)
     } catch (error) {
       console.error('Error fetching data:', error)
     } finally {
       setIsLoading(false)
     }
-  }, [startDate])
+  }, [startDate, loadDraft])
 
   useEffect(() => { fetchData() }, [fetchData])
   useAutoRefresh(fetchData)
+  const refresh = () => fetchData(true)
+
+  /** An edit on screen: remember it is unsaved, and drop the agent's reason for the days it touched */
+  const markEdited = (...dayIndexes: number[]) => {
+    setDirty(true)
+    setReasons(prev => {
+      const next = { ...prev }
+      for (const i of dayIndexes) delete next[formatDateParam(latestPlan.current[i]?.date ?? startDate)]
+      return next
+    })
+  }
 
   const handleRecipeChange = (dayIndex: number, column: MealSlotColumn, recipeId: string) => {
+    markEdited(dayIndex)
     setWeekPlan(prev => {
       const newPlan = [...prev]
       newPlan[dayIndex] = { ...newPlan[dayIndex], [getRecipeKeyFromColumn(column)]: recipeId }
@@ -58,12 +84,49 @@ export function useMealPlan(startDate: Date, weekStartDay: number = 1) {
     })
   }
 
+  // While a draft is pending, Ronen's tweaks are kept in the draft (not the plan) a moment after he makes them
+  useEffect(() => { latestPlan.current = weekPlan }, [weekPlan])
+  useEffect(() => {
+    if (!draft || !dirty) return
+    const timer = setTimeout(() => { persistEdits(latestPlan.current).then(() => setDirty(false)) }, 600)
+    return () => clearTimeout(timer)
+  }, [weekPlan, draft, dirty, persistEdits])
+
+  /** Accept all: the draft, with any tweaks, becomes the saved plan */
+  const handleAcceptDraft = async () => {
+    setIsSaving(true)
+    try {
+      if (await accept(latestPlan.current)) {
+        toast.success('Plan saved')
+        await refresh()
+      }
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleDiscardDraft = async () => {
+    if (!confirm('Throw away the draft?')) return
+    await discard()
+    await refresh()
+  }
+
+  /** Before the agent changes the plan on the server, make sure what is on screen is not lost */
+  const flushUnsaved = async () => {
+    if (!dirty) return
+    if (draft) await persistEdits(latestPlan.current)
+    else await saveMealPlan(startDate, latestPlan.current, days)
+    setDirty(false)
+  }
+
   const handleSave = async () => {
+    if (draft) return handleAcceptDraft()
     setIsSaving(true)
     try {
       const savedPlan = await saveMealPlan(startDate, weekPlan, days)
       if (savedPlan.length > 0) {
         setWeekPlan(savedPlan)
+        setDirty(false)
       }
     } catch (error) {
       console.error('Error saving:', error)
@@ -74,20 +137,14 @@ export function useMealPlan(startDate: Date, weekStartDay: number = 1) {
 
   const handleClear = () => {
     if (!confirm('Clear all selections for this week?')) return
+    setDirty(true)
+    setReasons({})
     setWeekPlan(createEmptyWeekPlan(startDate, weekStartDay))
   }
 
   const handleSwapRecipes = (column: MealSlotColumn, fromDayIndex: number, toDayIndex: number) => {
+    markEdited(fromDayIndex, toDayIndex)
     setWeekPlan(prev => swapRecipesInPlan(prev, column, fromDayIndex, toDayIndex))
-  }
-
-  // Functional update: the AI call takes a while, so work from the latest plan, not the one
-  // captured when the request started.
-  const applyGeneratedPlan = (
-    modifiedPlan: Parameters<typeof applyGeneratedPlanToWeek>[1],
-    options?: Parameters<typeof applyGeneratedPlanToWeek>[2]
-  ) => {
-    setWeekPlan(prev => applyGeneratedPlanToWeek(prev, modifiedPlan, options))
   }
 
   const { lunchRecipes, proteinRecipes, carbRecipes, vegetableRecipes } = filterRecipesByType(allRecipes)
@@ -107,6 +164,11 @@ export function useMealPlan(startDate: Date, weekStartDay: number = 1) {
     handleSave,
     handleClear,
     handleSwapRecipes,
-    applyGeneratedPlan,
+    draft,
+    reasons,
+    refresh,
+    flushUnsaved,
+    handleAcceptDraft,
+    handleDiscardDraft,
   }
 }

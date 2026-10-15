@@ -54,10 +54,10 @@ describe('MCP recipe tools (integration)', () => {
     metadata: { protein: 'egg', source: 'Claude suggestion' },
   }
 
-  it('lists the five tools', async () => {
+  it('keeps the original six tools (the plan tools are tested in mcp-plan.integration.test.ts)', async () => {
     const { tools } = await client.listTools()
-    expect(tools.map(t => t.name).sort()).toEqual(
-      ['create_recipe', 'get_meal_plan', 'get_recipe', 'get_recipes', 'get_shopping_history', 'update_recipe']
+    expect(tools.map(t => t.name)).toEqual(
+      expect.arrayContaining(['create_recipe', 'get_meal_plan', 'get_recipe', 'get_recipes', 'get_shopping_history', 'update_recipe'])
     )
   })
 

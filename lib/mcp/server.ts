@@ -5,11 +5,12 @@ import { registerGetRecipes } from './tools/getRecipes'
 import { registerCreateRecipe } from './tools/createRecipe'
 import { registerGetRecipe } from './tools/getRecipe'
 import { registerUpdateRecipe } from './tools/updateRecipe'
+import { registerPlanTools } from './tools/planTools'
 
 export function createMcpServer(): McpServer {
   const server = new McpServer({
     name: 'meal-planner',
-    version: '0.2.0',
+    version: '0.3.0',
   })
 
   registerGetMealPlan(server)
@@ -18,6 +19,7 @@ export function createMcpServer(): McpServer {
   registerGetRecipe(server)
   registerCreateRecipe(server)
   registerUpdateRecipe(server)
+  registerPlanTools(server)
 
   return server
 }

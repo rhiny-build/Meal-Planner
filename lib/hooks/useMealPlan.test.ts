@@ -313,50 +313,6 @@ describe('useMealPlan', () => {
     })
   })
 
-  describe('applyGeneratedPlan', () => {
-    it('should apply vegetableRecipeId from AI-generated plan', async () => {
-      const { result } = renderHook(() => useMealPlan(startDate, weekStartDay))
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false)
-      })
-
-      // Use dates relative to startDate (current week's Monday)
-      const monday = new Date(startDate)
-      const tuesday = new Date(startDate)
-      tuesday.setDate(tuesday.getDate() + 1)
-
-      const generatedPlan = [
-        {
-          date: monday,
-          proteinRecipeId: '1',
-          carbRecipeId: '2',
-          vegetableRecipeId: '3',
-        },
-        {
-          date: tuesday,
-          proteinRecipeId: '4',
-          carbRecipeId: '',
-          vegetableRecipeId: '3',
-        },
-      ]
-
-      act(() => {
-        result.current.applyGeneratedPlan(generatedPlan)
-      })
-
-      // Monday
-      expect(result.current.weekPlan[0].proteinRecipeId).toBe('1')
-      expect(result.current.weekPlan[0].carbRecipeId).toBe('2')
-      expect(result.current.weekPlan[0].vegetableRecipeId).toBe('3')
-
-      // Tuesday
-      expect(result.current.weekPlan[1].proteinRecipeId).toBe('4')
-      expect(result.current.weekPlan[1].carbRecipeId).toBe('')
-      expect(result.current.weekPlan[1].vegetableRecipeId).toBe('3')
-    })
-  })
-
   describe('Day Notes', () => {
     beforeEach(() => {
       // Clear localStorage before each test

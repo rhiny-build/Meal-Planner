@@ -20,10 +20,12 @@ interface WeekDayRowProps {
   isToday: boolean
   slots: DaySlots
   note: string
+  /** Why the draft chose this day's meals (only while a draft is pending) */
+  reason?: string
   onSwap: () => void
 }
 
-export default function WeekDayRow({ day, date, isToday, slots, note, onSwap }: WeekDayRowProps) {
+export default function WeekDayRow({ day, date, isToday, slots, note, reason, onSwap }: WeekDayRowProps) {
   const [isOpen, setIsOpen] = useState(false)
   const dinner = getDinner({
     dayOfWeek: day,
@@ -55,6 +57,7 @@ export default function WeekDayRow({ day, date, isToday, slots, note, onSwap }: 
             <span className={`text-[15px] font-semibold truncate ${dinner ? 'text-ink' : 'text-ink-soft'}`}>
               {dinner ? dinner.main.name : 'Nothing planned'}
             </span>
+            {reason && <span className="text-[13px] text-primary font-medium" data-testid="day-reason">{reason}</span>}
             {sides && <span className="text-[13px] text-ink-soft truncate">{sides}</span>}
             {slots.lunch && (
               <span className="text-xs text-ink-soft truncate" data-testid="week-day-lunch">

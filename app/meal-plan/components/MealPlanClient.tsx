@@ -3,7 +3,8 @@
  *
  * Features:
  * - The week as one row per day, each with a swap button
- * - Generate new meal plan with AI
+ * - Draft my week (next week, from day notes and recent weeks) with Accept all
+ * - Ask box: change the plan in plain words
  * - Changing a day's meals and note in a sheet (dropdowns per slot)
  * - Save/load from database
  * - Navigate between weeks
@@ -13,15 +14,15 @@
 
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { getWeekStart, formatDateParam } from '@/lib/dateUtils'
+import { getWeekStart, formatDateParam, parseDateParam } from '@/lib/dateUtils'
 import { useMealPlan } from '@/lib/hooks/useMealPlan'
 import PageHeader from '@/components/PageHeader'
 import WeekToolbar from './WeekToolbar'
 import WeekList from './WeekList'
 import { formatWeekRange, getWeekTitle } from '../helpers/weekLabels'
 import AiProgress from '@/components/AiProgress'
-
-const DEFAULT_PROMPT = 'Generate a balanced meal plan for the week following the rules. Do not change existing meals that are already set.'
+import DraftBanner from './DraftBanner'
+import AskBox from './AskBox'
 
 interface MealPlanClientProps {
   weekStartDay: number
@@ -37,7 +38,7 @@ export default function MealPlanClient({ weekStartDay }: MealPlanClientProps) {
       setStartDate(getWeekStart(new Date(lastVisited), weekStartDay))
     }
   }, [weekStartDay])
-  const [isGenerating, setIsGenerating] = useState(false)
+  const [isDrafting, setIsDrafting] = useState(false)
 
   const {
     weekPlan,
@@ -54,7 +55,12 @@ export default function MealPlanClient({ weekStartDay }: MealPlanClientProps) {
     handleSave,
     handleClear,
     handleSwapRecipes,
-    applyGeneratedPlan,
+    draft,
+    reasons,
+    refresh,
+    flushUnsaved,
+    handleAcceptDraft,
+    handleDiscardDraft,
   } = useMealPlan(startDate, weekStartDay)
 
   const handlePreviousWeek = () => {
@@ -73,36 +79,28 @@ export default function MealPlanClient({ weekStartDay }: MealPlanClientProps) {
     setStartDate(newDate)
   }
 
-  const handleGenerate = async () => {
-    setIsGenerating(true)
+  /** Draft my week: drafts NEXT week (the week the Shopping tab's Next week list is for), then shows it */
+  const handleDraft = async () => {
+    setIsDrafting(true)
     try {
-      const response = await fetch('/api/meal-plan/modify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          instruction: DEFAULT_PROMPT,
-          // Dates as plain local calendar days ("2026-10-12"), not timestamps: a timestamp
-          // is a different day on the server and in the model's answer outside UTC.
-          currentPlan: weekPlan.map((d) => ({ ...d, date: formatDateParam(d.date) })),
-        }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to generate meal plan')
-      }
-
+      const response = await fetch('/api/meal-plan/draft', { method: 'POST' })
       const result = await response.json()
-      applyGeneratedPlan(result.modifiedPlan, { keepFilled: true })
-      toast.success(result.explanation, { duration: 5000 })
+      if (!response.ok) throw new Error(result.error || 'The draft did not work, please try again.')
+      const draftedWeek = parseDateParam(result.weekStart)
+      localStorage.setItem('mealPlanLastVisited', draftedWeek.toISOString())
+      if (formatDateParam(draftedWeek) === formatDateParam(startDate)) await refresh()
+      else setStartDate(draftedWeek)
     } catch (error) {
-      console.error('Error generating meal plan:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to generate meal plan')
+      console.error('Error drafting the week:', error)
+      toast.error(error instanceof Error ? error.message : 'The draft did not work, please try again.')
     } finally {
-      setIsGenerating(false)
+      setIsDrafting(false)
     }
   }
 
+  const recipeNames = Object.fromEntries(
+    [...lunchRecipes, ...proteinRecipes, ...carbRecipes, ...vegetableRecipes].map(r => [r.id, r.name])
+  )
 
   if (isLoading) {
     return (
@@ -120,11 +118,11 @@ export default function MealPlanClient({ weekStartDay }: MealPlanClientProps) {
       />
 
       <WeekToolbar
-        isGenerating={isGenerating}
+        isDrafting={isDrafting}
         isSaving={isSaving}
         onPreviousWeek={handlePreviousWeek}
         onNextWeek={handleNextWeek}
-        onGenerate={handleGenerate}
+        onDraft={handleDraft}
         onSave={handleSave}
         onClear={handleClear}
       />
@@ -132,17 +130,22 @@ export default function MealPlanClient({ weekStartDay }: MealPlanClientProps) {
         {selectedCount} of 21 meals planned
       </p>
 
-      {/* Filling the empty slots with Claude: measured 9-13 s */}
+      {/* Drafting a week with the meal-plan agent: measured 25-30 s on the dev key */}
       <AiProgress
-        active={isGenerating}
-        label="Filling in your meal plan"
-        estimate={[10, 20]}
+        active={isDrafting}
+        label="Drafting your week"
+        estimate={[20, 45]}
         className="mb-4"
       />
+
+      {draft && (
+        <DraftBanner summary={draft.summary} isBusy={isSaving} onAccept={handleAcceptDraft} onDiscard={handleDiscardDraft} />
+      )}
 
       <WeekList
         weekPlan={weekPlan}
         dayNotes={dayNotes}
+        reasons={reasons}
         lunchRecipes={lunchRecipes}
         proteinRecipes={proteinRecipes}
         carbRecipes={carbRecipes}
@@ -151,6 +154,8 @@ export default function MealPlanClient({ weekStartDay }: MealPlanClientProps) {
         onNoteChange={handleNoteChange}
         onSwapRecipes={handleSwapRecipes}
       />
+
+      <AskBox weekStart={formatDateParam(startDate)} beforeAsk={flushUnsaved} onChanged={refresh} recipeNames={recipeNames} />
     </div>
   )
 }
