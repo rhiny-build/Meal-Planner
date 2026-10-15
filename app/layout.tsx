@@ -29,12 +29,16 @@ const bodyFont = Figtree({
 export const metadata: Metadata = {
   title: 'Family Meal Planner',
   description: 'Plan your family meals for the week',
+  // iPhone: opens full screen from the home screen (the manifest covers Android and desktop)
+  appleWebApp: { capable: true, title: 'Meals', statusBarStyle: 'default' },
+  formatDetection: { telephone: false },
 }
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
+  viewportFit: 'cover',
   themeColor: '#F3F5F2',
 }
 
