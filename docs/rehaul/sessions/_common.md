@@ -41,6 +41,14 @@ When you do interrupt, use the message format in `claude.md` and stop until he a
 - Run the app against local Postgres and exercise the feature the way a user would (Playwright, per the `ui` skill). For AI features, use real Claude at least once.
 - "I haven't tried it in the running app" is never an acceptable hand-over.
 
+## Replacing existing behaviour
+- Before building, list what the old version does for Ronen. If your work changes or drops any of it and the prompt doesn't say so, stop and ask. Don't build a replacement silently.
+- Compare old and new side by side on real data (e.g. next week's real meals) and put the table in the log.
+- Anything that guesses (matching, prediction, agents) gets a set of real cases with a pass rate, run before and after your change.
+
+## Previews must be able to show the feature
+- If the feature needs data the preview doesn't have (e.g. receipts uploaded to production after the preview's database was copied), either load a safe sample or say plainly under "Try on the preview" that it can't be checked there, and what to check after merging. An empty state is not a pass.
+
 ## It must run on Vercel
 - Production is Vercel serverless functions, not a long-running Node server. Size, time and filesystem limits apply. Check Vercel's docs for the current figures; don't guess.
 - Nothing may load a file by path at runtime (e.g. a worker or data file from `node_modules`). Import it so the build includes it in the function.
