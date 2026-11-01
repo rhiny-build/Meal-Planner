@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
+import { queueIngredientMatching } from '@/lib/nextWeek/queueMatching'
 import {
   RECIPE_KINDS,
   ingredientInputSchema,
@@ -63,6 +64,8 @@ export async function createRecipeHandler(args: CreateRecipeArgs) {
       }
       return { ...created, stepCount: resolved.steps.length }
     })
+
+    queueIngredientMatching(prisma, rows.map(r => r.name))
 
     return jsonResult({
       success: true,

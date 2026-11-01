@@ -28,6 +28,12 @@ export const AI_CONFIG = {
     /** About 65 output tokens per product, 30 products per call */
     maxTokens: 6000,
   },
+  matchIngredients: {
+    /** Recipe ingredient name -> one of Ronen's items, "not bought" or unsure; once per new name (saved in IngredientMatch) */
+    model: CLAUDE_MODELS.cheap,
+    /** About 30 output tokens per name, 40 names per call */
+    maxTokens: 4000,
+  },
   recipeImporter: {
     /** Haiku: about 10x cheaper than Sonnet with matching quality on the 5-case comparison (docs/rehaul/logs/RUN-cost-caching-haiku.md). Also used by the backfill. */
     model: CLAUDE_MODELS.cheap,

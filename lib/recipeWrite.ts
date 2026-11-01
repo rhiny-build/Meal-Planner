@@ -12,6 +12,7 @@ import type { RecipeFormData, StructuredIngredientData, RecipeStepData } from '@
 import { parseIngredientLine } from '@/lib/ingredientParser'
 import { parseAmount } from '@/lib/ingredientAmount'
 import { validateStepText } from '@/lib/recipeStepTokens'
+import { queueIngredientMatching } from '@/lib/nextWeek/queueMatching'
 
 /** Thrown for bad input; routes turn it into a 400. */
 export class RecipeValidationError extends Error {}
@@ -150,7 +151,7 @@ export async function createRecipeFromForm(prisma: PrismaClient, body: RecipeFor
     body.steps ?? [],
     new Set(rows.map((r) => r.id).filter(Boolean) as string[])
   )
-  return prisma.recipe.create({
+  const created = await prisma.recipe.create({
     data: {
       name: body.name,
       recipeUrl: body.recipeUrl || null,
@@ -167,6 +168,8 @@ export async function createRecipeFromForm(prisma: PrismaClient, body: RecipeFor
     },
     include,
   })
+  queueIngredientMatching(prisma, rows.map((r) => r.name))
+  return created
 }
 
 export async function updateRecipeFromForm(
@@ -187,7 +190,7 @@ export async function updateRecipeFromForm(
   } = body
   const book = bookFields(body)
 
-  return prisma.$transaction(async (tx) => {
+  const updated = await prisma.$transaction(async (tx) => {
     const existing = await tx.ingredient.findMany({
       where: { recipeId: id },
       select: { id: true, name: true, quantity: true, unit: true, amount: true, notes: true, order: true },
@@ -238,4 +241,6 @@ export async function updateRecipeFromForm(
       include,
     })
   }, TRANSACTION_OPTIONS)
+  if (rows) queueIngredientMatching(prisma, rows.map((r) => r.name))
+  return updated
 }

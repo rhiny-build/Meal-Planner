@@ -16,6 +16,7 @@ import type { NextWeekData } from '@/lib/nextWeek/loadNextWeek'
 import { MIN_ORDERS } from '@/lib/nextWeek/predict'
 import { setNextWeekTick } from '../../nextWeekActions'
 import EditLineSheet from './EditLineSheet'
+import FixMatchSheet from './FixMatchSheet'
 import LineRow from './LineRow'
 
 type Section = 'meals' | 'usual' | 'maybe'
@@ -43,6 +44,7 @@ export default function NextWeekTab({ data }: { data: NextWeekData }) {
   const [local, setLocal] = useState<Record<string, boolean>>({})
   const [section, setSection] = useState<Section>('meals')
   const [editing, setEditing] = useState<ListLine | null>(null)
+  const [fixing, setFixing] = useState<ListLine | null>(null)
 
   if (data.orderCount < MIN_ORDERS) {
     return (
@@ -74,7 +76,7 @@ export default function NextWeekTab({ data }: { data: NextWeekData }) {
   }
 
   const show = (s: Section) => (section === s ? 'block' : 'hidden md:block')
-  const row = (line: ListLine) => <LineRow key={line.key} line={line} onToggle={toggle} onEdit={setEditing} />
+  const row = (line: ListLine) => <LineRow key={line.key} line={line} onToggle={toggle} onEdit={setEditing} onFix={setFixing} />
 
   return (
     <div className="flex flex-col gap-4">
@@ -153,6 +155,18 @@ export default function NextWeekTab({ data }: { data: NextWeekData }) {
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null)
+            router.refresh()
+          }}
+        />
+      )}
+
+      {fixing && (
+        <FixMatchSheet
+          line={fixing}
+          items={data.items}
+          onClose={() => setFixing(null)}
+          onSaved={() => {
+            setFixing(null)
             router.refresh()
           }}
         />

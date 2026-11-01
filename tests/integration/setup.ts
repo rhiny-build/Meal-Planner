@@ -83,6 +83,7 @@ export async function clearTestDatabase() {
   await testPrisma.receipt.deleteMany()
   await testPrisma.productMapping.deleteMany()
   await testPrisma.nextWeekTick.deleteMany()
+  await testPrisma.ingredientMatch.deleteMany()
   await testPrisma.rejectedSuggestion.deleteMany()
   await testPrisma.ingredientMapping.deleteMany()
   await testPrisma.shoppingListItem.deleteMany()

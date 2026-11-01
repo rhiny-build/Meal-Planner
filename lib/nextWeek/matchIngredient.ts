@@ -1,7 +1,12 @@
 /**
- * Match a recipe ingredient name ("skinless chicken breast fillets, diced") to one of Ronen's known items
- * ("chicken breast"). Deterministic and free: exact match first, then an item whose words all appear in the
- * ingredient, then an ingredient whose words all appear in the item. Ties go to the item bought most often.
+ * Word-level helpers for matching a recipe ingredient name ("skinless chicken breast fillets, diced") to one of
+ * Ronen's items ("chicken breast").
+ *
+ * - `exactItemMatch` is the only matching done without the model: the same words as an item, after dropping
+ *   filler and plurals. Free, and never wrong in a way that matters.
+ * - `matchIngredient` is the OLD word-subset matcher. The Next week list no longer uses it (it matched "Sweet Corn"
+ *   to Haribo sweets); it stays as the "before" side of the quality score (scripts/rehaul/scoreIngredientMatching.ts).
+ * - `ingredientKey` is the saved-answer key: one answer per distinct name.
  */
 
 import pluralize from 'pluralize'
@@ -26,7 +31,53 @@ export function normaliseWords(name: string): string[] {
 
 const isSubset = (small: string[], big: string[]) => small.length > 0 && small.every(w => big.includes(w))
 
-/** Key used for ingredients that match no known item. */
+/**
+ * The key a saved answer is stored under: lower case, brackets and anything after a comma dropped, only letters kept.
+ * Deliberately keeps filler words ("tinned tomatoes" and "tomatoes" are different things to buy).
+ */
+export function ingredientKey(name: string): string {
+  const key = name
+    .toLowerCase()
+    .replace(/\(.*?\)/g, ' ')
+    .replace(/,.*$/, ' ')
+    .replace(/[^a-zà-ÿ ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return key || name.toLowerCase().trim()
+}
+
+/** Lower-case words with plurals made singular, but nothing dropped ("chopped tomatoes" stays two words). */
+const strictWords = (name: string) =>
+  name
+    .toLowerCase()
+    .replace(/\(.*?\)/g, ' ')
+    .replace(/,.*$/, ' ')
+    .replace(/[^a-zà-ÿ ]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(w => pluralize.singular(w))
+    .join(' ')
+
+/**
+ * The item that is the same thing as the ingredient, without the model:
+ *  1. the same words (plurals ignored): "Tomatoes" is "tomato", "chopped tomatoes" is "chopped tomatoes";
+ *  2. the same words once filler is dropped ("Grated Mozzarella" is "mozzarella"), but only when exactly one item
+ *     fits, so "tomatoes" is never guessed between "tomato" and "chopped tomatoes".
+ * Anything else is left to the model.
+ */
+export function exactItemMatch(ingredient: string, items: { item: string; bought: number }[]): string | null {
+  const strict = strictWords(ingredient)
+  if (!strict) return null
+  const same = items.filter(i => strictWords(i.item) === strict)
+  if (same.length > 0) return same.reduce((a, b) => (b.bought > a.bought ? b : a)).item
+
+  const words = normaliseWords(ingredient).join(' ')
+  if (!words) return null
+  const loose = items.filter(i => normaliseWords(i.item).join(' ') === words)
+  return loose.length === 1 ? loose[0].item : null
+}
+
+/** Key used for ingredients that match no known item (old matcher). */
 export const rawKey = (ingredient: string) => `raw:${normaliseWords(ingredient).join(' ') || ingredient.toLowerCase().trim()}`
 
 export function matchIngredient(ingredient: string, items: { item: string; bought: number }[]): string | null {

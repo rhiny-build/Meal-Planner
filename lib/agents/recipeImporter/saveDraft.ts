@@ -9,6 +9,7 @@
  */
 
 import { prisma } from '@/lib/prisma'
+import { queueIngredientMatching } from '@/lib/nextWeek/queueMatching'
 import { buildDraft } from './tools'
 import type { RecipeDraft } from './types'
 
@@ -22,7 +23,7 @@ export async function saveRecipeDraft(rawDraft: unknown) {
   const sourceUrl = typeof raw?.sourceUrl === 'string' && /^https?:\/\//i.test(raw.sourceUrl) ? raw.sourceUrl : null
   const draft = await buildDraft(raw, sourceUrl)
 
-  return prisma.$transaction(async (tx) => {
+  const saved = await prisma.$transaction(async (tx) => {
     const recipe = await tx.recipe.create({
       data: {
         name: draft.name,
@@ -70,4 +71,6 @@ export async function saveRecipeDraft(rawDraft: unknown) {
 
     return recipe
   })
+  queueIngredientMatching(prisma, draft.ingredients.map((ing) => ing.name))
+  return saved
 }

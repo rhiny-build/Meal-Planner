@@ -13,9 +13,12 @@ import { ensureShoppingListExists } from './actions'
 import ShoppingListClient from './components/ShoppingListClient'
 import NextWeekOnly from './components/nextWeek/NextWeekOnly'
 import { loadNextWeek, nextWeekStart } from '@/lib/nextWeek/loadNextWeek'
+import { queueBookMatching } from '@/lib/nextWeek/queueMatching'
 import { measured } from '@/lib/timing/measure'
 
 export const dynamic = 'force-dynamic'
+// The page may wait on the model for new ingredient names, and matches the rest of the recipe book after it responds
+export const maxDuration = 60
 
 interface PageProps {
   searchParams: Promise<{ week?: string; tab?: string }>
@@ -34,6 +37,7 @@ async function ShoppingListContentImpl({ searchParams }: PageProps) {
   // Old shopping list switched off (Settings): only the Next week view
   if (!showOldShoppingList) {
     const nextWeekData = await loadNextWeek(prisma, nextWeekStart(new Date(), startDay))
+    queueBookMatching(prisma, nextWeekData.items)
     return <NextWeekOnly data={nextWeekData} />
   }
 
@@ -61,6 +65,7 @@ async function ShoppingListContentImpl({ searchParams }: PageProps) {
 
   // The Next week view is the default tab; it is recomputed on every visit, never saved
   const nextWeek = !tabParam || tabParam === 'next' ? await loadNextWeek(prisma, nextWeekStart(new Date(), startDay)) : null
+  if (nextWeek) queueBookMatching(prisma, nextWeek.items)
 
   return (
     <ShoppingListClient

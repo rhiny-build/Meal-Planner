@@ -1,18 +1,24 @@
 /**
  * Build the "Next week" list (pure logic): meals first, then the usual weekly items, then "Do you need these?".
  *
+ * Which item an ingredient means comes from the saved answers (IngredientMatch), never worked out here.
+ *
  * Meal ingredient rules:
- *  - fresh ingredient: ticked
- *  - cupboard ingredient: ticked only if likely run out (time since last bought > 1.5x its usual gap);
- *    otherwise unticked with the reason; never bought, or bought only once: unticked, "check"
+ *  - fresh ingredient (fresh aisles): ticked, "Fresh, for Tue"; other non-cupboard items (sweets, drinks,
+ *    household, frozen): ticked, "For Tue"
+ *  - cupboard ingredient: ticked only if likely out (last bought more than 1.5x its usual gap ago); more than
+ *    2x the gap ago it is unticked, "Not bought for a long time, check"; otherwise unticked with the reason;
+ *    bought only once: unticked, "check"
  *  - an item a meal needs is removed from the other two sections (greyed "see Tue" in the usual items)
  *  - two meals needing the same item: one line, "for Mon + Thu"
- *  - no match to a known item: the plain ingredient name, unticked, "check"
+ *  - saved as "not bought": the plain ingredient name, unticked
+ *  - model unsure (or no answer yet): the plain ingredient name, unticked, "check"
  */
 
 import { AISLES } from './aisles'
-import { matchIngredient, rawKey } from './matchIngredient'
+import { ingredientKey } from './matchIngredient'
 import { predict, rhythm, restockReason, weeksBetween, type History } from './predict'
+import type { SavedMatch } from './resolveMatches'
 
 export interface ItemInfo {
   aisle: string
@@ -39,6 +45,10 @@ export interface ListLine {
   ticked: boolean
   /** Shown but not tickable: the meals section already has it */
   greyed?: boolean
+  /** Meal lines only: the recipe ingredient name(s) behind the line, what a fix is saved against */
+  ingredients?: string[]
+  /** Meal lines only: matched to an item, saved as not bought, or needs checking */
+  match?: 'matched' | 'none' | 'check'
 }
 
 export interface MealCard {
@@ -59,6 +69,11 @@ export interface NextWeekList {
 }
 
 export const CUPBOARD_RUN_OUT_FACTOR = 1.5
+/** Past this many times its usual gap a cupboard item is probably not something he still buys */
+export const CUPBOARD_TOO_LONG_FACTOR = 2
+
+/** Aisles whose items are fresh food; "Fresh" is only said for these */
+export const FRESH_AISLES: readonly string[] = ['Fresh produce', 'Dairy and eggs', 'Meat and deli', 'Fish', 'Bakery']
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const shortDate = (date: string) => `${Number(date.slice(8, 10))} ${MONTHS[Number(date.slice(5, 7)) - 1]}`
@@ -73,46 +88,62 @@ interface BuildInput {
   target: string
   /** Ticks Ronen changed on the page: key -> ticked */
   overrides?: Record<string, boolean>
+  /** Saved ingredient answers by ingredient key (see ingredientKey) */
+  matches?: Map<string, SavedMatch>
 }
 
-export function buildNextWeekList({ history, catalog, meals, target, overrides = {} }: BuildInput): NextWeekList {
+export function buildNextWeekList({ history, catalog, meals, target, overrides = {}, matches = new Map() }: BuildInput): NextWeekList {
   const tick = (key: string, fallback: boolean) => overrides[key] ?? fallback
-  const knownItems = [...history.dates.entries()].map(([item, dates]) => ({ item, bought: dates.length }))
 
   // 1. Which meals need which item (one entry per item or unmatched ingredient, in plan order)
   interface Need {
     key: string
     item: string | null
     ingredient: string
+    /** Every recipe wording that ended up on this line */
+    ingredients: string[]
+    match: 'matched' | 'none' | 'check'
     days: string[]
     firstMeal: number
   }
   const needs = new Map<string, Need>()
   meals.forEach((meal, mealIndex) => {
     for (const ingredient of meal.ingredients) {
-      const item = matchIngredient(ingredient, knownItems)
-      const key = item ? `item:${item}` : rawKey(ingredient)
+      const ingredientId = ingredientKey(ingredient)
+      const saved = matches.get(ingredientId)
+      const item = saved?.status === 'matched' && saved.itemName && history.dates.has(saved.itemName) ? saved.itemName : null
+      const match = item ? 'matched' : saved?.status === 'none' ? 'none' : 'check'
+      const key = item ? `item:${item}` : `raw:${ingredientId}`
       const need = needs.get(key)
-      if (!need) needs.set(key, { key, item, ingredient, days: [meal.day], firstMeal: mealIndex })
-      else if (!need.days.includes(meal.day)) need.days.push(meal.day)
+      if (!need) needs.set(key, { key, item, ingredient, ingredients: [ingredient], match, days: [meal.day], firstMeal: mealIndex })
+      else {
+        if (!need.days.includes(meal.day)) need.days.push(meal.day)
+        if (!need.ingredients.includes(ingredient)) need.ingredients.push(ingredient)
+      }
     }
   })
 
   const needLine = (need: Need): ListLine => {
+    const fix = { ingredients: need.ingredients, match: need.match }
     if (!need.item) {
-      return { key: need.key, label: need.ingredient, why: 'Not in your past orders, check', ticked: tick(need.key, false) }
+      const why = need.match === 'none' ? 'Not one of your usual items' : 'Not sure which product, check'
+      return { key: need.key, label: need.ingredient, why, ticked: tick(need.key, false), ...fix }
     }
     const info = catalog.get(need.item)
     const label = history.lastProduct.get(need.item) ?? need.item
     const forDays = joinDays(need.days)
-    const base = { key: need.key, label, item: need.item, aisle: info?.aisle }
+    const base = { key: need.key, label, item: need.item, aisle: info?.aisle, ...fix }
     if (!info?.cupboard) {
-      return { ...base, why: `Fresh, for ${forDays}`, ticked: tick(need.key, true) }
+      const fresh = FRESH_AISLES.includes(info?.aisle ?? '')
+      return { ...base, why: fresh ? `Fresh, for ${forDays}` : `For ${forDays}`, ticked: tick(need.key, true) }
     }
     const r = rhythm(history.dates.get(need.item) ?? [])
     const since = weeksBetween(r.lastDate, target)
     if (r.medianGap === null) {
       return { ...base, why: `Cupboard: bought once, ${shortDate(r.lastDate)}, check`, ticked: tick(need.key, false) }
+    }
+    if (since > CUPBOARD_TOO_LONG_FACTOR * r.medianGap) {
+      return { ...base, why: 'Not bought for a long time, check', ticked: tick(need.key, false) }
     }
     if (since > CUPBOARD_RUN_OUT_FACTOR * r.medianGap) {
       return {

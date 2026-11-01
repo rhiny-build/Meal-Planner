@@ -8,8 +8,13 @@ import type { PrismaClient } from '@prisma/client'
 import { formatDateParam, getWeekStart } from '@/lib/dateUtils'
 import { getWeekBounds } from '@/lib/mealPlanHelpers'
 import { buildNextWeekList, type ItemInfo, type MealInput, type NextWeekList } from './buildList'
-import { fallbackItemName } from './itemName'
-import { WINDOW, buildHistory, type PurchaseLine } from './predict'
+import { claudeMatcher, resolveIngredientMatches, type MatchCall } from './resolveMatches'
+import type { MatchItem } from './matchPrompt'
+import { WINDOW } from './predict'
+import { buildPurchaseContext } from './purchaseContext'
+
+/** Longest the page waits on the model for new ingredient names before showing them as "check" */
+export const NEXT_WEEK_MATCH_BUDGET_MS = 25_000
 
 export interface NextWeekData {
   /** Order (delivery) date, YYYY-MM-DD */
@@ -19,6 +24,8 @@ export interface NextWeekData {
   list: NextWeekList
   /** Products whose item the cheap model has not worked out yet */
   unclassified: number
+  /** Ronen's items, for the "which product is it" list and for matching the rest of the recipe book */
+  items: MatchItem[]
 }
 
 /** The weekday most of the last orders were delivered on (0 = Sunday), by UTC date. */
@@ -57,7 +64,13 @@ function recipeIngredientNames(recipe: { ingredients: string; structuredIngredie
   return recipe.ingredients.split('\n').map(l => l.trim()).filter(Boolean)
 }
 
-export async function loadNextWeek(prisma: PrismaClient, weekStart: Date, today = new Date()): Promise<NextWeekData> {
+export async function loadNextWeek(
+  prisma: PrismaClient,
+  weekStart: Date,
+  today = new Date(),
+  /** Asked only for ingredient names with no saved answer yet (the first visit after new recipes or receipts) */
+  matcher: MatchCall = claudeMatcher()
+): Promise<NextWeekData> {
   // Everything that does not depend on the receipts is asked for at the same time as the receipts
   const { startDate, endDate } = getWeekBounds(weekStart)
   const [rows, mappings, plan] = await Promise.all([
@@ -76,21 +89,7 @@ export async function loadNextWeek(prisma: PrismaClient, weekStart: Date, today 
       },
     }),
   ])
-  const mappingByProduct = new Map(mappings.map(m => [m.productName, m]))
-  const itemOf = (product: string) => mappingByProduct.get(product)?.itemName ?? fallbackItemName(product)
-
-  const lines: PurchaseLine[] = rows.map(r => ({
-    date: r.purchaseDate.toISOString().slice(0, 10),
-    productName: r.rawName,
-    item: itemOf(r.rawName),
-  }))
-  const history = buildHistory(lines)
-
-  const catalog = new Map<string, ItemInfo>()
-  for (const [item, product] of history.lastProduct) {
-    const mapping = mappingByProduct.get(product)
-    catalog.set(item, { aisle: mapping?.aisle ?? 'Other', cupboard: mapping?.cupboard ?? false })
-  }
+  const { history, catalog, items, unclassified } = buildPurchaseContext(rows, mappings)
 
   const orderDate = orderDateInWeek(weekStart, usualOrderWeekday(history.orders))
   const meals: MealInput[] = plan
@@ -103,6 +102,11 @@ export async function loadNextWeek(prisma: PrismaClient, weekStart: Date, today 
       }
     })
     .filter(meal => meal.name !== '')
+
+  // Saved answers for every ingredient of the planned meals; names with no answer yet are matched now (once, then saved)
+  const { matches } = await resolveIngredientMatches(prisma, meals.flatMap(m => m.ingredients), items, matcher, {
+    budgetMs: NEXT_WEEK_MATCH_BUDGET_MS,
+  })
 
   // Ticks only live until the order date has passed
   const todayKey = formatDateParam(today)
@@ -118,7 +122,8 @@ export async function loadNextWeek(prisma: PrismaClient, weekStart: Date, today 
   return {
     orderDate,
     orderCount: history.orders.length,
-    list: buildNextWeekList({ history, catalog, meals, target: orderDate, overrides }),
-    unclassified: new Set(lines.filter(l => !mappingByProduct.has(l.productName)).map(l => l.productName)).size,
+    list: buildNextWeekList({ history, catalog, meals, target: orderDate, overrides, matches }),
+    unclassified,
+    items,
   }
 }
