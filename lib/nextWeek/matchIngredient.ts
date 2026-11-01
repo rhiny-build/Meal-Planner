@@ -1,7 +1,12 @@
 /**
- * Match a recipe ingredient name ("skinless chicken breast fillets, diced") to one of Ronen's known items
- * ("chicken breast"). Deterministic and free: exact match first, then an item whose words all appear in the
- * ingredient, then an ingredient whose words all appear in the item. Ties go to the item bought most often.
+ * Word-level helpers for matching a recipe ingredient name ("skinless chicken breast fillets, diced") to one of
+ * Ronen's items ("chicken breast").
+ *
+ * - `exactItemMatch` is the only matching done without the model: the same words as an item, after dropping
+ *   filler and plurals. Free, and never wrong in a way that matters.
+ * - `matchIngredient` is the OLD word-subset matcher. The Next week list no longer uses it (it matched "Sweet Corn"
+ *   to Haribo sweets); it stays as the "before" side of the quality score (scripts/rehaul/scoreIngredientMatching.ts).
+ * - `ingredientKey` is the saved-answer key: one answer per distinct name.
  */
 
 import pluralize from 'pluralize'
@@ -26,7 +31,34 @@ export function normaliseWords(name: string): string[] {
 
 const isSubset = (small: string[], big: string[]) => small.length > 0 && small.every(w => big.includes(w))
 
-/** Key used for ingredients that match no known item. */
+/**
+ * The key a saved answer is stored under: lower case, brackets and anything after a comma dropped, only letters kept.
+ * Deliberately keeps filler words ("tinned tomatoes" and "tomatoes" are different things to buy).
+ */
+export function ingredientKey(name: string): string {
+  const key = name
+    .toLowerCase()
+    .replace(/\(.*?\)/g, ' ')
+    .replace(/,.*$/, ' ')
+    .replace(/[^a-zà-ÿ ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return key || name.toLowerCase().trim()
+}
+
+/** The item with exactly the same words as the ingredient (filler and plurals ignored); the most-bought on a tie. */
+export function exactItemMatch(ingredient: string, items: { item: string; bought: number }[]): string | null {
+  const words = normaliseWords(ingredient).join(' ')
+  if (!words) return null
+  let best: { item: string; bought: number } | null = null
+  for (const candidate of items) {
+    if (normaliseWords(candidate.item).join(' ') !== words) continue
+    if (!best || candidate.bought > best.bought) best = candidate
+  }
+  return best?.item ?? null
+}
+
+/** Key used for ingredients that match no known item (old matcher). */
 export const rawKey = (ingredient: string) => `raw:${normaliseWords(ingredient).join(' ') || ingredient.toLowerCase().trim()}`
 
 export function matchIngredient(ingredient: string, items: { item: string; bought: number }[]): string | null {

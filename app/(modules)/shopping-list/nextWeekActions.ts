@@ -1,14 +1,16 @@
 'use server'
 
 /**
- * Server actions for the "Next week" list: remember a tick, and correct an item or aisle.
- * Corrections stick: a corrected ProductMapping is never overwritten by the cheap model.
+ * Server actions for the "Next week" list: remember a tick, correct an item or aisle, and fix which item an
+ * ingredient means. Corrections stick: a corrected ProductMapping and a source "ronen" IngredientMatch are never
+ * overwritten by the cheap model.
  */
 
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { isAisle } from '@/lib/nextWeek/aisles'
 import { fallbackItemName } from '@/lib/nextWeek/itemName'
+import { ingredientKey } from '@/lib/nextWeek/matchIngredient'
 import { tickDate } from '@/lib/nextWeek/loadNextWeek'
 
 export async function setNextWeekTick(orderDate: string, key: string, ticked: boolean): Promise<void> {
@@ -42,5 +44,20 @@ export async function correctProduct({ productName, itemName, aisle }: ProductCo
       update: { itemName: item, aisle, corrected: true },
     }),
   ])
+  revalidatePath('/shopping-list')
+}
+
+/**
+ * Ronen's pick for what a recipe ingredient is: one of his items, or null for "I don't buy this".
+ * Saved against every wording on the line, applies to every recipe using it, and is never overwritten.
+ */
+export async function setIngredientMatch(ingredients: string[], itemName: string | null): Promise<void> {
+  const item = itemName?.trim().toLowerCase() || null
+  const keys = [...new Set(ingredients.map(ingredientKey).filter(Boolean))]
+  if (keys.length === 0) throw new Error('Bad match')
+  const data = { itemName: item, status: item ? 'matched' : 'none', source: 'ronen', itemsVersion: null }
+  await prisma.$transaction(
+    keys.map(name => prisma.ingredientMatch.upsert({ where: { name }, create: { name, ...data }, update: data }))
+  )
   revalidatePath('/shopping-list')
 }

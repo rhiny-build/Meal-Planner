@@ -267,6 +267,22 @@ model ProductMapping {
   @@index([itemName])
 }
 
+// IngredientMatch: which of Ronen's items a recipe ingredient name means, saved once per distinct name.
+// status "matched" (itemName set), "none" (not something he buys) or "unsure" (the model could not tell; shown as "check").
+// source "exact" (same words as an item), "model" (the cheap model) or "ronen" (his pick; never overwritten).
+model IngredientMatch {
+  id           String   @id @default(cuid())
+  name         String   @unique // lower-cased ingredient name with brackets and anything after a comma removed
+  itemName     String?
+  status       String
+  source       String
+  itemsVersion String?  // fingerprint of Ronen's items when the model answered; "none" and "unsure" are re-matched when it changes
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([status, source])
+}
+
 // NextWeekTick: a tick Ronen changed on the "Next week" list; kept until that order date has passed
 model NextWeekTick {
   id        String   @id @default(cuid())

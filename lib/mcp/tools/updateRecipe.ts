@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
+import { queueIngredientMatching } from '@/lib/nextWeek/queueMatching'
 import {
   RECIPE_KINDS,
   ingredientInputSchema,
@@ -112,6 +113,8 @@ export async function updateRecipeHandler(args: UpdateRecipeArgs) {
         ],
       }
     })
+
+    if (ingredients !== undefined) queueIngredientMatching(prisma, ingredients.map((i, idx) => toIngredientRow(i, idx).name))
 
     return jsonResult({
       success: true,
