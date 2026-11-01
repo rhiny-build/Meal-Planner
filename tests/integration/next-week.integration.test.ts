@@ -99,7 +99,12 @@ describe('Next week list integration', { timeout: 60000 }, () => {
     const weekStart = new Date(2026, 9, 19) // Monday 19 October 2026
     await testPrisma.mealPlan.create({ data: { date: weekStart, dayOfWeek: 'Monday', proteinRecipeId: recipe.id } })
 
-    const notBought: MatchCall = async names => names.map(name => ({ name, decision: 'none' as const }))
+    // cucumber is one of the items; the paprika is not
+    const notBought: MatchCall = async (names, items) =>
+      names.map(name => {
+        const item = items.find(i => name === 'cucumber' && i.item.includes('cucumber'))
+        return item ? { name, decision: 'item' as const, item: item.item } : { name, decision: 'none' as const }
+      })
     const data = await loadNextWeek(testPrisma, weekStart, new Date(2026, 9, 14), notBought)
     expect(data.orderCount).toBe(12)
     expect(data.orderDate).toBe('2026-10-20')
