@@ -4,6 +4,8 @@
 
 - Never leave DB and code out of sync — schema changes and code updates go in the same commit
 - Code must work on Vercel (serverless), not just locally. "Works on my machine" isn't done
+- Replacing existing behaviour: list what the old version does for the user. Keep it working the same, or ask Ronen before dropping or changing it. A replacement becomes the default only after old and new have been compared side by side on real data
+- Anything that guesses (matching, prediction, agents) needs a set of real cases with a pass rate, re-run whenever it changes. Rule tests alone don't show quality
 - When unsure, ask one specific question. Wait for the answer. Never proceed on an assumption
 - Always update relevant documentation on feature completion. If you change structure (tables, agents, flows, deploys), update the matching diagram in `ARCHITECTURE.md`. (Rehaul build sessions are the exception: they write only their own log, and a docs-sync run updates the shared docs.)
 - Never push to `main`. All work reaches `main` through a pull request that Ronen merges (merging **is** a production deploy)
