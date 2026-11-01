@@ -5,6 +5,8 @@
  *   npx tsx scripts/rehaul/scoreIngredientMatching.ts new            # new matcher from recorded model answers (free)
  *   ANTHROPIC_API_KEY=$DEV_ANTHROPIC_API_KEY npx tsx scripts/rehaul/scoreIngredientMatching.ts new --record
  *                                                                   # REAL model run over all names; re-records the answers
+ *   ANTHROPIC_API_KEY=$DEV_ANTHROPIC_API_KEY npx tsx scripts/rehaul/scoreIngredientMatching.ts new --record-missing
+ *                                                                   # REAL model run only for names with no recorded answer yet
  *
  * `--record` costs real tokens (about 9 calls of 40 names). Run it only when the prompt, the model or the
  * case set changes. The recorded answers also drive the unit test, so the score is checked on every `npm test`.
@@ -40,7 +42,8 @@ function report(label: string, score: Score) {
 
 async function main() {
   const mode = process.argv[2]
-  const record = process.argv.includes('--record')
+  const recordAll = process.argv.includes('--record')
+  const recordMissing = process.argv.includes('--record-missing')
   if (mode === 'old') {
     report('OLD word matcher', scoreCases(caseSet.cases, name => matchIngredient(name, itemsForOld) ?? 'none'))
     return
@@ -48,17 +51,20 @@ async function main() {
   if (mode !== 'new') throw new Error('Usage: old | new [--record]')
 
   let recorded: Recorded
-  if (record) {
-    const usage: TokenUsage = { input: 0, output: 0 }
+  if (recordAll || recordMissing) {
+    const previous: Recorded | null = recordMissing ? JSON.parse(readFileSync(recordedPath, 'utf8')) : null
+    const usage: TokenUsage = previous ? { ...previous.usage } : { input: 0, output: 0 }
     const call = claudeMatcher(usage)
-    const needModel = caseSet.cases.map(c => c.name).filter(n => !exactItemMatch(n, itemsForOld))
-    const answers: Record<string, ModelAnswer> = {}
+    const needModel = caseSet.cases
+      .map(c => c.name)
+      .filter(n => !exactItemMatch(n, itemsForOld) && !previous?.answers[n])
+    const answers: Record<string, ModelAnswer> = { ...(previous?.answers ?? {}) }
     for (let i = 0; i < needModel.length; i += MATCH_BATCH_SIZE) {
       for (const a of await call(needModel.slice(i, i + MATCH_BATCH_SIZE), caseSet.items)) answers[a.name] = a
     }
     recorded = { model: 'cheap (see lib/ai/config.ts)', recordedAt: new Date().toISOString().slice(0, 10), usage, answers }
     writeFileSync(recordedPath, JSON.stringify(recorded, null, 1) + '\n')
-    console.log(`Recorded ${Object.keys(answers).length} answers; tokens in ${usage.input}, out ${usage.output}`)
+    console.log(`Asked the model about ${needModel.length} names; ${Object.keys(answers).length} answers recorded; tokens in ${usage.input}, out ${usage.output}`)
   } else {
     recorded = JSON.parse(readFileSync(recordedPath, 'utf8'))
   }

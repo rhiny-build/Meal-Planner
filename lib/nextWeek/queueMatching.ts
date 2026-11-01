@@ -6,10 +6,13 @@
 
 import type { PrismaClient } from '@prisma/client'
 import { after } from 'next/server'
+import type { MatchItem } from './matchPrompt'
 import { claudeMatcher, resolveIngredientMatches } from './resolveMatches'
 import { loadPurchaseContext } from './purchaseContext'
 
-export const QUEUE_MATCH_BUDGET_MS = 60_000
+export const QUEUE_MATCH_BUDGET_MS = 40_000
+/** Whole recipe book, after the page is sent: inside the 60 s page limit, which also covers work after the response */
+export const BOOK_MATCH_BUDGET_MS = 40_000
 
 export async function matchIngredientNames(prisma: PrismaClient, names: string[]): Promise<void> {
   try {
@@ -30,6 +33,40 @@ export function queueIngredientMatching(prisma: PrismaClient, names: string[]): 
     after(work)
   } catch {
     // Not inside a request (scripts): just run it
+    void work()
+  }
+}
+
+/** Every distinct ingredient name in the recipe book (structured ones, or the older text lines when a recipe has none). */
+export async function bookIngredientNames(prisma: PrismaClient): Promise<string[]> {
+  const recipes = await prisma.recipe.findMany({
+    select: { ingredients: true, structuredIngredients: { select: { name: true } } },
+  })
+  return recipes.flatMap(r =>
+    r.structuredIngredients.length > 0
+      ? r.structuredIngredients.map(i => i.name)
+      : r.ingredients.split('\n').map(l => l.trim()).filter(Boolean)
+  )
+}
+
+/**
+ * After the Next week page is sent: give every ingredient in the recipe book a saved answer (the first visit
+ * covers the ~350 existing names; later visits only pick up new names and re-ask "not bought"/"unsure" when
+ * Ronen's items changed). The page itself only waits for the names of next week's meals.
+ */
+export function queueBookMatching(prisma: PrismaClient, items: MatchItem[]): void {
+  if (!process.env.ANTHROPIC_API_KEY || items.length === 0) return
+  const work = async () => {
+    try {
+      const names = await bookIngredientNames(prisma)
+      await resolveIngredientMatches(prisma, names, items, claudeMatcher(), { budgetMs: BOOK_MATCH_BUDGET_MS })
+    } catch (err) {
+      console.error('Ingredient matching for the recipe book failed', err)
+    }
+  }
+  try {
+    after(work)
+  } catch {
     void work()
   }
 }

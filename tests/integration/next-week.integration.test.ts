@@ -11,6 +11,7 @@ import { testPrisma, setupTestDatabase, teardownTestDatabase, clearTestDatabase 
 import { ingestReceiptPdf, reparseStoredReceipt } from '@/lib/receipts/ingest'
 import { getPdf, receiptPath } from '@/lib/receipts/storage'
 import { classifyNewProducts, type ClassifyCall } from '@/lib/nextWeek/classifyProducts'
+import type { MatchCall } from '@/lib/nextWeek/resolveMatches'
 import { loadNextWeek } from '@/lib/nextWeek/loadNextWeek'
 import { orderPdf, syntheticOrders } from '../fixtures/receipts/synthetic'
 
@@ -98,13 +99,14 @@ describe('Next week list integration', { timeout: 60000 }, () => {
     const weekStart = new Date(2026, 9, 19) // Monday 19 October 2026
     await testPrisma.mealPlan.create({ data: { date: weekStart, dayOfWeek: 'Monday', proteinRecipeId: recipe.id } })
 
-    const data = await loadNextWeek(testPrisma, weekStart, new Date(2026, 9, 14))
+    const notBought: MatchCall = async names => names.map(name => ({ name, decision: 'none' as const }))
+    const data = await loadNextWeek(testPrisma, weekStart, new Date(2026, 9, 14), notBought)
     expect(data.orderCount).toBe(12)
     expect(data.orderDate).toBe('2026-10-20')
     expect(data.list.meals).toHaveLength(1)
     const lines = data.list.meals[0].lines
     expect(lines.find(l => l.label.includes('Cucumber'))).toMatchObject({ ticked: true })
-    expect(lines.find(l => l.label === 'smoked paprika')).toMatchObject({ ticked: false, why: expect.stringContaining('check') })
+    expect(lines.find(l => l.label === 'smoked paprika')).toMatchObject({ ticked: false, match: 'none', why: 'Not one of your usual items' })
     expect(data.list.usual.flatMap(g => g.lines).length).toBeGreaterThan(5)
   })
 })

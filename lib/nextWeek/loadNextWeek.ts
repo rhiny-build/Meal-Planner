@@ -14,7 +14,7 @@ import { WINDOW } from './predict'
 import { buildPurchaseContext } from './purchaseContext'
 
 /** Longest the page waits on the model for new ingredient names before showing them as "check" */
-export const NEXT_WEEK_MATCH_BUDGET_MS = 60_000
+export const NEXT_WEEK_MATCH_BUDGET_MS = 25_000
 
 export interface NextWeekData {
   /** Order (delivery) date, YYYY-MM-DD */

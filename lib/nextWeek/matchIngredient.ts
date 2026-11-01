@@ -46,16 +46,35 @@ export function ingredientKey(name: string): string {
   return key || name.toLowerCase().trim()
 }
 
-/** The item with exactly the same words as the ingredient (filler and plurals ignored); the most-bought on a tie. */
+/** Lower-case words with plurals made singular, but nothing dropped ("chopped tomatoes" stays two words). */
+const strictWords = (name: string) =>
+  name
+    .toLowerCase()
+    .replace(/\(.*?\)/g, ' ')
+    .replace(/,.*$/, ' ')
+    .replace(/[^a-zà-ÿ ]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(w => pluralize.singular(w))
+    .join(' ')
+
+/**
+ * The item that is the same thing as the ingredient, without the model:
+ *  1. the same words (plurals ignored): "Tomatoes" is "tomato", "chopped tomatoes" is "chopped tomatoes";
+ *  2. the same words once filler is dropped ("Grated Mozzarella" is "mozzarella"), but only when exactly one item
+ *     fits, so "tomatoes" is never guessed between "tomato" and "chopped tomatoes".
+ * Anything else is left to the model.
+ */
 export function exactItemMatch(ingredient: string, items: { item: string; bought: number }[]): string | null {
+  const strict = strictWords(ingredient)
+  if (!strict) return null
+  const same = items.filter(i => strictWords(i.item) === strict)
+  if (same.length > 0) return same.reduce((a, b) => (b.bought > a.bought ? b : a)).item
+
   const words = normaliseWords(ingredient).join(' ')
   if (!words) return null
-  let best: { item: string; bought: number } | null = null
-  for (const candidate of items) {
-    if (normaliseWords(candidate.item).join(' ') !== words) continue
-    if (!best || candidate.bought > best.bought) best = candidate
-  }
-  return best?.item ?? null
+  const loose = items.filter(i => normaliseWords(i.item).join(' ') === words)
+  return loose.length === 1 ? loose[0].item : null
 }
 
 /** Key used for ingredients that match no known item (old matcher). */
