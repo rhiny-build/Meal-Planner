@@ -11,7 +11,7 @@ Branch `rehaul_phase_matching`, one PR to `main` (not merged).
 - "Fresh" is said only for fresh aisles (fresh produce, dairy and eggs, meat and deli, fish, bakery). Everything else says "For Tue".
 
 ## Quality score (353 real ingredient names, 295 scored)
-`tests/fixtures/matching/cases.json`: every distinct name from the 79 production recipes, each with an expected item or "not bought" (generic item names only). 50 names are marked `unsure` (more than one answer is defensible, e.g. "Salt and pepper", "Fresh herbs", "Peppers") and left out of the score; **that is 14% of the names, so please skim them** (`"unsure": true` in the file). Ronen's real items aren't in the repo, so the item list is the 50 names in `classify-sample.json` plus 83 obvious generic ones. "Garlic powder" is deliberately *not* in the item list, so the right answer is "not bought" (as the table allows).
+`tests/fixtures/matching/cases.json`: every distinct name from the 79 production recipes, each with an expected item or "not bought" (generic item names only). 50 names are marked `unsure` (more than one answer is defensible, e.g. "Salt and pepper", "Fresh herbs", "Peppers") and left out of the score; **that is 14% of the names, so please skim them** (`"unsure": true` in the file). Ronen's real items aren't in the repo, so the item list is the 49 distinct item names in `classify-sample.json` plus 84 obvious generic ones. "Garlic powder" is deliberately *not* in the item list, so the right answer is "not bought" (as the table allows).
 
 | | Table rows (8) | The rest (295 scored cases) |
 |---|---|---|
