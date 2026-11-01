@@ -1,0 +1,2151 @@
+{
+ "note": "Generic item names only. Expected answers for a UK family's items; \"unsure\": true marks a case where more than one answer is defensible, excluded from the score. \"alsoOk\" lists accepted alternatives.",
+ "items": [
+  {
+   "item": "aubergine",
+   "aisle": "Fresh produce",
+   "bought": 5
+  },
+  {
+   "item": "baby potatoes",
+   "aisle": "Fresh produce",
+   "bought": 14
+  },
+  {
+   "item": "bacon",
+   "aisle": "Meat and deli",
+   "bought": 20
+  },
+  {
+   "item": "bagel",
+   "aisle": "Bakery",
+   "bought": 12
+  },
+  {
+   "item": "baked beans",
+   "aisle": "Cupboard",
+   "bought": 8
+  },
+  {
+   "item": "balsamic vinegar",
+   "aisle": "Cupboard",
+   "bought": 4
+  },
+  {
+   "item": "banana",
+   "aisle": "Fresh produce",
+   "bought": 12
+  },
+  {
+   "item": "basil",
+   "aisle": "Fresh produce",
+   "bought": 8
+  },
+  {
+   "item": "basmati rice",
+   "aisle": "Cupboard",
+   "bought": 12
+  },
+  {
+   "item": "bbq sauce",
+   "aisle": "Cupboard",
+   "bought": 5
+  },
+  {
+   "item": "beef mince",
+   "aisle": "Meat and deli",
+   "bought": 12
+  },
+  {
+   "item": "black pepper",
+   "aisle": "Cupboard",
+   "bought": 10
+  },
+  {
+   "item": "bolognese sauce",
+   "aisle": "Cupboard",
+   "bought": 12
+  },
+  {
+   "item": "breadcrumbs",
+   "aisle": "Cupboard",
+   "bought": 12
+  },
+  {
+   "item": "breakfast cereal",
+   "aisle": "Cupboard",
+   "bought": 12
+  },
+  {
+   "item": "broccoli",
+   "aisle": "Fresh produce",
+   "bought": 25
+  },
+  {
+   "item": "burger buns",
+   "aisle": "Bakery",
+   "bought": 7
+  },
+  {
+   "item": "butter",
+   "aisle": "Dairy and eggs",
+   "bought": 30
+  },
+  {
+   "item": "cabbage",
+   "aisle": "Fresh produce",
+   "bought": 6
+  },
+  {
+   "item": "carrot",
+   "aisle": "Fresh produce",
+   "bought": 12
+  },
+  {
+   "item": "cashew nuts",
+   "aisle": "Cupboard",
+   "bought": 3
+  },
+  {
+   "item": "cauliflower",
+   "aisle": "Fresh produce",
+   "bought": 6
+  },
+  {
+   "item": "chai tea",
+   "aisle": "Drinks and snacks",
+   "bought": 12
+  },
+  {
+   "item": "cheddar cheese",
+   "aisle": "Dairy and eggs",
+   "bought": 12
+  },
+  {
+   "item": "cherry tomatoes",
+   "aisle": "Fresh produce",
+   "bought": 22
+  },
+  {
+   "item": "chicken breast",
+   "aisle": "Meat and deli",
+   "bought": 40
+  },
+  {
+   "item": "chicken nuggets",
+   "aisle": "Frozen",
+   "bought": 5
+  },
+  {
+   "item": "chicken thigh",
+   "aisle": "Meat and deli",
+   "bought": 8
+  },
+  {
+   "item": "chickpeas",
+   "aisle": "Cupboard",
+   "bought": 12
+  },
+  {
+   "item": "chilli",
+   "aisle": "Fresh produce",
+   "bought": 9
+  },
+  {
+   "item": "chilli flakes",
+   "aisle": "Cupboard",
+   "bought": 6
+  },
+  {
+   "item": "chocolate biscuit",
+   "aisle": "Drinks and snacks",
+   "bought": 12
+  },
+  {
+   "item": "chopped tomatoes",
+   "aisle": "Cupboard",
+   "bought": 22
+  },
+  {
+   "item": "chorizo",
+   "aisle": "Meat and deli",
+   "bought": 6
+  },
+  {
+   "item": "ciabatta",
+   "aisle": "Bakery",
+   "bought": 5
+  },
+  {
+   "item": "cinnamon",
+   "aisle": "Cupboard",
+   "bought": 3
+  },
+  {
+   "item": "cola",
+   "aisle": "Drinks and snacks",
+   "bought": 12
+  },
+  {
+   "item": "coriander",
+   "aisle": "Fresh produce",
+   "bought": 15
+  },
+  {
+   "item": "cornflour",
+   "aisle": "Cupboard",
+   "bought": 4
+  },
+  {
+   "item": "couscous",
+   "aisle": "Cupboard",
+   "bought": 6
+  },
+  {
+   "item": "cucumber",
+   "aisle": "Fresh produce",
+   "bought": 12
+  },
+  {
+   "item": "dijon mustard",
+   "aisle": "Cupboard",
+   "bought": 5
+  },
+  {
+   "item": "double cream",
+   "aisle": "Dairy and eggs",
+   "bought": 8
+  },
+  {
+   "item": "egg mayo filler",
+   "aisle": "Meat and deli",
+   "bought": 4
+  },
+  {
+   "item": "egg noodles",
+   "aisle": "Cupboard",
+   "bought": 4
+  },
+  {
+   "item": "eggs",
+   "aisle": "Dairy and eggs",
+   "bought": 12
+  },
+  {
+   "item": "fajita kit",
+   "aisle": "Cupboard",
+   "bought": 12
+  },
+  {
+   "item": "fish fingers",
+   "aisle": "Frozen",
+   "bought": 12
+  },
+  {
+   "item": "frankfurters",
+   "aisle": "Meat and deli",
+   "bought": 4
+  },
+  {
+   "item": "fusilli pasta",
+   "aisle": "Cupboard",
+   "bought": 12
+  },
+  {
+   "item": "garam masala",
+   "aisle": "Cupboard",
+   "bought": 12
+  },
+  {
+   "item": "garden peas",
+   "aisle": "Frozen",
+   "bought": 12
+  },
+  {
+   "item": "garlic",
+   "aisle": "Fresh produce",
+   "bought": 35
+  },
+  {
+   "item": "ginger",
+   "aisle": "Fresh produce",
+   "bought": 12
+  },
+  {
+   "item": "gnocchi",
+   "aisle": "Cupboard",
+   "bought": 5
+  },
+  {
+   "item": "granola",
+   "aisle": "Cupboard",
+   "bought": 12
+  },
+  {
+   "item": "grapes",
+   "aisle": "Fresh produce",
+   "bought": 12
+  },
+  {
+   "item": "grated mozzarella",
+   "aisle": "Dairy and eggs",
+   "bought": 12
+  },
+  {
+   "item": "green beans",
+   "aisle": "Fresh produce",
+   "bought": 11
+  },
+  {
+   "item": "ground cumin",
+   "aisle": "Cupboard",
+   "bought": 12
+  },
+  {
+   "item": "halloumi",
+   "aisle": "Dairy and eggs",
+   "bought": 11
+  },
+  {
+   "item": "halloumi fries",
+   "aisle": "Frozen",
+   "bought": 3
+  },
+  {
+   "item": "ham",
+   "aisle": "Meat and deli",
+   "bought": 12
+  },
+  {
+   "item": "hazelnut spread",
+   "aisle": "Cupboard",
+   "bought": 12
+  },
+  {
+   "item": "honey",
+   "aisle": "Cupboard",
+   "bought": 9
+  },
+  {
+   "item": "houmous",
+   "aisle": "Dairy and eggs",
+   "bought": 12
+  },
+  {
+   "item": "ibuprofen",
+   "aisle": "Health and beauty",
+   "bought": 12
+  },
+  {
+   "item": "kitchen roll",
+   "aisle": "Household",
+   "bought": 12
+  },
+  {
+   "item": "laundry liquid",
+   "aisle": "Household",
+   "bought": 12
+  },
+  {
+   "item": "lemon",
+   "aisle": "Fresh produce",
+   "bought": 12
+  },
+  {
+   "item": "lettuce",
+   "aisle": "Fresh produce",
+   "bought": 13
+  },
+  {
+   "item": "lime",
+   "aisle": "Fresh produce",
+   "bought": 9
+  },
+  {
+   "item": "mayonnaise",
+   "aisle": "Cupboard",
+   "bought": 10
+  },
+  {
+   "item": "meat-free pieces",
+   "aisle": "Meat and deli",
+   "bought": 12
+  },
+  {
+   "item": "mini chicken fillets",
+   "aisle": "Meat and deli",
+   "bought": 6
+  },
+  {
+   "item": "mushrooms",
+   "aisle": "Fresh produce",
+   "bought": 18
+  },
+  {
+   "item": "olive oil",
+   "aisle": "Cupboard",
+   "bought": 12
+  },
+  {
+   "item": "olives",
+   "aisle": "Cupboard",
+   "bought": 9
+  },
+  {
+   "item": "onion",
+   "aisle": "Fresh produce",
+   "bought": 45
+  },
+  {
+   "item": "oregano",
+   "aisle": "Cupboard",
+   "bought": 5
+  },
+  {
+   "item": "oven chips",
+   "aisle": "Frozen",
+   "bought": 24
+  },
+  {
+   "item": "oyster sauce",
+   "aisle": "Cupboard",
+   "bought": 3
+  },
+  {
+   "item": "paprika",
+   "aisle": "Cupboard",
+   "bought": 8
+  },
+  {
+   "item": "parmesan",
+   "aisle": "Dairy and eggs",
+   "bought": 10
+  },
+  {
+   "item": "parsley",
+   "aisle": "Fresh produce",
+   "bought": 16
+  },
+  {
+   "item": "passata",
+   "aisle": "Cupboard",
+   "bought": 9
+  },
+  {
+   "item": "pasta",
+   "aisle": "Cupboard",
+   "bought": 35
+  },
+  {
+   "item": "pasta sauce",
+   "aisle": "Cupboard",
+   "bought": 10
+  },
+  {
+   "item": "peanuts",
+   "aisle": "Drinks and snacks",
+   "bought": 4
+  },
+  {
+   "item": "pesto",
+   "aisle": "Cupboard",
+   "bought": 12
+  },
+  {
+   "item": "pine nuts",
+   "aisle": "Cupboard",
+   "bought": 3
+  },
+  {
+   "item": "pitta bread",
+   "aisle": "Bakery",
+   "bought": 12
+  },
+  {
+   "item": "plain flour",
+   "aisle": "Cupboard",
+   "bought": 12
+  },
+  {
+   "item": "red onion",
+   "aisle": "Fresh produce",
+   "bought": 20
+  },
+  {
+   "item": "red pepper",
+   "aisle": "Fresh produce",
+   "bought": 12
+  },
+  {
+   "item": "rice noodles",
+   "aisle": "Cupboard",
+   "bought": 4
+  },
+  {
+   "item": "rice vinegar",
+   "aisle": "Cupboard",
+   "bought": 3
+  },
+  {
+   "item": "rocket",
+   "aisle": "Fresh produce",
+   "bought": 8
+  },
+  {
+   "item": "salmon fillet",
+   "aisle": "Fish",
+   "bought": 12
+  },
+  {
+   "item": "salt",
+   "aisle": "Cupboard",
+   "bought": 12
+  },
+  {
+   "item": "semi skimmed milk",
+   "aisle": "Dairy and eggs",
+   "bought": 12
+  },
+  {
+   "item": "sesame oil",
+   "aisle": "Cupboard",
+   "bought": 4
+  },
+  {
+   "item": "smoked paprika",
+   "aisle": "Cupboard",
+   "bought": 6
+  },
+  {
+   "item": "smoked salmon",
+   "aisle": "Fish",
+   "bought": 7
+  },
+  {
+   "item": "soft cheese",
+   "aisle": "Dairy and eggs",
+   "bought": 6
+  },
+  {
+   "item": "soured cream",
+   "aisle": "Dairy and eggs",
+   "bought": 5
+  },
+  {
+   "item": "soy sauce",
+   "aisle": "Cupboard",
+   "bought": 14
+  },
+  {
+   "item": "spaghetti",
+   "aisle": "Cupboard",
+   "bought": 18
+  },
+  {
+   "item": "spring onion",
+   "aisle": "Fresh produce",
+   "bought": 14
+  },
+  {
+   "item": "squash",
+   "aisle": "Drinks and snacks",
+   "bought": 12
+  },
+  {
+   "item": "stock cube",
+   "aisle": "Cupboard",
+   "bought": 12
+  },
+  {
+   "item": "strawberry",
+   "aisle": "Fresh produce",
+   "bought": 12
+  },
+  {
+   "item": "strawberry yogurt",
+   "aisle": "Dairy and eggs",
+   "bought": 12
+  },
+  {
+   "item": "sugar",
+   "aisle": "Cupboard",
+   "bought": 9
+  },
+  {
+   "item": "sugar snap peas",
+   "aisle": "Fresh produce",
+   "bought": 7
+  },
+  {
+   "item": "sweet chilli sauce",
+   "aisle": "Cupboard",
+   "bought": 6
+  },
+  {
+   "item": "sweet potato",
+   "aisle": "Fresh produce",
+   "bought": 10
+  },
+  {
+   "item": "sweetcorn",
+   "aisle": "Fresh produce",
+   "bought": 8
+  },
+  {
+   "item": "sweets",
+   "aisle": "Drinks and snacks",
+   "bought": 9
+  },
+  {
+   "item": "teriyaki sauce",
+   "aisle": "Cupboard",
+   "bought": 4
+  },
+  {
+   "item": "toilet tissue",
+   "aisle": "Household",
+   "bought": 12
+  },
+  {
+   "item": "tomato",
+   "aisle": "Fresh produce",
+   "bought": 12
+  },
+  {
+   "item": "tomato ketchup",
+   "aisle": "Cupboard",
+   "bought": 12
+  },
+  {
+   "item": "tomato puree",
+   "aisle": "Cupboard",
+   "bought": 10
+  },
+  {
+   "item": "toothpaste",
+   "aisle": "Health and beauty",
+   "bought": 12
+  },
+  {
+   "item": "tortilla wraps",
+   "aisle": "Bakery",
+   "bought": 14
+  },
+  {
+   "item": "tuna",
+   "aisle": "Cupboard",
+   "bought": 9
+  },
+  {
+   "item": "turkey mince",
+   "aisle": "Meat and deli",
+   "bought": 12
+  },
+  {
+   "item": "turmeric",
+   "aisle": "Cupboard",
+   "bought": 5
+  },
+  {
+   "item": "vegetable oil",
+   "aisle": "Cupboard",
+   "bought": 12
+  },
+  {
+   "item": "white bread",
+   "aisle": "Bakery",
+   "bought": 12
+  },
+  {
+   "item": "white wine vinegar",
+   "aisle": "Cupboard",
+   "bought": 3
+  },
+  {
+   "item": "yellow pepper",
+   "aisle": "Fresh produce",
+   "bought": 9
+  }
+ ],
+ "cases": [
+  {
+   "name": "(5-6 oz) tuna in olive oil",
+   "expected": "tuna"
+  },
+  {
+   "name": "-15 ml sugar",
+   "expected": "sugar"
+  },
+  {
+   "name": "-3 Crushed garlic cloves",
+   "expected": "garlic"
+  },
+  {
+   "name": "-4 tablespoons Soy sauce",
+   "expected": "soy sauce"
+  },
+  {
+   "name": "all-purpose flour",
+   "expected": "plain flour"
+  },
+  {
+   "name": "Anchovies",
+   "expected": "none"
+  },
+  {
+   "name": "Anchovy fillets",
+   "expected": "none"
+  },
+  {
+   "name": "anchovy paste",
+   "expected": "none"
+  },
+  {
+   "name": "Aubergine",
+   "expected": "aubergine"
+  },
+  {
+   "name": "Aubgergine",
+   "expected": "aubergine"
+  },
+  {
+   "name": "baby capers",
+   "expected": "none"
+  },
+  {
+   "name": "Baby Corn",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "Baby gem lettuce",
+   "expected": "lettuce",
+   "unsure": true
+  },
+  {
+   "name": "Baby Potatoes",
+   "expected": "baby potatoes"
+  },
+  {
+   "name": "Backon Rashers",
+   "expected": "bacon"
+  },
+  {
+   "name": "Baharat",
+   "expected": "none"
+  },
+  {
+   "name": "Baked Beans",
+   "expected": "baked beans"
+  },
+  {
+   "name": "Balsamic Vinegar",
+   "expected": "balsamic vinegar"
+  },
+  {
+   "name": "Bamboo Shoots",
+   "expected": "none"
+  },
+  {
+   "name": "Basil Leaves",
+   "expected": "basil"
+  },
+  {
+   "name": "BBQ Sauce",
+   "expected": "bbq sauce"
+  },
+  {
+   "name": "beef mince",
+   "expected": "beef mince"
+  },
+  {
+   "name": "Black olives",
+   "expected": "olives"
+  },
+  {
+   "name": "Black Olives",
+   "expected": "olives"
+  },
+  {
+   "name": "black pepper",
+   "expected": "black pepper"
+  },
+  {
+   "name": "Black pepper",
+   "expected": "black pepper"
+  },
+  {
+   "name": "boneless",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "boneless skinless chicken breast or chicken tenderloins",
+   "expected": "chicken breast"
+  },
+  {
+   "name": "Bread",
+   "expected": "white bread"
+  },
+  {
+   "name": "Breadcrumbs",
+   "expected": "breadcrumbs"
+  },
+  {
+   "name": "Broccoli",
+   "expected": "broccoli"
+  },
+  {
+   "name": "brown sugar",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "Burger Buns",
+   "expected": "burger buns"
+  },
+  {
+   "name": "Burgers",
+   "expected": "none"
+  },
+  {
+   "name": "butter",
+   "expected": "butter"
+  },
+  {
+   "name": "Butter",
+   "expected": "butter"
+  },
+  {
+   "name": "Buttermilk",
+   "expected": "none"
+  },
+  {
+   "name": "cabbage",
+   "expected": "cabbage"
+  },
+  {
+   "name": "Campari tomatoes",
+   "expected": "tomato"
+  },
+  {
+   "name": "Canned tomatoes",
+   "expected": "chopped tomatoes"
+  },
+  {
+   "name": "Canned tuna",
+   "expected": "tuna"
+  },
+  {
+   "name": "capers",
+   "expected": "none"
+  },
+  {
+   "name": "Capers",
+   "expected": "none"
+  },
+  {
+   "name": "Carrot",
+   "expected": "carrot"
+  },
+  {
+   "name": "Carrots",
+   "expected": "carrot"
+  },
+  {
+   "name": "carrots",
+   "expected": "carrot"
+  },
+  {
+   "name": "Cashew Nuts",
+   "expected": "cashew nuts"
+  },
+  {
+   "name": "Cauliflower",
+   "expected": "cauliflower"
+  },
+  {
+   "name": "cayenne pepper",
+   "expected": "none"
+  },
+  {
+   "name": "cherry tomatoes",
+   "expected": "cherry tomatoes"
+  },
+  {
+   "name": "Cherry Tomatoes",
+   "expected": "cherry tomatoes"
+  },
+  {
+   "name": "chestnut mushrooms",
+   "expected": "mushrooms"
+  },
+  {
+   "name": "Chicken Breast",
+   "expected": "chicken breast"
+  },
+  {
+   "name": "Chicken Breast Chunks",
+   "expected": "chicken breast"
+  },
+  {
+   "name": "Chicken Breast Fillets",
+   "expected": "chicken breast"
+  },
+  {
+   "name": "Chicken breasts",
+   "expected": "chicken breast"
+  },
+  {
+   "name": "Chicken Nuggets",
+   "expected": "chicken nuggets"
+  },
+  {
+   "name": "Chicken Stock",
+   "expected": "stock cube"
+  },
+  {
+   "name": "Chicken strips",
+   "expected": "chicken breast",
+   "alsoOk": [
+    "mini chicken fillets"
+   ],
+   "tableRow": true
+  },
+  {
+   "name": "chicken tenderloins",
+   "expected": "mini chicken fillets",
+   "alsoOk": [
+    "chicken breast"
+   ]
+  },
+  {
+   "name": "chicken thigh fillets",
+   "expected": "chicken thigh"
+  },
+  {
+   "name": "Chili",
+   "expected": "chilli",
+   "unsure": true
+  },
+  {
+   "name": "Chili garlic sauce",
+   "expected": "none"
+  },
+  {
+   "name": "chili oil",
+   "expected": "none"
+  },
+  {
+   "name": "chilli flakes",
+   "expected": "chilli flakes"
+  },
+  {
+   "name": "chilli powder",
+   "expected": "none"
+  },
+  {
+   "name": "chopped fresh dill fronds",
+   "expected": "none"
+  },
+  {
+   "name": "Chopped fresh parsley",
+   "expected": "parsley"
+  },
+  {
+   "name": "Chopped parsley",
+   "expected": "parsley"
+  },
+  {
+   "name": "chopped tomatoes",
+   "expected": "chopped tomatoes"
+  },
+  {
+   "name": "Chorizo",
+   "expected": "chorizo"
+  },
+  {
+   "name": "chorizo",
+   "expected": "chorizo"
+  },
+  {
+   "name": "Chutney",
+   "expected": "none"
+  },
+  {
+   "name": "ciabatta",
+   "expected": "ciabatta"
+  },
+  {
+   "name": "Ciabbata",
+   "expected": "ciabatta"
+  },
+  {
+   "name": "cinnamon",
+   "expected": "cinnamon"
+  },
+  {
+   "name": "Cooked chicken",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "cooking oil",
+   "expected": "vegetable oil"
+  },
+  {
+   "name": "Coriander",
+   "expected": "coriander"
+  },
+  {
+   "name": "Corn",
+   "expected": "sweetcorn"
+  },
+  {
+   "name": "Cornflour",
+   "expected": "cornflour"
+  },
+  {
+   "name": "Cornstarch",
+   "expected": "cornflour"
+  },
+  {
+   "name": "Corriander",
+   "expected": "coriander"
+  },
+  {
+   "name": "Couscous",
+   "expected": "couscous"
+  },
+  {
+   "name": "Crushed cornflakes",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "crushed red pepper flakes",
+   "expected": "chilli flakes"
+  },
+  {
+   "name": "Cucumber",
+   "expected": "cucumber"
+  },
+  {
+   "name": "Cumin",
+   "expected": "ground cumin"
+  },
+  {
+   "name": "Diced Chicken Breast",
+   "expected": "chicken breast"
+  },
+  {
+   "name": "Dijon mustard",
+   "expected": "dijon mustard"
+  },
+  {
+   "name": "dijon mustard",
+   "expected": "dijon mustard"
+  },
+  {
+   "name": "Dressing",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "Dried Cranberries",
+   "expected": "none"
+  },
+  {
+   "name": "dried oregano",
+   "expected": "oregano"
+  },
+  {
+   "name": "Dried Parsley",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "Egg",
+   "expected": "eggs"
+  },
+  {
+   "name": "egg",
+   "expected": "eggs"
+  },
+  {
+   "name": "Egg Noodles",
+   "expected": "egg noodles"
+  },
+  {
+   "name": "Eggs",
+   "expected": "eggs"
+  },
+  {
+   "name": "eggs",
+   "expected": "eggs"
+  },
+  {
+   "name": "El Paso Tortilla Kit",
+   "expected": "fajita kit",
+   "tableRow": true
+  },
+  {
+   "name": "extra virgin olive oil",
+   "expected": "olive oil"
+  },
+  {
+   "name": "extra-virgin olive oil",
+   "expected": "olive oil"
+  },
+  {
+   "name": "fennel bulbs",
+   "expected": "none"
+  },
+  {
+   "name": "finely chopped fresh rosemary",
+   "expected": "none"
+  },
+  {
+   "name": "Flour",
+   "expected": "plain flour"
+  },
+  {
+   "name": "Frankfurters",
+   "expected": "frankfurters"
+  },
+  {
+   "name": "Fresh basil for garnish",
+   "expected": "basil"
+  },
+  {
+   "name": "fresh basil or thyme -for garnish",
+   "expected": "basil",
+   "unsure": true
+  },
+  {
+   "name": "fresh coriander",
+   "expected": "coriander"
+  },
+  {
+   "name": "Fresh cracked black pepper",
+   "expected": "black pepper"
+  },
+  {
+   "name": "Fresh dill",
+   "expected": "none"
+  },
+  {
+   "name": "fresh ginger",
+   "expected": "ginger"
+  },
+  {
+   "name": "Fresh herbs",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "Fresh lime juice or rice vinegar",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "Fresh parsley",
+   "expected": "parsley"
+  },
+  {
+   "name": "fresh parsley",
+   "expected": "parsley"
+  },
+  {
+   "name": "Fresh salad veggies",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "Fresh thyme",
+   "expected": "none"
+  },
+  {
+   "name": "freshly ground pepper",
+   "expected": "black pepper"
+  },
+  {
+   "name": "Fries",
+   "expected": "oven chips",
+   "tableRow": true
+  },
+  {
+   "name": "Frozen Fries",
+   "expected": "oven chips"
+  },
+  {
+   "name": "Frozen Peas",
+   "expected": "garden peas",
+   "unsure": true
+  },
+  {
+   "name": "frozen peas",
+   "expected": "garden peas",
+   "unsure": true
+  },
+  {
+   "name": "Frozen peas",
+   "expected": "garden peas",
+   "unsure": true
+  },
+  {
+   "name": "Frozen Sweet Potatoes Fries",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "garam masala",
+   "expected": "garam masala"
+  },
+  {
+   "name": "Garlic",
+   "expected": "garlic"
+  },
+  {
+   "name": "garlic",
+   "expected": "garlic"
+  },
+  {
+   "name": "garlic (minced (optional))",
+   "expected": "garlic"
+  },
+  {
+   "name": "garlic -grated",
+   "expected": "garlic"
+  },
+  {
+   "name": "garlic clove",
+   "expected": "garlic"
+  },
+  {
+   "name": "Garlic Clove",
+   "expected": "garlic"
+  },
+  {
+   "name": "garlic cloves",
+   "expected": "garlic"
+  },
+  {
+   "name": "Garlic cloves",
+   "expected": "garlic"
+  },
+  {
+   "name": "garlic cloves minced",
+   "expected": "garlic"
+  },
+  {
+   "name": "garlic powder",
+   "expected": "none"
+  },
+  {
+   "name": "Garlic powder",
+   "expected": "none",
+   "tableRow": true
+  },
+  {
+   "name": "garlic salt",
+   "expected": "none"
+  },
+  {
+   "name": "Gnocchi",
+   "expected": "gnocchi"
+  },
+  {
+   "name": "Grated ginger",
+   "expected": "ginger"
+  },
+  {
+   "name": "Grated Mozzarela",
+   "expected": "grated mozzarella",
+   "tableRow": true
+  },
+  {
+   "name": "Grated Mozzarella",
+   "expected": "grated mozzarella"
+  },
+  {
+   "name": "grated Parmesan cheese",
+   "expected": "parmesan"
+  },
+  {
+   "name": "Green beans",
+   "expected": "green beans"
+  },
+  {
+   "name": "Green Beans",
+   "expected": "green beans"
+  },
+  {
+   "name": "green chilli",
+   "expected": "chilli"
+  },
+  {
+   "name": "green onions",
+   "expected": "spring onion"
+  },
+  {
+   "name": "Ground black pepper",
+   "expected": "black pepper"
+  },
+  {
+   "name": "ground black pepper",
+   "expected": "black pepper"
+  },
+  {
+   "name": "ground coriander",
+   "expected": "none"
+  },
+  {
+   "name": "ground cumin",
+   "expected": "ground cumin"
+  },
+  {
+   "name": "Ground Turkey",
+   "expected": "turkey mince",
+   "tableRow": true
+  },
+  {
+   "name": "ground turmeric",
+   "expected": "turmeric"
+  },
+  {
+   "name": "Groundnut Oil",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "Halloumi cheese",
+   "expected": "halloumi"
+  },
+  {
+   "name": "Halloumi Cheese",
+   "expected": "halloumi"
+  },
+  {
+   "name": "Hallumi",
+   "expected": "halloumi"
+  },
+  {
+   "name": "Harrisa",
+   "expected": "none"
+  },
+  {
+   "name": "head broccoli",
+   "expected": "broccoli"
+  },
+  {
+   "name": "heavy cream",
+   "expected": "double cream"
+  },
+  {
+   "name": "Honey",
+   "expected": "honey"
+  },
+  {
+   "name": "Honey/sugar",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "Hot Papprika",
+   "expected": "paprika",
+   "unsure": true
+  },
+  {
+   "name": "Humous",
+   "expected": "houmous"
+  },
+  {
+   "name": "Israeli Couscous",
+   "expected": "couscous",
+   "unsure": true
+  },
+  {
+   "name": "Itse Buns",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "ketchup",
+   "expected": "tomato ketchup"
+  },
+  {
+   "name": "Ketchup",
+   "expected": "tomato ketchup"
+  },
+  {
+   "name": "kosher salt",
+   "expected": "salt"
+  },
+  {
+   "name": "Kosher salt",
+   "expected": "salt"
+  },
+  {
+   "name": "lb. green beans",
+   "expected": "green beans"
+  },
+  {
+   "name": "lb. ground pork",
+   "expected": "none"
+  },
+  {
+   "name": "lbs. boneless, skinless chicken thighs",
+   "expected": "chicken thigh"
+  },
+  {
+   "name": "leaves (or 1/2 tsp dried) fresh thyme",
+   "expected": "none"
+  },
+  {
+   "name": "lemon",
+   "expected": "lemon"
+  },
+  {
+   "name": "Lemon",
+   "expected": "lemon"
+  },
+  {
+   "name": "Lemon juice",
+   "expected": "lemon",
+   "unsure": true
+  },
+  {
+   "name": "lemon juice",
+   "expected": "lemon",
+   "unsure": true
+  },
+  {
+   "name": "lemon slices",
+   "expected": "lemon"
+  },
+  {
+   "name": "lemon zest",
+   "expected": "lemon"
+  },
+  {
+   "name": "Lemon/lime juice",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "lemons",
+   "expected": "lemon"
+  },
+  {
+   "name": "Lettuce",
+   "expected": "lettuce"
+  },
+  {
+   "name": "Light Soft Cheese",
+   "expected": "soft cheese"
+  },
+  {
+   "name": "light soy sauce",
+   "expected": "soy sauce"
+  },
+  {
+   "name": "Lime wedges",
+   "expected": "lime"
+  },
+  {
+   "name": "Mayo",
+   "expected": "mayonnaise",
+   "tableRow": true
+  },
+  {
+   "name": "Mayonese",
+   "expected": "mayonnaise"
+  },
+  {
+   "name": "Milk",
+   "expected": "semi skimmed milk"
+  },
+  {
+   "name": "Mince Turkey",
+   "expected": "turkey mince"
+  },
+  {
+   "name": "Minced Beef",
+   "expected": "beef mince"
+  },
+  {
+   "name": "Minced garlic",
+   "expected": "garlic"
+  },
+  {
+   "name": "Mini Chicken Fillets",
+   "expected": "mini chicken fillets",
+   "alsoOk": [
+    "chicken breast"
+   ]
+  },
+  {
+   "name": "mini sweet peppers (any color or a mix)",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "Mixed lettuce",
+   "expected": "lettuce"
+  },
+  {
+   "name": "multi-colored bell peppers thinly sliced, about ¼-inch wide",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "Mushroom",
+   "expected": "mushrooms"
+  },
+  {
+   "name": "Mushrooms",
+   "expected": "mushrooms"
+  },
+  {
+   "name": "Mustard",
+   "expected": "dijon mustard",
+   "unsure": true
+  },
+  {
+   "name": "noodles",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "of a medium sweet onion or purple onion",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "of black pepper",
+   "expected": "black pepper"
+  },
+  {
+   "name": "Oil",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "Oil for frying",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "Olive Oil",
+   "expected": "olive oil"
+  },
+  {
+   "name": "olive oil",
+   "expected": "olive oil"
+  },
+  {
+   "name": "Olive oil",
+   "expected": "olive oil"
+  },
+  {
+   "name": "Olives",
+   "expected": "olives"
+  },
+  {
+   "name": "onion",
+   "expected": "onion"
+  },
+  {
+   "name": "Onion",
+   "expected": "onion"
+  },
+  {
+   "name": "Onion powder",
+   "expected": "none"
+  },
+  {
+   "name": "Onion Rings",
+   "expected": "none"
+  },
+  {
+   "name": "Onions",
+   "expected": "onion"
+  },
+  {
+   "name": "orange juice",
+   "expected": "none"
+  },
+  {
+   "name": "Oyster Sauce",
+   "expected": "oyster sauce"
+  },
+  {
+   "name": "oyster sauce",
+   "expected": "oyster sauce"
+  },
+  {
+   "name": "Pallea Rice",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "Pancetta",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "pancetta or bacon",
+   "expected": "bacon"
+  },
+  {
+   "name": "panko bread crumbs",
+   "expected": "breadcrumbs"
+  },
+  {
+   "name": "paprika",
+   "expected": "paprika"
+  },
+  {
+   "name": "Paprika",
+   "expected": "paprika"
+  },
+  {
+   "name": "Parmesan cheese",
+   "expected": "parmesan"
+  },
+  {
+   "name": "Parsley",
+   "expected": "parsley"
+  },
+  {
+   "name": "parsley",
+   "expected": "parsley"
+  },
+  {
+   "name": "Parsley Leaves",
+   "expected": "parsley"
+  },
+  {
+   "name": "Passata",
+   "expected": "passata"
+  },
+  {
+   "name": "pasta",
+   "expected": "pasta"
+  },
+  {
+   "name": "Pasta",
+   "expected": "pasta"
+  },
+  {
+   "name": "pasta of your choice",
+   "expected": "pasta"
+  },
+  {
+   "name": "Pasta Sauce",
+   "expected": "pasta sauce"
+  },
+  {
+   "name": "Peanuts",
+   "expected": "peanuts"
+  },
+  {
+   "name": "Pecans",
+   "expected": "none"
+  },
+  {
+   "name": "pepper",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "Pepper",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "Pepper to taste",
+   "expected": "black pepper"
+  },
+  {
+   "name": "Peppers",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "Persian cucumbers",
+   "expected": "cucumber"
+  },
+  {
+   "name": "Pesto",
+   "expected": "pesto"
+  },
+  {
+   "name": "pesto",
+   "expected": "pesto"
+  },
+  {
+   "name": "Pine nuts",
+   "expected": "pine nuts"
+  },
+  {
+   "name": "pineapple chunks",
+   "expected": "none"
+  },
+  {
+   "name": "pitted olives (Kalamata or mixed)",
+   "expected": "olives"
+  },
+  {
+   "name": "plain flour",
+   "expected": "plain flour"
+  },
+  {
+   "name": "Pork Loin",
+   "expected": "none"
+  },
+  {
+   "name": "poultry seasoning",
+   "expected": "none"
+  },
+  {
+   "name": "Quick cook steaks",
+   "expected": "none"
+  },
+  {
+   "name": "Radish",
+   "expected": "none"
+  },
+  {
+   "name": "Ready Chicken",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "ready soup from supermarket",
+   "expected": "none"
+  },
+  {
+   "name": "Red chili flakes",
+   "expected": "chilli flakes"
+  },
+  {
+   "name": "Red Onion",
+   "expected": "red onion"
+  },
+  {
+   "name": "red onion",
+   "expected": "red onion"
+  },
+  {
+   "name": "red pepper",
+   "expected": "red pepper"
+  },
+  {
+   "name": "Red Pepper",
+   "expected": "red pepper"
+  },
+  {
+   "name": "Red pepper",
+   "expected": "red pepper"
+  },
+  {
+   "name": "red pepper flakes",
+   "expected": "chilli flakes"
+  },
+  {
+   "name": "Red pepper flakes",
+   "expected": "chilli flakes"
+  },
+  {
+   "name": "red peppers",
+   "expected": "red pepper"
+  },
+  {
+   "name": "Red Peppers",
+   "expected": "red pepper"
+  },
+  {
+   "name": "red wine vinegar + more to taste",
+   "expected": "none"
+  },
+  {
+   "name": "Rice",
+   "expected": "basmati rice"
+  },
+  {
+   "name": "Rice noodles",
+   "expected": "rice noodles"
+  },
+  {
+   "name": "rice vinegar",
+   "expected": "rice vinegar"
+  },
+  {
+   "name": "Rice Vinegar",
+   "expected": "rice vinegar"
+  },
+  {
+   "name": "Rice wine vinegar",
+   "expected": "rice vinegar"
+  },
+  {
+   "name": "rocket",
+   "expected": "rocket"
+  },
+  {
+   "name": "Rocket Leaves",
+   "expected": "rocket"
+  },
+  {
+   "name": "Saffron",
+   "expected": "none"
+  },
+  {
+   "name": "salmon filets",
+   "expected": "salmon fillet"
+  },
+  {
+   "name": "salmon fillet",
+   "expected": "salmon fillet"
+  },
+  {
+   "name": "Salmon fillets",
+   "expected": "salmon fillet"
+  },
+  {
+   "name": "Salt",
+   "expected": "salt"
+  },
+  {
+   "name": "salt",
+   "expected": "salt"
+  },
+  {
+   "name": "Salt and pepper",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "salt and pepper",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "Salt and pepper to taste",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "salt and white pepper",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "Salt Pepper",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "Salt to taste",
+   "expected": "salt"
+  },
+  {
+   "name": "San Marzano crushed tomatoes",
+   "expected": "chopped tomatoes",
+   "unsure": true
+  },
+  {
+   "name": "scallions, trimmed and chopped",
+   "expected": "spring onion"
+  },
+  {
+   "name": "sea bass fillets",
+   "expected": "none"
+  },
+  {
+   "name": "Sea bass fillets",
+   "expected": "none"
+  },
+  {
+   "name": "sea salt",
+   "expected": "salt"
+  },
+  {
+   "name": "Seasame Oil",
+   "expected": "sesame oil"
+  },
+  {
+   "name": "Sesame",
+   "expected": "none"
+  },
+  {
+   "name": "sesame oil",
+   "expected": "sesame oil"
+  },
+  {
+   "name": "Sesame oil",
+   "expected": "sesame oil"
+  },
+  {
+   "name": "Sesame Oil",
+   "expected": "sesame oil"
+  },
+  {
+   "name": "sesame seeds",
+   "expected": "none"
+  },
+  {
+   "name": "Sherry Tomatoes",
+   "expected": "cherry tomatoes"
+  },
+  {
+   "name": "short pasta",
+   "expected": "pasta"
+  },
+  {
+   "name": "Shwarama air frier chicken seasonsing",
+   "expected": "none"
+  },
+  {
+   "name": "Sliced carrot",
+   "expected": "carrot"
+  },
+  {
+   "name": "Sliced cucumber",
+   "expected": "cucumber"
+  },
+  {
+   "name": "smoked paprika",
+   "expected": "smoked paprika"
+  },
+  {
+   "name": "Smoked Salmon",
+   "expected": "smoked salmon"
+  },
+  {
+   "name": "Sour cream",
+   "expected": "soured cream"
+  },
+  {
+   "name": "Soy",
+   "expected": "soy sauce"
+  },
+  {
+   "name": "Soy Sauce",
+   "expected": "soy sauce"
+  },
+  {
+   "name": "Soy sauce",
+   "expected": "soy sauce"
+  },
+  {
+   "name": "soy sauce",
+   "expected": "soy sauce"
+  },
+  {
+   "name": "Spaghetti",
+   "expected": "spaghetti"
+  },
+  {
+   "name": "Spring Onion",
+   "expected": "spring onion"
+  },
+  {
+   "name": "Spring Onions",
+   "expected": "spring onion"
+  },
+  {
+   "name": "Stir Fry Beef",
+   "expected": "none"
+  },
+  {
+   "name": "Sugar",
+   "expected": "sugar"
+  },
+  {
+   "name": "sugar",
+   "expected": "sugar"
+  },
+  {
+   "name": "Sugar Snap Peas",
+   "expected": "sugar snap peas"
+  },
+  {
+   "name": "sugar snap peas",
+   "expected": "sugar snap peas"
+  },
+  {
+   "name": "sumac",
+   "expected": "none"
+  },
+  {
+   "name": "Sweet chili sauce or hoisin sauce for serving",
+   "expected": "sweet chilli sauce",
+   "unsure": true
+  },
+  {
+   "name": "Sweet Chilli",
+   "expected": "sweet chilli sauce"
+  },
+  {
+   "name": "Sweet chilli sauce",
+   "expected": "sweet chilli sauce"
+  },
+  {
+   "name": "Sweet Corn",
+   "expected": "sweetcorn",
+   "tableRow": true
+  },
+  {
+   "name": "sweet multi-colored mini bell pepper",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "sweet or bell peppers - mixed colors",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "sweet paprika",
+   "expected": "paprika"
+  },
+  {
+   "name": "sweet potatoes",
+   "expected": "sweet potato"
+  },
+  {
+   "name": "Tbsp. fresh ginger",
+   "expected": "ginger"
+  },
+  {
+   "name": "Tbsp. shallots",
+   "expected": "none"
+  },
+  {
+   "name": "Teriyaki Sauce",
+   "expected": "teriyaki sauce"
+  },
+  {
+   "name": "Teryaki",
+   "expected": "teriyaki sauce"
+  },
+  {
+   "name": "to 8 olives, (green or Kalamata)",
+   "expected": "olives"
+  },
+  {
+   "name": "tomaoe puree",
+   "expected": "tomato puree"
+  },
+  {
+   "name": "Tomato Puree",
+   "expected": "tomato puree"
+  },
+  {
+   "name": "tomato purée",
+   "expected": "tomato puree"
+  },
+  {
+   "name": "Tomatoes",
+   "expected": "tomato"
+  },
+  {
+   "name": "Tortiila",
+   "expected": "tortilla wraps"
+  },
+  {
+   "name": "Trout",
+   "expected": "none"
+  },
+  {
+   "name": "Turmeric",
+   "expected": "turmeric"
+  },
+  {
+   "name": "Tzatziki",
+   "expected": "none"
+  },
+  {
+   "name": "Unsalted butter",
+   "expected": "butter"
+  },
+  {
+   "name": "vegetable oil",
+   "expected": "vegetable oil"
+  },
+  {
+   "name": "vegetable or chicken stock",
+   "expected": "stock cube"
+  },
+  {
+   "name": "Vinegar",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "walnuts",
+   "expected": "none"
+  },
+  {
+   "name": "White Cabbage",
+   "expected": "cabbage"
+  },
+  {
+   "name": "white vinegar or Fresh lemon juice",
+   "expected": "none",
+   "unsure": true
+  },
+  {
+   "name": "White Wine",
+   "expected": "none"
+  },
+  {
+   "name": "white wine vinegar",
+   "expected": "white wine vinegar"
+  },
+  {
+   "name": "Yellow Pepper",
+   "expected": "yellow pepper"
+  },
+  {
+   "name": "Zaatar",
+   "expected": "none"
+  },
+  {
+   "name": "¼ cup freshly squeezed lemon juice",
+   "expected": "lemon",
+   "unsure": true
+  },
+  {
+   "name": "¼ teaspoon crushed red pepper flakes",
+   "expected": "chilli flakes"
+  },
+  {
+   "name": "¼ teaspoon freshly ground black pepper",
+   "expected": "black pepper"
+  },
+  {
+   "name": "½ small red onion very thinly sliced, about ⅛-inch wide",
+   "expected": "red onion"
+  },
+  {
+   "name": "½ teaspoon black pepper",
+   "expected": "black pepper"
+  },
+  {
+   "name": "½ teaspoon kosher salt",
+   "expected": "salt"
+  },
+  {
+   "name": "¾ teaspoon kosher salt",
+   "expected": "salt"
+  },
+  {
+   "name": "⅓ cup extra virgin olive oil",
+   "expected": "olive oil"
+  }
+ ]
+}
